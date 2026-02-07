@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Core Automation** - Browser automation, stealth, screenshots, artifact storage
 - [x] **Phase 2: Discovery & Planning** - Site crawling, workflow detection, LLM integration
 - [x] **Phase 3: Execution & Testing** - Test runner, error capture, functional checks
-- [ ] **Phase 4: Analysis & Diagnosis** - AI error diagnosis, UI auditing, root cause analysis
+- [x] **Phase 4: Analysis & Diagnosis** - AI error diagnosis, UI auditing, root cause analysis
 - [ ] **Phase 5: Reporting & Output** - Dual-format reports, prioritization, visualization
 - [ ] **Phase 6: Interfaces & Integration** - CLI wrapper, MCP server, GitHub Action
 - [ ] **Phase 7: Demo Prep & Polish** - Video recording, offline mode, stability hardening
@@ -110,9 +110,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 04-01-PLAN.md -- Diagnosis schemas, GeminiClient multimodal extension, and error analyzer
-- [ ] 04-02-PLAN.md -- Source code mapper with ts-morph AST analysis
-- [ ] 04-03-PLAN.md -- Vision UI auditor and pipeline integration with --source flag
+- [x] 04-01-PLAN.md -- Diagnosis schemas, GeminiClient multimodal extension, and error analyzer
+- [x] 04-02-PLAN.md -- Source code mapper with ts-morph AST analysis
+- [x] 04-03-PLAN.md -- Vision UI auditor and pipeline integration with --source flag
 
 ### Phase 5: Reporting & Output
 **Goal**: Tool generates beautiful standalone HTML report for humans and structured Markdown report for AI coding tools, both with prioritized issues and actionable recommendations.
