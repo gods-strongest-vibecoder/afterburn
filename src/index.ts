@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Main entry point with Phase 2 discovery + Phase 3 execution + Phase 4 analysis pipeline
+// Main entry point with Phase 2 discovery + Phase 3 execution + Phase 4 analysis + Phase 5 reporting pipeline
 import crypto from 'node:crypto';
 import { ensureBrowserInstalled, withSpinner } from './cli/index.js';
 import { runDiscovery } from './discovery/index.js';
@@ -9,6 +9,7 @@ import type { ExecutionOptions } from './execution/index.js';
 import { analyzeErrors, auditUI, mapErrorToSource } from './analysis/index.js';
 import type { AnalysisArtifact } from './analysis/index.js';
 import { ArtifactStorage } from './artifacts/index.js';
+import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport } from './reports/index.js';
 
 async function main(): Promise<void> {
   console.log('Afterburn v0.1.0 - Automated Web Testing\n');
@@ -224,6 +225,31 @@ async function main(): Promise<void> {
       const artifactStorage = new ArtifactStorage();
       await artifactStorage.save(analysisArtifact);
       console.log(`\nAnalysis artifact saved: .afterburn/artifacts/analysis-${sessionId}.json\n`);
+
+      // Phase 5: Generate reports
+      console.log('Generating reports...\n');
+
+      try {
+        // Generate HTML report (human-readable)
+        const htmlReport = await generateHtmlReport(executionResult, analysisArtifact);
+        const htmlPath = `.afterburn/reports/report-${sessionId}.html`;
+        await writeHtmlReport(htmlReport, htmlPath);
+
+        // Generate Markdown report (AI-readable)
+        const markdownReport = generateMarkdownReport(executionResult, analysisArtifact);
+        const mdPath = `.afterburn/reports/report-${sessionId}.md`;
+        await writeMarkdownReport(markdownReport, mdPath);
+
+        console.log('Reports generated:');
+        console.log(`  HTML (human): ${htmlPath}`);
+        console.log(`  Markdown (AI): ${mdPath}`);
+      } catch (reportError) {
+        // Report generation should not crash the pipeline
+        console.error('Warning: Report generation failed:', reportError instanceof Error ? reportError.message : String(reportError));
+        console.error('Test results are still available in execution and analysis artifacts.');
+      }
+
+      console.log('');
 
       // Exit with code based on execution results
       process.exit(executionResult.exitCode);
