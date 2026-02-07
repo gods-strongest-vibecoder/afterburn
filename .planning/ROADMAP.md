@@ -58,12 +58,14 @@ Plans:
   4. User can optionally provide workflow hints via `--flows` flag to guide discovery
   5. Tool detects broken internal and external links (404s) during crawl
 
-**Plans**: TBD (3-5 plans expected)
+**Plans**: 5 plans
 
 Plans:
-- [ ] 02-01: TBD during planning
-- [ ] 02-02: TBD during planning
-- [ ] 02-03: TBD during planning
+- [ ] 02-01-PLAN.md -- Discovery types and recursive web crawler engine
+- [ ] 02-02-PLAN.md -- SPA framework detection and interactive element mapper
+- [ ] 02-03-PLAN.md -- Broken link validator and hierarchical sitemap builder
+- [ ] 02-04-PLAN.md -- Gemini AI client and workflow plan generator
+- [ ] 02-05-PLAN.md -- Discovery pipeline integration and CLI wiring
 
 ### Phase 3: Execution & Testing
 **Goal**: Tool executes workflow test plans, fills forms with realistic data, captures errors and performance metrics, and produces comprehensive execution logs for analysis.
@@ -187,7 +189,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Automation | 4/4 | Complete | 2026-02-07 |
-| 2. Discovery & Planning | 0/TBD | Not started | - |
+| 2. Discovery & Planning | 0/5 | Not started | - |
 | 3. Execution & Testing | 0/TBD | Not started | - |
 | 4. Analysis & Diagnosis | 0/TBD | Not started | - |
 | 5. Reporting & Output | 0/TBD | Not started | - |
