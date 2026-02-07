@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 5 of 7 (Reporting & Output)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In progress
-Last activity: 2026-02-07 — Completed 05-01-PLAN.md (Report Foundations - Health Scoring & Prioritization)
+Last activity: 2026-02-07 — Completed 05-03-PLAN.md (Markdown Report Generator)
 
-Progress: [█████████░] 85% (17/20 total plans complete across all phases)
+Progress: [█████████░] 90% (18/20 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 5.1 minutes
-- Total execution time: 1.4 hours
+- Total plans completed: 18
+- Average duration: 4.9 minutes
+- Total execution time: 1.5 hours
 
 **By Phase:**
 
@@ -32,13 +32,13 @@ Progress: [█████████░] 85% (17/20 total plans complete acros
 | 2 - Discovery | 5/5 | 21 min | 4.2 min |
 | 3 - Execution | 4/4 | 15 min | 3.8 min |
 | 4 - Analysis | 3/3 | 17 min | 5.7 min |
-| 5 - Reporting | 1/3 | 3 min | 3.0 min |
+| 5 - Reporting | 2/3 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (8m), 04-01 (5m), 04-02 (6m), 04-03 (6m), 05-01 (3m)
-- Trend: Phase 5 started strong with 3-min velocity (foundational work)
+- Last 5 plans: 04-01 (5m), 04-02 (6m), 04-03 (6m), 05-01 (3m), 05-03 (2m)
+- Trend: Phase 5 maintaining exceptional velocity (2-3 min/plan)
 
-*Updated after plan 05-01 completion*
+*Updated after plan 05-03 completion*
 
 ## Accumulated Context
 
@@ -112,6 +112,10 @@ Recent decisions affecting current work:
 - **Health score weighting:** Workflows 40%, errors 30%, accessibility 20%, performance 10% balances user flow impact with technical quality — 05-01
 - **Veto logic for failed workflows:** Any failed workflow caps overall score at maximum 50 ensures critical issues visible — 05-01
 - **Three-tier priority system:** High = workflow-blocking, medium = errors/confusing, low = minor issues with plain English impacts — 05-01
+- **YAML frontmatter for Markdown reports:** 13 metadata fields (session_id, health_score, total_issues, ai_powered, source_analysis) enable programmatic parsing by AI tools — 05-03
+- **Reproduction steps with full context:** Include ALL steps (passed + failed) in failed workflows so AI tools can see where workflow failed and what succeeded before it — 05-03
+- **AI-parseability requirements:** Consistent H1/H2/H3 hierarchy, labeled tables, language-hinted code blocks, explicit text labels (no emoji-only markers) — 05-03
+- **Edge case fallback messages:** Every helper function returns meaningful message for empty input (e.g., "No source code references available. Run with --source ./path") — 05-03
 
 ### Pending Todos
 
@@ -152,12 +156,15 @@ None yet.
 - ✅ Vision LLM screenshot analysis for UI/UX issues
 - ✅ Source code pinpointing via --source flag
 
-**Phase 5 IN PROGRESS** — 1 of 3 plans complete
+**Phase 5 IN PROGRESS** — 2 of 3 plans complete
 - ✅ 05-01 complete — Health scorer and priority ranker with weighted scoring and veto logic
-- Health scorer calculates 0-100 score with breakdown (workflows 40%, errors 30%, accessibility 20%, performance 10%)
-- Veto logic caps score at 50 when any workflow fails
-- Priority ranker categorizes issues as high/medium/low with plain English summaries
-- Handlebars and marked installed for HTML/Markdown report generation
+- ✅ 05-03 complete — Markdown report generator with YAML frontmatter and AI-optimized structure
+- Markdown reports have YAML frontmatter with 13 metadata fields for machine parsing
+- Prioritized issue table with columns: #, Priority, Category, Summary, Location
+- Technical details section includes original error messages and source code references (file:line + context)
+- Reproduction steps show all workflow steps (passed + failed) for full context
+- AI-parseability ensured: consistent H1/H2/H3 hierarchy, labeled tables, language-hinted code blocks
+- Edge case handling with fallback messages for empty data (no errors, no workflows, no source)
 
 **Timeline Risk:**
 - 7-day hackathon deadline is aggressive for 34 requirements
@@ -166,8 +173,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Plan 05-01 execution (Report Foundations - Health Scoring & Prioritization)
-Stopped at: Completed 05-01-PLAN.md — Phase 5 in progress (1/3 plans)
+Last session: 2026-02-07 — Plan 05-03 execution (Markdown Report Generator)
+Stopped at: Completed 05-03-PLAN.md — Phase 5 in progress (2/3 plans)
 Resume file: None
 
-**Next action:** Execute 05-02-PLAN.md (HTML Report Generator) — Build Handlebars-based human-readable report
+**Next action:** Wave 2 continues with 05-02-PLAN.md (HTML Report Generator) executing in parallel
