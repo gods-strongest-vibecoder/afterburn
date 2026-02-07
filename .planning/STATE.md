@@ -11,31 +11,31 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 2 of 7 (Discovery & Planning)
-Plan: 2 of 5 complete
+Plan: 3 of 5 complete
 Status: In progress
-Last activity: 2026-02-07 — Completed 02-01-PLAN.md (Types & Crawler)
+Last activity: 2026-02-07 — Completed 02-03-PLAN.md (Link Validation & Sitemap)
 
-Progress: [████░░░░░░] 44% (6/14 total plans complete across all phases)
+Progress: [█████░░░░░] 50% (7/14 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 9 minutes
-- Total execution time: 0.92 hours
+- Total plans completed: 7
+- Average duration: 8 minutes
+- Total execution time: 0.97 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 - Foundation | 4/4 | 49 min | 12.3 min |
-| 2 - Discovery | 2/5 | 6 min | 3.0 min |
+| 2 - Discovery | 3/5 | 9 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (8m), 01-04 (12m), 02-01 (6m), 02-02 (5m), 02-01-reexec (6m)
-- Trend: Phase 2 plans executing faster (type-driven architecture, clear patterns)
+- Last 5 plans: 01-04 (12m), 02-01 (6m), 02-02 (5m), 02-01-reexec (6m), 02-03 (3m)
+- Trend: Phase 2 plans maintaining fast velocity (3-6 min avg)
 
-*Updated after plan 02-01 completion*
+*Updated after plan 02-03 completion*
 
 ## Accumulated Context
 
@@ -71,6 +71,10 @@ Recent decisions affecting current work:
 - **Crawler architecture:** Build on BrowserManager instead of Crawlee to avoid playwright-extra conflicts — 02-01
 - **pageProcessor callback pattern:** Inject per-page processing via callback to separate URL management from element discovery — 02-01
 - **additionalUrls seeding:** Accept additionalUrls in crawl() for SPA route injection from History API interception — 02-01
+- **page.request.get() for link validation:** Maintains session context (cookies, auth) vs standalone HTTP client — 02-03
+- **External link skipping:** Don't check external links to avoid rate-limiting third-party sites — 02-03
+- **Batched link checking:** Max 5 concurrent HTTP checks prevents overwhelming target servers — 02-03
+- **Placeholder sitemap nodes:** Create intermediate nodes for uncrawled parent paths (ensures complete tree) — 02-03
 
 ### Pending Todos
 
@@ -92,7 +96,7 @@ None yet.
 **Phase 2 Progress:**
 - ✅ 02-01 complete — Discovery types and crawler engine with URL queue
 - ✅ 02-02 complete — SPA detection (6 frameworks) and element mapper with hidden element discovery
-- ⏳ 02-03 pending — Broken link validator and hierarchical sitemap builder
+- ✅ 02-03 complete — Broken link validator and hierarchical sitemap builder
 - ⏳ 02-04 pending — Gemini AI client and workflow plan generator
 - ⏳ 02-05 pending — Discovery pipeline integration and CLI wiring
 
@@ -107,8 +111,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Plan 02-01 execution (Types & Crawler)
-Stopped at: Completed 02-01-PLAN.md, 2 of 5 Phase 2 plans complete
+Last session: 2026-02-07 — Plan 02-03 execution (Link Validation & Sitemap)
+Stopped at: Completed 02-03-PLAN.md, 3 of 5 Phase 2 plans complete
 Resume file: None
 
-**Next action:** Continue Phase 2 — plans 02-03, 02-04, 02-05 remaining
+**Next action:** Continue Phase 2 — plans 02-04, 02-05 remaining
