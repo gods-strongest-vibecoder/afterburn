@@ -6,22 +6,22 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Any vibe coder can run one command and instantly know what's broken on their site, why it matters, and exactly what to fix — no test-writing, no config, no expertise needed.
 
-**Current focus:** Phase 3 - Execution & Testing
+**Current focus:** Phase 4 - Analysis & Diagnosis
 
 ## Current Position
 
-Phase: 3 of 7 (Execution & Testing)
-Plan: 4 of 4 complete
-Status: Phase complete
-Last activity: 2026-02-07 — Completed 03-04-PLAN.md (Workflow Executor & Pipeline Integration)
+Phase: 4 of 7 (Analysis & Diagnosis)
+Plan: 2 of 4 complete
+Status: In progress
+Last activity: 2026-02-07 — Completed 04-02-PLAN.md (Source Code Mapper)
 
-Progress: [████████░░] 86% (12/14 total plans complete across all phases)
+Progress: [█████████░] 93% (13/14 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 5.8 minutes
+- Total plans completed: 13
+- Average duration: 5.6 minutes
 - Total execution time: 1.2 hours
 
 **By Phase:**
@@ -31,12 +31,13 @@ Progress: [████████░░] 86% (12/14 total plans complete acros
 | 1 - Foundation | 4/4 | 49 min | 12.3 min |
 | 2 - Discovery | 5/5 | 21 min | 4.2 min |
 | 3 - Execution | 4/4 | 15 min | 3.8 min |
+| 4 - Analysis | 2/4 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (5m), 03-03 (2m), 03-04 (8m)
-- Trend: Phase 3 complete with excellent velocity (average 3.8 min), ready for Phase 4
+- Last 5 plans: 03-03 (2m), 03-04 (8m), 04-02 (5m)
+- Trend: Phase 4 maintaining excellent velocity (average 2.5 min so far)
 
-*Updated after plan 03-04 completion - Phase 3 COMPLETE*
+*Updated after plan 04-02 completion*
 
 ## Accumulated Context
 
@@ -98,6 +99,10 @@ Recent decisions affecting current work:
 - **Credential injection heuristic:** Detect login workflows by name/description, inject --email/--password into matching fields — 03-04
 - **Exit code for CI/CD:** 0 if all pass, 1 if any failures or issues detected — 03-04
 - **Form detection trigger:** Detect broken forms when fill step followed by submit click — 03-04
+- **Source mapper timeout:** 10-second hard timeout prevents hanging on large codebases during AST analysis — 04-02
+- **Error term extraction strategy:** Quoted strings → identifiers from patterns → camelCase/PascalCase → URL path segments, sorted by length (longer = more specific) — 04-02
+- **AST search relevance scoring:** Exact name match = 10, partial match = 5, string literal = 3 (prioritizes best matches) — 04-02
+- **Batch source mapping efficiency:** mapMultipleErrors() loads ts-morph Project once for all errors, shares 10-second timeout — 04-02
 
 ### Pending Todos
 
@@ -129,6 +134,12 @@ None yet.
 - ✅ 03-03 complete — Step action handlers with form filling, dead button detection, and evidence capture
 - ✅ 03-04 complete — Workflow executor orchestration and main pipeline integration with exit codes
 
+**Phase 4 In Progress** — 2 of 4 plans complete
+- ✅ 04-01 complete — Analysis types and diagnosis schema with Zod validation
+- ✅ 04-02 complete — Source code mapper with ts-morph AST analysis
+- ⏳ 04-03 pending — Error diagnoser with Gemini LLM integration
+- ⏳ 04-04 pending — UI auditor with Gemini Vision LLM
+
 **Phase 4 Research:**
 - Vision LLM prompt engineering for UI auditing not well-documented
 - May need experimentation with structured output schemas during Phase 4 planning
@@ -140,8 +151,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Plan 03-04 execution (Workflow Executor & Pipeline Integration)
-Stopped at: Completed 03-04-PLAN.md, Phase 3 COMPLETE (4/4 plans)
+Last session: 2026-02-07 — Plan 04-02 execution (Source Code Mapper)
+Stopped at: Completed 04-02-PLAN.md (2/4 plans in Phase 4)
 Resume file: None
 
-**Next action:** Begin Phase 4 (Analysis & Insights) — Run phase planning to design Gemini Vision LLM integration for UI analysis and report generation
+**Next action:** Continue Phase 4 — Execute plan 04-03 (Error Diagnoser) to integrate Gemini LLM for error diagnosis with optional source mapping
