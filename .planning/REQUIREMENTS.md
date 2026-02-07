@@ -13,8 +13,8 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 - [ ] **DISC-02**: Tool discovers all forms, buttons, links, and navigation menus on each page
 - [ ] **DISC-03**: Tool maps full site structure as a page tree
 - [ ] **DISC-04**: Tool handles SPA routing (React, Vue, Next.js client-side navigation)
-- [ ] **DISC-05**: Tool bypasses common anti-bot detection (stealth mode)
-- [ ] **DISC-06**: Tool auto-dismisses cookie consent banners
+- [x] **DISC-05**: Tool bypasses common anti-bot detection (stealth mode)
+- [x] **DISC-06**: Tool auto-dismisses cookie consent banners
 
 ### Workflow Simulation
 
@@ -65,7 +65,7 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 
 - [ ] **CLI-01**: Tool runs via `npx afterburn <url>` with zero install
 - [ ] **CLI-02**: Terminal shows live real-time progress during crawl/test
-- [ ] **CLI-03**: Tool shows progress indicators during first-run browser download
+- [x] **CLI-03**: Tool shows progress indicators during first-run browser download
 - [ ] **CLI-04**: Exit code 0 = all clear, non-zero = issues found
 
 ### MCP Server
@@ -127,8 +127,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-02 | Phase 2 | Pending |
 | DISC-03 | Phase 2 | Pending |
 | DISC-04 | Phase 2 | Pending |
-| DISC-05 | Phase 1 | Pending |
-| DISC-06 | Phase 1 | Pending |
+| DISC-05 | Phase 1 | Complete |
+| DISC-06 | Phase 1 | Complete |
 | WKFL-01 | Phase 2 | Pending |
 | WKFL-02 | Phase 2 | Pending |
 | WKFL-03 | Phase 3 | Pending |
@@ -161,7 +161,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RPRT-08 | Phase 5 | Pending |
 | CLI-01 | Phase 6 | Pending |
 | CLI-02 | Phase 6 | Pending |
-| CLI-03 | Phase 1 | Pending |
+| CLI-03 | Phase 1 | Complete |
 | CLI-04 | Phase 3 | Pending |
 | MCP-01 | Phase 6 | Pending |
 | MCP-02 | Phase 6 | Pending |
