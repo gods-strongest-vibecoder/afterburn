@@ -188,7 +188,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
 
     // Step 6: Run crawler
     onProgress('Starting site crawl...');
-    const crawlResult: CrawlResult = await crawler.crawl(targetUrl);
+    const crawlResult: CrawlResult = await crawler.crawl(targetUrl, spaRoutes);
 
     // Update crawl result with our collected data
     crawlResult.brokenLinks = allBrokenLinks;
