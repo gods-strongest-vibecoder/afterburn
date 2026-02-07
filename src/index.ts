@@ -1,16 +1,9 @@
 #!/usr/bin/env node
-// Main entry point demonstrating Phase 1 pipeline integration
+// Main entry point with Phase 2 discovery pipeline
 import crypto from 'node:crypto';
-import { BrowserManager } from './browser/index.js';
-import { ScreenshotManager } from './screenshots/index.js';
-import { ArtifactStorage } from './artifacts/index.js';
 import { ensureBrowserInstalled, withSpinner } from './cli/index.js';
-import type { ArtifactMetadata, ScreenshotRef } from './types/artifacts.js';
-
-interface SessionArtifact extends ArtifactMetadata {
-  targetUrl: string;
-  screenshots: ScreenshotRef[];
-}
+import { runDiscovery } from './discovery/index.js';
+import type { DiscoveryOptions } from './discovery/index.js';
 
 async function main(): Promise<void> {
   console.log('Afterburn v0.1.0 - Automated Web Testing\n');
@@ -21,61 +14,88 @@ async function main(): Promise<void> {
   // Get target URL from command line
   const targetUrl = process.argv[2];
   if (!targetUrl) {
-    console.error('Usage: afterburn <url>');
+    console.error('Usage: afterburn <url> [--flows "flow1, flow2, ..."]');
     console.error('Example: afterburn https://example.com');
+    console.error('         afterburn https://example.com --flows "signup, checkout"');
     process.exit(1);
+  }
+
+  // Parse --flows flag
+  let flowHints: string[] = [];
+  const flowsIndex = process.argv.indexOf('--flows');
+  if (flowsIndex !== -1 && process.argv[flowsIndex + 1]) {
+    const flowsArg = process.argv[flowsIndex + 1];
+    flowHints = flowsArg.split(',').map(hint => hint.trim()).filter(Boolean);
   }
 
   // Generate session ID
   const sessionId = crypto.randomUUID();
 
-  // Initialize modules
-  const browserManager = new BrowserManager();
-  const screenshotManager = new ScreenshotManager();
-  const artifactStorage = new ArtifactStorage();
-
   try {
-    // Launch stealth browser
-    await withSpinner('Launching browser', async () => {
-      await browserManager.launch();
-    });
+    // Run Phase 2 discovery pipeline
+    console.log('Starting discovery...\n');
 
-    // Navigate to target URL (auto-dismisses cookies)
-    const page = await withSpinner(`Navigating to ${targetUrl}`, async () => {
-      return await browserManager.newPage(targetUrl);
-    });
-
-    // Capture dual-format screenshots
-    const screenshotRef = await withSpinner('Capturing screenshots', async () => {
-      return await screenshotManager.capture(page, 'initial');
-    });
-
-    // Save session artifact
-    const sessionArtifact: SessionArtifact = {
-      version: '1.0',
-      stage: 'session',
-      timestamp: new Date().toISOString(),
-      sessionId,
+    const discoveryOptions: DiscoveryOptions = {
       targetUrl,
-      screenshots: [screenshotRef],
+      sessionId,
+      userHints: flowHints,
+      maxPages: 0,  // unlimited
+      onProgress: (msg: string) => console.log(`  ${msg}`),
     };
 
-    const artifactPath = await artifactStorage.save(sessionArtifact);
+    const result = await runDiscovery(discoveryOptions);
 
     // Print summary
-    console.log('\n✓ Session complete');
+    console.log('\n✓ Discovery Complete!');
     console.log(`  Session ID: ${sessionId}`);
-    console.log(`  Screenshots:`);
-    console.log(`    PNG:  ${screenshotRef.pngPath} (${screenshotRef.sizes.png} bytes)`);
-    console.log(`    WebP: ${screenshotRef.webpPath} (${screenshotRef.sizes.webp} bytes)`);
-    console.log(`    Size reduction: ${screenshotRef.sizes.reduction}`);
-    console.log(`  Artifact: ${artifactPath}\n`);
+    console.log(`  Pages found: ${result.crawlResult.totalPagesDiscovered}`);
+
+    // Count interactive elements across all pages
+    const totalForms = result.crawlResult.pages.reduce((sum, p) => sum + p.forms.length, 0);
+    const totalButtons = result.crawlResult.pages.reduce((sum, p) => sum + p.buttons.length, 0);
+    const totalLinks = result.crawlResult.pages.reduce((sum, p) => sum + p.links.length, 0);
+
+    console.log(`  Interactive elements: ${totalForms} forms, ${totalButtons} buttons, ${totalLinks} links`);
+    console.log(`  Broken links: ${result.crawlResult.brokenLinks.length} found`);
+
+    const spaInfo = result.crawlResult.spaDetected.framework !== 'none'
+      ? `${result.crawlResult.spaDetected.framework}${result.crawlResult.spaDetected.version ? ' v' + result.crawlResult.spaDetected.version : ''}`
+      : 'None detected';
+    console.log(`  SPA framework: ${spaInfo}`);
+
+    console.log(`  Workflow plans: ${result.workflowPlans.length} generated`);
+
+    // Print broken links if any
+    if (result.crawlResult.brokenLinks.length > 0) {
+      console.log('\nBroken Links:');
+      result.crawlResult.brokenLinks.slice(0, 10).forEach(link => {
+        console.log(`  ✗ ${link.url} (${link.statusCode}${link.statusText ? ' - ' + link.statusText : ''})`);
+        console.log(`    Found on: ${link.sourceUrl}`);
+      });
+
+      if (result.crawlResult.brokenLinks.length > 10) {
+        console.log(`  ... and ${result.crawlResult.brokenLinks.length - 10} more`);
+      }
+    }
+
+    // Print workflows
+    if (result.workflowPlans.length > 0) {
+      console.log('\nWorkflows:');
+      result.workflowPlans.forEach((plan, index) => {
+        const source = plan.source === 'user-hint' ? ' [user-specified]' : '';
+        console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority})${source} - ${plan.steps.length} steps`);
+      });
+    }
+
+    console.log(`\nArtifact saved: .afterburn/artifacts/discovery-${sessionId}.json\n`);
+
   } catch (error) {
     console.error('\n✗ Error:', error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
+      console.error('\nStack trace:');
+      console.error(error.stack);
+    }
     process.exit(1);
-  } finally {
-    // Always close browser
-    await browserManager.close();
   }
 }
 

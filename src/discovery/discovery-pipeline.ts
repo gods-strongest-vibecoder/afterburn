@@ -204,8 +204,37 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     console.log('\nSite Map:');
     console.log(printSitemapTree(sitemap));
 
-    // Steps 8-10 handled in Task 2
-    // For now, return partial result
+    // Step 8: Generate workflow plans
+    let workflowPlans: WorkflowPlan[] = [];
+
+    // Check if GEMINI_API_KEY is set
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (geminiApiKey) {
+      try {
+        onProgress('Generating workflow plans with AI...');
+        const geminiClient = new GeminiClient(geminiApiKey);
+        const workflowPlanner = new WorkflowPlanner(geminiClient);
+
+        workflowPlans = await workflowPlanner.generatePlans(sitemap, userHints);
+
+        if (workflowPlans.length > 0) {
+          console.log('\nDiscovered Workflows:');
+          workflowPlans.forEach((plan, index) => {
+            console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority}) - ${plan.steps.length} steps`);
+          });
+        } else {
+          console.log('\nNo workflows generated');
+        }
+      } catch (error) {
+        console.warn('Warning: Failed to generate workflow plans:', error instanceof Error ? error.message : String(error));
+        console.warn('Continuing without workflow plans...');
+      }
+    } else {
+      console.warn('\nWarning: GEMINI_API_KEY not set — skipping AI workflow planning');
+    }
+
+    // Step 9: Save discovery artifact
     const artifact: DiscoveryArtifact = {
       version: '1.0',
       stage: 'discovery',
@@ -214,14 +243,29 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
       targetUrl,
       sitemap,
       crawlResult,
-      workflowPlans: [],  // Will be populated in Task 2
+      workflowPlans,
       userHints,
     };
 
+    onProgress('Saving discovery artifact...');
+    await artifactStorage.save(artifact);
+
+    // Step 10: Cleanup
+    onProgress('Closing browser...');
+    await browserManager.close();
+
+    // Step 11: Return artifact
     return artifact;
 
   } catch (error) {
     console.error('Discovery pipeline failed:', error instanceof Error ? error.message : String(error));
     throw error;
+  } finally {
+    // Always close browser even on error
+    try {
+      await browserManager.close();
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }
