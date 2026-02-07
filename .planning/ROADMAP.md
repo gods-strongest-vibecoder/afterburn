@@ -131,12 +131,13 @@ Plans:
   7. AI report includes technical error details, reproduction steps, and suggested fix strategies
   8. AI report references source code files and line numbers when `--source` was provided
 
-**Plans**: TBD (3-4 plans expected)
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 05-01: TBD during planning
-- [ ] 05-02: TBD during planning
-- [ ] 05-03: TBD during planning
+- [ ] 05-01-PLAN.md -- Health scorer, priority ranker, and npm dependencies (Handlebars, marked)
+- [ ] 05-02-PLAN.md -- HTML report generator with Handlebars templates and inline CSS
+- [ ] 05-03-PLAN.md -- Markdown report generator for AI coding tool consumption
+- [ ] 05-04-PLAN.md -- Pipeline integration and barrel exports
 
 ### Phase 6: Interfaces & Integration
 **Goal**: Core engine is wrapped in three interfaces: zero-install CLI via npx, MCP server for AI coding assistants, and GitHub Action for CI/CD.
