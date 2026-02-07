@@ -36,12 +36,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Cookie consent banners are automatically dismissed without manual intervention
   5. Artifact storage system persists intermediate outputs as JSON files for debugging and resume capability
 
-**Plans**: TBD (3-5 plans expected)
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD during planning
-- [ ] 01-02: TBD during planning
-- [ ] 01-03: TBD during planning
+- [ ] 01-01-PLAN.md -- Project setup, dependencies, and shared type definitions
+- [ ] 01-02-PLAN.md -- Stealth browser automation and cookie banner dismissal
+- [ ] 01-03-PLAN.md -- Dual-format screenshot capture and artifact storage
+- [ ] 01-04-PLAN.md -- CLI progress indicators and end-to-end integration
 
 ### Phase 2: Discovery & Planning
 **Goal**: Tool discovers complete site structure including SPA routes, maps all interactive elements, and AI generates realistic workflow test plans without manual configuration.
@@ -185,7 +186,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Automation | 0/TBD | Not started | - |
+| 1. Foundation & Core Automation | 0/4 | Planned | - |
 | 2. Discovery & Planning | 0/TBD | Not started | - |
 | 3. Execution & Testing | 0/TBD | Not started | - |
 | 4. Analysis & Diagnosis | 0/TBD | Not started | - |
