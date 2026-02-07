@@ -107,12 +107,12 @@ Plans:
   6. Vision LLM detects poor contrast, readability problems, and formatting issues (text cut off, misaligned elements)
   7. AI provides UI improvement suggestions in plain English without jargon
 
-**Plans**: TBD (3-5 plans expected)
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 04-01: TBD during planning
-- [ ] 04-02: TBD during planning
-- [ ] 04-03: TBD during planning
+- [ ] 04-01-PLAN.md -- Diagnosis schemas, GeminiClient multimodal extension, and error analyzer
+- [ ] 04-02-PLAN.md -- Source code mapper with ts-morph AST analysis
+- [ ] 04-03-PLAN.md -- Vision UI auditor and pipeline integration with --source flag
 
 ### Phase 5: Reporting & Output
 **Goal**: Tool generates beautiful standalone HTML report for humans and structured Markdown report for AI coding tools, both with prioritized issues and actionable recommendations.
@@ -192,7 +192,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Foundation & Core Automation | 4/4 | Complete | 2026-02-07 |
 | 2. Discovery & Planning | 5/5 | Complete | 2026-02-07 |
 | 3. Execution & Testing | 4/4 | Complete | 2026-02-07 |
-| 4. Analysis & Diagnosis | 0/TBD | Not started | - |
+| 4. Analysis & Diagnosis | 0/3 | Not started | - |
 | 5. Reporting & Output | 0/TBD | Not started | - |
 | 6. Interfaces & Integration | 0/TBD | Not started | - |
 | 7. Demo Prep & Polish | 0/TBD | Not started | - |
