@@ -9,17 +9,17 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 
 ### Discovery & Crawling
 
-- [ ] **DISC-01**: User can point tool at any URL and it crawls all reachable pages
-- [ ] **DISC-02**: Tool discovers all forms, buttons, links, and navigation menus on each page
-- [ ] **DISC-03**: Tool maps full site structure as a page tree
-- [ ] **DISC-04**: Tool handles SPA routing (React, Vue, Next.js client-side navigation)
+- [x] **DISC-01**: User can point tool at any URL and it crawls all reachable pages
+- [x] **DISC-02**: Tool discovers all forms, buttons, links, and navigation menus on each page
+- [x] **DISC-03**: Tool maps full site structure as a page tree
+- [x] **DISC-04**: Tool handles SPA routing (React, Vue, Next.js client-side navigation)
 - [x] **DISC-05**: Tool bypasses common anti-bot detection (stealth mode)
 - [x] **DISC-06**: Tool auto-dismisses cookie consent banners
 
 ### Workflow Simulation
 
-- [ ] **WKFL-01**: AI auto-discovers user workflows from page structure (signup, onboarding, dashboard)
-- [ ] **WKFL-02**: User can provide optional flow hints via `--flows "signup, checkout"` flag
+- [x] **WKFL-01**: AI auto-discovers user workflows from page structure (signup, onboarding, dashboard)
+- [x] **WKFL-02**: User can provide optional flow hints via `--flows "signup, checkout"` flag
 - [ ] **WKFL-03**: Tool fills forms with realistic generated data (names, emails, addresses)
 - [ ] **WKFL-04**: Tool clicks buttons, follows navigations, handles redirects
 - [ ] **WKFL-05**: User can test authenticated flows via `--email` and `--password` flags
@@ -32,7 +32,7 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 - [ ] **TEST-03**: Tool captures JavaScript console errors per page
 - [ ] **TEST-04**: Tool detects dead buttons (click handlers producing no effect)
 - [ ] **TEST-05**: Tool detects broken images and missing assets
-- [ ] **TEST-06**: Tool detects broken links (internal and external 404s)
+- [x] **TEST-06**: Tool detects broken links (internal and external 404s)
 
 ### Error Diagnosis
 
