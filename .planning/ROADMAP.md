@@ -12,7 +12,7 @@ Afterburn follows a linear pipeline from foundation to demo: establish reliable 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Core Automation** - Browser automation, stealth, screenshots, artifact storage
+- [x] **Phase 1: Foundation & Core Automation** - Browser automation, stealth, screenshots, artifact storage
 - [ ] **Phase 2: Discovery & Planning** - Site crawling, workflow detection, LLM integration
 - [ ] **Phase 3: Execution & Testing** - Test runner, error capture, functional checks
 - [ ] **Phase 4: Analysis & Diagnosis** - AI error diagnosis, UI auditing, root cause analysis
@@ -39,10 +39,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Project setup, dependencies, and shared type definitions
-- [ ] 01-02-PLAN.md -- Stealth browser automation and cookie banner dismissal
-- [ ] 01-03-PLAN.md -- Dual-format screenshot capture and artifact storage
-- [ ] 01-04-PLAN.md -- CLI progress indicators and end-to-end integration
+- [x] 01-01-PLAN.md -- Project setup, dependencies, and shared type definitions
+- [x] 01-02-PLAN.md -- Stealth browser automation and cookie banner dismissal
+- [x] 01-03-PLAN.md -- Dual-format screenshot capture and artifact storage
+- [x] 01-04-PLAN.md -- CLI progress indicators and end-to-end integration
 
 ### Phase 2: Discovery & Planning
 **Goal**: Tool discovers complete site structure including SPA routes, maps all interactive elements, and AI generates realistic workflow test plans without manual configuration.
@@ -186,7 +186,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Automation | 0/4 | Planned | - |
+| 1. Foundation & Core Automation | 4/4 | Complete | 2026-02-07 |
 | 2. Discovery & Planning | 0/TBD | Not started | - |
 | 3. Execution & Testing | 0/TBD | Not started | - |
 | 4. Analysis & Diagnosis | 0/TBD | Not started | - |
