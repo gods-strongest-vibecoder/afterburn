@@ -11,17 +11,17 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 5 of 7 (Reporting & Output)
-Plan: 2 of 3 complete
+Plan: 3 of 4 complete
 Status: In progress
-Last activity: 2026-02-07 — Completed 05-03-PLAN.md (Markdown Report Generator)
+Last activity: 2026-02-07 — Completed 05-02-PLAN.md and 05-03-PLAN.md (Wave 2: HTML & Markdown Report Generators)
 
-Progress: [█████████░] 90% (18/20 total plans complete across all phases)
+Progress: [█████████░] 95% (19/20 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 4.9 minutes
+- Total plans completed: 19
+- Average duration: 4.8 minutes
 - Total execution time: 1.5 hours
 
 **By Phase:**
@@ -32,13 +32,13 @@ Progress: [█████████░] 90% (18/20 total plans complete acros
 | 2 - Discovery | 5/5 | 21 min | 4.2 min |
 | 3 - Execution | 4/4 | 15 min | 3.8 min |
 | 4 - Analysis | 3/3 | 17 min | 5.7 min |
-| 5 - Reporting | 2/3 | 5 min | 2.5 min |
+| 5 - Reporting | 3/4 | 10 min | 3.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (5m), 04-02 (6m), 04-03 (6m), 05-01 (3m), 05-03 (2m)
-- Trend: Phase 5 maintaining exceptional velocity (2-3 min/plan)
+- Last 5 plans: 04-02 (6m), 04-03 (6m), 05-01 (3m), 05-02 (5m), 05-03 (2m)
+- Trend: Phase 5 maintaining strong velocity (2-5 min/plan)
 
-*Updated after plan 05-03 completion*
+*Updated after plan 05-02 completion (Wave 2 parallel with 05-03)*
 
 ## Accumulated Context
 
@@ -112,6 +112,10 @@ Recent decisions affecting current work:
 - **Health score weighting:** Workflows 40%, errors 30%, accessibility 20%, performance 10% balances user flow impact with technical quality — 05-01
 - **Veto logic for failed workflows:** Any failed workflow caps overall score at maximum 50 ensures critical issues visible — 05-01
 - **Three-tier priority system:** High = workflow-blocking, medium = errors/confusing, low = minor issues with plain English impacts — 05-01
+- **Screenshot optimization for HTML reports:** Max 768px width resize with WebP quality 80, reduce to 60 if >100KB prevents base64 bloat in HTML reports — 05-02
+- **ESM path resolution with fallback:** Template paths use dual fallback (dist/ and src/) to work in both compiled and dev environments — 05-02
+- **Graceful screenshot degradation:** Missing screenshots return undefined instead of throwing, preventing report generation failures — 05-02
+- **Triple-brace CSS injection:** {{{inlineCSS}}} prevents Handlebars HTML-escaping, enabling proper inline style injection — 05-02
 - **YAML frontmatter for Markdown reports:** 13 metadata fields (session_id, health_score, total_issues, ai_powered, source_analysis) enable programmatic parsing by AI tools — 05-03
 - **Reproduction steps with full context:** Include ALL steps (passed + failed) in failed workflows so AI tools can see where workflow failed and what succeeded before it — 05-03
 - **AI-parseability requirements:** Consistent H1/H2/H3 hierarchy, labeled tables, language-hinted code blocks, explicit text labels (no emoji-only markers) — 05-03
@@ -156,9 +160,13 @@ None yet.
 - ✅ Vision LLM screenshot analysis for UI/UX issues
 - ✅ Source code pinpointing via --source flag
 
-**Phase 5 IN PROGRESS** — 2 of 3 plans complete
+**Phase 5 IN PROGRESS** — 3 of 4 plans complete
 - ✅ 05-01 complete — Health scorer and priority ranker with weighted scoring and veto logic
-- ✅ 05-03 complete — Markdown report generator with YAML frontmatter and AI-optimized structure
+- ✅ 05-02 complete (Wave 2) — HTML report generator with Handlebars templates, inline CSS, base64 screenshots
+- ✅ 05-03 complete (Wave 2) — Markdown report generator with YAML frontmatter and AI-optimized structure
+- HTML reports are self-contained single files with inline CSS and base64-embedded screenshots (no CDN dependencies)
+- Screenshot optimization: max 768px width, WebP quality 80/60, graceful degradation on errors
+- Template path resolution works in both dist/ (compiled) and src/ (dev) environments
 - Markdown reports have YAML frontmatter with 13 metadata fields for machine parsing
 - Prioritized issue table with columns: #, Priority, Category, Summary, Location
 - Technical details section includes original error messages and source code references (file:line + context)
@@ -173,8 +181,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Plan 05-03 execution (Markdown Report Generator)
-Stopped at: Completed 05-03-PLAN.md — Phase 5 in progress (2/3 plans)
+Last session: 2026-02-07 — Wave 2 execution (05-02 HTML + 05-03 Markdown Report Generators)
+Stopped at: Completed 05-02-PLAN.md and 05-03-PLAN.md — Phase 5 in progress (3/4 plans)
 Resume file: None
 
-**Next action:** Wave 2 continues with 05-02-PLAN.md (HTML Report Generator) executing in parallel
+**Next action:** Execute 05-04-PLAN.md (CLI Report Integration) to wire report generators into main pipeline
