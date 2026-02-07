@@ -3,6 +3,7 @@
 import { GoogleGenerativeAI, GenerativeModel, type GenerateContentResult } from '@google/generative-ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { z } from 'zod';
+import fs from 'node:fs';
 
 /**
  * Reusable Gemini 2.5 Flash client for structured and unstructured generation.
@@ -66,6 +67,56 @@ export class GeminiClient {
     try {
       const result = await this.model.generateContent(prompt);
       return result.response.text();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Gemini API error: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate structured JSON output with image input (multimodal)
+   */
+  async generateStructuredWithImage<T>(
+    prompt: string,
+    schema: z.ZodType<T>,
+    imagePath: string
+  ): Promise<T> {
+    try {
+      // Read image file as base64
+      const base64Data = fs.readFileSync(imagePath, { encoding: 'base64' });
+
+      // Convert Zod schema to JSON Schema for Gemini
+      const jsonSchema = zodToJsonSchema(schema as any, { name: 'ResponseSchema' });
+
+      // Configure model for structured JSON output with image
+      const result: GenerateContentResult = await this.model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: 'image/png', data: base64Data } },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: jsonSchema as any,
+        },
+      });
+
+      // Extract text response
+      const responseText = result.response.text();
+
+      // Parse JSON
+      const jsonData = JSON.parse(responseText);
+
+      // Validate against Zod schema
+      const validated = schema.parse(jsonData) as T;
+
+      return validated;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Gemini API error: ${error.message}`);
