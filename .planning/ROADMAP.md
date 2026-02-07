@@ -83,12 +83,13 @@ Plans:
   6. Tool runs axe-core accessibility audit and captures performance metrics (load time, LCP) on every page
   7. Tool exits with code 0 when all checks pass, non-zero when issues are found
 
-**Plans**: TBD (3-5 plans expected)
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: TBD during planning
-- [ ] 03-02: TBD during planning
-- [ ] 03-03: TBD during planning
+- [ ] 03-01-PLAN.md -- Execution types, test data constants, and error detection infrastructure
+- [ ] 03-02-PLAN.md -- Accessibility auditor and performance monitor
+- [ ] 03-03-PLAN.md -- Step handlers, form filling, dead button and broken form detection
+- [ ] 03-04-PLAN.md -- Workflow executor, pipeline integration, CLI flags, and exit codes
 
 ### Phase 4: Analysis & Diagnosis
 **Goal**: AI analyzes execution logs to infer root causes of errors with source code pinpointing when available, and vision LLM audits screenshots for UI/UX issues.
@@ -184,13 +185,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Automation | 4/4 | Complete | 2026-02-07 |
 | 2. Discovery & Planning | 5/5 | Complete | 2026-02-07 |
-| 3. Execution & Testing | 0/TBD | Not started | - |
+| 3. Execution & Testing | 0/4 | Not started | - |
 | 4. Analysis & Diagnosis | 0/TBD | Not started | - |
 | 5. Reporting & Output | 0/TBD | Not started | - |
 | 6. Interfaces & Integration | 0/TBD | Not started | - |
