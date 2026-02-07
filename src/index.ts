@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-// Main entry point with Phase 2 discovery + Phase 3 execution pipeline
+// Main entry point with Phase 2 discovery + Phase 3 execution + Phase 4 analysis pipeline
 import crypto from 'node:crypto';
 import { ensureBrowserInstalled, withSpinner } from './cli/index.js';
 import { runDiscovery } from './discovery/index.js';
 import type { DiscoveryOptions } from './discovery/index.js';
 import { WorkflowExecutor } from './execution/index.js';
 import type { ExecutionOptions } from './execution/index.js';
+import { analyzeErrors, auditUI, mapErrorToSource } from './analysis/index.js';
+import type { AnalysisArtifact } from './analysis/index.js';
+import { ArtifactStorage } from './artifacts/index.js';
 
 async function main(): Promise<void> {
   console.log('Afterburn v0.1.0 - Automated Web Testing\n');
@@ -16,10 +19,11 @@ async function main(): Promise<void> {
   // Get target URL from command line
   const targetUrl = process.argv[2];
   if (!targetUrl) {
-    console.error('Usage: afterburn <url> [--flows "flow1, flow2, ..."] [--email <email>] [--password <password>]');
+    console.error('Usage: afterburn <url> [--flows "flow1, flow2, ..."] [--email <email>] [--password <password>] [--source ./path]');
     console.error('Example: afterburn https://example.com');
     console.error('         afterburn https://example.com --flows "signup, checkout"');
     console.error('         afterburn https://example.com --email user@example.com --password secret123');
+    console.error('         afterburn https://example.com --source ./src');
     process.exit(1);
   }
 
@@ -41,6 +45,13 @@ async function main(): Promise<void> {
   const passwordIndex = process.argv.indexOf('--password');
   if (passwordIndex !== -1 && process.argv[passwordIndex + 1]) {
     password = process.argv[passwordIndex + 1];
+  }
+
+  // Parse --source flag
+  let sourcePath: string | undefined;
+  const sourceIndex = process.argv.indexOf('--source');
+  if (sourceIndex !== -1 && process.argv[sourceIndex + 1]) {
+    sourcePath = process.argv[sourceIndex + 1];
   }
 
   // Generate session ID
@@ -153,7 +164,66 @@ async function main(): Promise<void> {
       console.log(`  Performance: ${executionResult.pageAudits.length} pages audited`);
 
       console.log(`\nExecution artifact saved: .afterburn/artifacts/execution-${sessionId}.json`);
-      console.log(`Total issues found: ${executionResult.totalIssues}\n`);
+      console.log(`Total issues found: ${executionResult.totalIssues}`);
+
+      // Phase 4: Analyze execution results
+      console.log('\nStarting analysis...\n');
+
+      // Error diagnosis
+      const diagnosedErrors = await analyzeErrors(executionResult);
+
+      // Source code mapping (if --source provided)
+      if (sourcePath) {
+        console.log(`  Cross-referencing with source code: ${sourcePath}`);
+        for (const diagnosed of diagnosedErrors) {
+          const sourceLocation = await mapErrorToSource(diagnosed.originalError, sourcePath);
+          if (sourceLocation) {
+            diagnosed.sourceLocation = sourceLocation;
+          }
+        }
+      }
+
+      // UI auditing (vision analysis of screenshots from execution)
+      const uiAudits = await auditUI(executionResult);
+
+      // Print analysis summary
+      const aiPowered = !!process.env.GEMINI_API_KEY;
+      console.log('\n--- Analysis Complete ---');
+      console.log(`  Mode: ${aiPowered ? 'AI-powered (Gemini)' : 'Basic (set GEMINI_API_KEY for AI diagnosis)'}`);
+      console.log(`  Errors diagnosed: ${diagnosedErrors.length}`);
+      console.log(`  UI audits: ${uiAudits.length} screenshots analyzed`);
+      if (sourcePath) {
+        const withSource = diagnosedErrors.filter(d => d.sourceLocation).length;
+        console.log(`  Source pinpointed: ${withSource}/${diagnosedErrors.length} errors`);
+      }
+
+      // Print top diagnosed errors (up to 5)
+      if (diagnosedErrors.length > 0) {
+        console.log('\nTop Issues:');
+        diagnosedErrors.slice(0, 5).forEach((d, i) => {
+          console.log(`  ${i + 1}. ${d.summary}`);
+          console.log(`     Fix: ${d.suggestedFix}`);
+          if (d.sourceLocation) {
+            console.log(`     Location: ${d.sourceLocation.file}:${d.sourceLocation.line}`);
+          }
+        });
+      }
+
+      // Save analysis artifact
+      const analysisArtifact: AnalysisArtifact = {
+        version: '1.0.0',
+        stage: 'analysis',
+        timestamp: new Date().toISOString(),
+        sessionId,
+        diagnosedErrors,
+        uiAudits,
+        sourceAnalysisAvailable: !!sourcePath,
+        aiPowered,
+      };
+
+      const artifactStorage = new ArtifactStorage();
+      await artifactStorage.save(analysisArtifact);
+      console.log(`\nAnalysis artifact saved: .afterburn/artifacts/analysis-${sessionId}.json\n`);
 
       // Exit with code based on execution results
       process.exit(executionResult.exitCode);
