@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 Phase: 2 of 7 (Discovery & Planning)
 Plan: 2 of 5 complete
 Status: In progress
-Last activity: 2026-02-07 — Completed 02-02-PLAN.md (SPA Detection & Element Mapper)
+Last activity: 2026-02-07 — Completed 02-01-PLAN.md (Types & Crawler)
 
 Progress: [████░░░░░░] 44% (6/14 total plans complete across all phases)
 
@@ -32,10 +32,10 @@ Progress: [████░░░░░░] 44% (6/14 total plans complete across
 | 2 - Discovery | 2/5 | 6 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (26m), 01-03 (8m), 01-04 (12m), 02-01 (1m), 02-02 (5m)
+- Last 5 plans: 01-03 (8m), 01-04 (12m), 02-01 (6m), 02-02 (5m), 02-01-reexec (6m)
 - Trend: Phase 2 plans executing faster (type-driven architecture, clear patterns)
 
-*Updated after plan 02-02 completion*
+*Updated after plan 02-01 completion*
 
 ## Accumulated Context
 
@@ -68,6 +68,9 @@ Recent decisions affecting current work:
 - **Navigation element filtering:** Skip "delete", "submit", "cancel", "logout" text to avoid destructive actions during route discovery — 02-02
 - **Label association fallback chain:** aria-label → label[for=id] → ancestor::label ensures complete form field metadata — 02-02
 - **Hidden element reset strategy:** Toggle trigger → Escape key → page reload fallback for reliable state reset — 02-02
+- **Crawler architecture:** Build on BrowserManager instead of Crawlee to avoid playwright-extra conflicts — 02-01
+- **pageProcessor callback pattern:** Inject per-page processing via callback to separate URL management from element discovery — 02-01
+- **additionalUrls seeding:** Accept additionalUrls in crawl() for SPA route injection from History API interception — 02-01
 
 ### Pending Todos
 
@@ -104,8 +107,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Plan 02-02 execution (SPA Detection & Element Mapper)
-Stopped at: Completed 02-02-PLAN.md, 2 of 5 Phase 2 plans complete
+Last session: 2026-02-07 — Plan 02-01 execution (Types & Crawler)
+Stopped at: Completed 02-01-PLAN.md, 2 of 5 Phase 2 plans complete
 Resume file: None
 
-**Next action:** Execute plan 02-03 (Broken link validator and sitemap builder)
+**Next action:** Continue Phase 2 — plans 02-03, 02-04, 02-05 remaining
