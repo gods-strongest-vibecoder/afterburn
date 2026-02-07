@@ -2,7 +2,7 @@
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { ensureDirSync, writeFile } from 'fs-extra';
+import fs from 'fs-extra';
 import type { Page } from 'playwright-core';
 import type { ScreenshotRef } from '../types/artifacts.js';
 
@@ -28,7 +28,7 @@ export async function captureDualFormat(
   outputDir: string
 ): Promise<ScreenshotRef> {
   // Ensure output directory exists
-  ensureDirSync(outputDir);
+  fs.ensureDirSync(outputDir);
 
   // Capture full-page PNG screenshot
   const pngBuffer = await page.screenshot({ type: 'png', fullPage: true });
@@ -44,8 +44,8 @@ export async function captureDualFormat(
   const webpPath = join(outputDir, `${name}-${hash}.webp`);
 
   // Write both formats to disk
-  await writeFile(pngPath, pngBuffer);
-  await writeFile(webpPath, webpBuffer);
+  await fs.outputFile(pngPath, pngBuffer);
+  await fs.outputFile(webpPath, webpBuffer);
 
   // Get image dimensions
   const metadata = await sharp(pngBuffer).metadata();

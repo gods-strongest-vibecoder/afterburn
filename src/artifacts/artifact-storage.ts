@@ -1,6 +1,6 @@
 // JSON file persistence for pipeline artifacts with versioning and cleanup
 import { join } from 'node:path';
-import { ensureDirSync, writeJson, readJson, pathExists, readdir, stat, unlink } from 'fs-extra';
+import fs from 'fs-extra';
 import type { ArtifactMetadata } from '../types/artifacts.js';
 
 /**
@@ -11,7 +11,7 @@ export class ArtifactStorage {
 
   constructor(baseDir: string = '.afterburn/artifacts') {
     this.baseDir = baseDir;
-    ensureDirSync(this.baseDir);
+    fs.ensureDirSync(this.baseDir);
   }
 
   /**
@@ -22,7 +22,7 @@ export class ArtifactStorage {
   async save<T extends ArtifactMetadata>(artifact: T): Promise<string> {
     const filename = `${artifact.stage}-${artifact.sessionId}.json`;
     const filepath = join(this.baseDir, filename);
-    await writeJson(filepath, artifact, { spaces: 2 });
+    await fs.writeJson(filepath, artifact, { spaces: 2 });
     return filepath;
   }
 
@@ -37,11 +37,11 @@ export class ArtifactStorage {
     const filename = `${stage}-${sessionId}.json`;
     const filepath = join(this.baseDir, filename);
 
-    if (!(await pathExists(filepath))) {
+    if (!(await fs.pathExists(filepath))) {
       throw new Error(`Artifact not found: ${stage}-${sessionId}`);
     }
 
-    return readJson(filepath) as Promise<T>;
+    return fs.readJson(filepath) as Promise<T>;
   }
 
   /**
@@ -53,7 +53,7 @@ export class ArtifactStorage {
   async exists(stage: string, sessionId: string): Promise<boolean> {
     const filename = `${stage}-${sessionId}.json`;
     const filepath = join(this.baseDir, filename);
-    return pathExists(filepath);
+    return fs.pathExists(filepath);
   }
 
   /**
@@ -62,7 +62,7 @@ export class ArtifactStorage {
    * @returns Array of artifact filenames
    */
   async list(stage?: string): Promise<string[]> {
-    const files = await readdir(this.baseDir);
+    const files = await fs.readdir(this.baseDir);
     const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     if (!stage) {
@@ -85,11 +85,11 @@ export class ArtifactStorage {
 
     for (const file of files) {
       const filepath = join(this.baseDir, file);
-      const stats = await stat(filepath);
+      const stats = await fs.stat(filepath);
       const age = now - stats.mtimeMs;
 
       if (age > threshold) {
-        await unlink(filepath);
+        await fs.unlink(filepath);
         deletedCount++;
       }
     }

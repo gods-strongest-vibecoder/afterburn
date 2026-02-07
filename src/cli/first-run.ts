@@ -21,10 +21,13 @@ export async function ensureBrowserInstalled(): Promise<void> {
         : path.join(os.homedir(), '.cache', 'ms-playwright');
 
     // Check if playwright cache exists and has chromium installations
+    // Modern Playwright uses chromium_headless_shell, older versions use chromium-
     let browserFound = false;
     if (fs.existsSync(playwrightCache)) {
       const entries = fs.readdirSync(playwrightCache);
-      browserFound = entries.some((entry) => entry.startsWith('chromium-'));
+      browserFound = entries.some((entry) =>
+        entry.startsWith('chromium-') || entry.startsWith('chromium_headless_shell-')
+      );
     }
 
     if (browserFound) {
