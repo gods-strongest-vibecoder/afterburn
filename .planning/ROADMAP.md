@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Core Automation** - Browser automation, stealth, screenshots, artifact storage
 - [x] **Phase 2: Discovery & Planning** - Site crawling, workflow detection, LLM integration
-- [ ] **Phase 3: Execution & Testing** - Test runner, error capture, functional checks
+- [x] **Phase 3: Execution & Testing** - Test runner, error capture, functional checks
 - [ ] **Phase 4: Analysis & Diagnosis** - AI error diagnosis, UI auditing, root cause analysis
 - [ ] **Phase 5: Reporting & Output** - Dual-format reports, prioritization, visualization
 - [ ] **Phase 6: Interfaces & Integration** - CLI wrapper, MCP server, GitHub Action
@@ -78,18 +78,18 @@ Plans:
   1. Tool fills forms with realistic generated data (names, emails, addresses) and submits successfully
   2. Tool clicks buttons, follows navigation, handles redirects without manual intervention
   3. User can test authenticated flows by providing `--email` and `--password` flags
-  4. Tool captures screenshots at every step of workflow execution
+  4. Tool captures screenshots on workflow errors for evidence (per discuss-phase decision: error-only screenshots)
   5. Tool detects HTTP errors (500, 404, 403), broken forms, console errors, dead buttons, and broken images
   6. Tool runs axe-core accessibility audit and captures performance metrics (load time, LCP) on every page
   7. Tool exits with code 0 when all checks pass, non-zero when issues are found
 
-**Plans**: 4 plans
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 03-01-PLAN.md -- Execution types, test data constants, and error detection infrastructure
-- [ ] 03-02-PLAN.md -- Accessibility auditor and performance monitor
-- [ ] 03-03-PLAN.md -- Step handlers, form filling, dead button and broken form detection
-- [ ] 03-04-PLAN.md -- Workflow executor, pipeline integration, CLI flags, and exit codes
+- [x] 03-01-PLAN.md -- Execution types, test data constants, and error detection infrastructure
+- [x] 03-02-PLAN.md -- Accessibility auditor and performance monitor
+- [x] 03-03-PLAN.md -- Step handlers, form filling, dead button and broken form detection
+- [x] 03-04-PLAN.md -- Workflow executor, pipeline integration, CLI flags, and exit codes
 
 ### Phase 4: Analysis & Diagnosis
 **Goal**: AI analyzes execution logs to infer root causes of errors with source code pinpointing when available, and vision LLM audits screenshots for UI/UX issues.
@@ -191,7 +191,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Automation | 4/4 | Complete | 2026-02-07 |
 | 2. Discovery & Planning | 5/5 | Complete | 2026-02-07 |
-| 3. Execution & Testing | 0/4 | Not started | - |
+| 3. Execution & Testing | 4/4 | Complete | 2026-02-07 |
 | 4. Analysis & Diagnosis | 0/TBD | Not started | - |
 | 5. Reporting & Output | 0/TBD | Not started | - |
 | 6. Interfaces & Integration | 0/TBD | Not started | - |

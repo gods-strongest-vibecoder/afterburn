@@ -20,18 +20,18 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 
 - [x] **WKFL-01**: AI auto-discovers user workflows from page structure (signup, onboarding, dashboard)
 - [x] **WKFL-02**: User can provide optional flow hints via `--flows "signup, checkout"` flag
-- [ ] **WKFL-03**: Tool fills forms with realistic generated data (names, emails, addresses)
-- [ ] **WKFL-04**: Tool clicks buttons, follows navigations, handles redirects
-- [ ] **WKFL-05**: User can test authenticated flows via `--email` and `--password` flags
-- [ ] **WKFL-06**: Tool screenshots every page visited during workflows
+- [x] **WKFL-03**: Tool fills forms with realistic generated data (names, emails, addresses)
+- [x] **WKFL-04**: Tool clicks buttons, follows navigations, handles redirects
+- [x] **WKFL-05**: User can test authenticated flows via `--email` and `--password` flags
+- [x] **WKFL-06**: Tool captures screenshots on workflow errors for evidence collection
 
 ### Functional Testing
 
-- [ ] **TEST-01**: Tool detects HTTP errors (500, 404, 403) with context
-- [ ] **TEST-02**: Tool detects broken forms (submit with no effect — no request, no navigation, no DOM change)
-- [ ] **TEST-03**: Tool captures JavaScript console errors per page
-- [ ] **TEST-04**: Tool detects dead buttons (click handlers producing no effect)
-- [ ] **TEST-05**: Tool detects broken images and missing assets
+- [x] **TEST-01**: Tool detects HTTP errors (500, 404, 403) with context
+- [x] **TEST-02**: Tool detects broken forms (submit with no effect — no request, no navigation, no DOM change)
+- [x] **TEST-03**: Tool captures JavaScript console errors per page
+- [x] **TEST-04**: Tool detects dead buttons (click handlers producing no effect)
+- [x] **TEST-05**: Tool detects broken images and missing assets
 - [x] **TEST-06**: Tool detects broken links (internal and external 404s)
 
 ### Error Diagnosis
@@ -47,8 +47,8 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 - [ ] **UIAX-02**: AI detects poor contrast and readability problems
 - [ ] **UIAX-03**: AI detects formatting issues (text cut off, misaligned elements)
 - [ ] **UIAX-04**: AI provides UI improvement suggestions in plain English
-- [ ] **UIAX-05**: Tool runs WCAG accessibility audit via axe-core on every page
-- [ ] **UIAX-06**: Tool reports basic performance metrics (load time, LCP) per page
+- [x] **UIAX-05**: Tool runs WCAG accessibility audit via axe-core on every page
+- [x] **UIAX-06**: Tool reports basic performance metrics (load time, LCP) per page
 
 ### Reporting
 
@@ -66,7 +66,7 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 - [ ] **CLI-01**: Tool runs via `npx afterburn <url>` with zero install
 - [ ] **CLI-02**: Terminal shows live real-time progress during crawl/test
 - [x] **CLI-03**: Tool shows progress indicators during first-run browser download
-- [ ] **CLI-04**: Exit code 0 = all clear, non-zero = issues found
+- [x] **CLI-04**: Exit code 0 = all clear, non-zero = issues found
 
 ### MCP Server
 
