@@ -6,21 +6,21 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 
 **Core value:** Any vibe coder can run one command and instantly know what's broken on their site, why it matters, and exactly what to fix — no test-writing, no config, no expertise needed.
 
-**Current focus:** Phase 5 - Reporting & Output
+**Current focus:** Phase 6 - Interfaces & Integration
 
 ## Current Position
 
-Phase: 5 of 7 (Reporting & Output)
-Plan: 4 of 4 complete
-Status: Phase complete
-Last activity: 2026-02-07 — Completed 05-04-PLAN.md (CLI Report Integration) — Phase 5 complete
+Phase: 6 of 7 (Interfaces & Integration)
+Plan: 1 of 3 complete
+Status: In progress
+Last activity: 2026-02-08 — Completed 06-01-PLAN.md (Core Engine & CLI)
 
-Progress: [██████████] 100% (20/20 total plans complete across all phases)
+Progress: [██████████░] 95% (21/22 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Average duration: 4.7 minutes
 - Total execution time: 1.6 hours
 
@@ -33,12 +33,13 @@ Progress: [██████████] 100% (20/20 total plans complete acro
 | 3 - Execution | 4/4 | 15 min | 3.8 min |
 | 4 - Analysis | 3/3 | 17 min | 5.7 min |
 | 5 - Reporting | 4/4 | 13 min | 3.3 min |
+| 6 - Interfaces | 1/3 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (6m), 05-01 (3m), 05-02 (5m), 05-03 (2m), 05-04 (3m)
-- Trend: Phase 5 maintained excellent velocity (2-5 min/plan) — fastest phase to date
+- Last 5 plans: 05-01 (3m), 05-02 (5m), 05-03 (2m), 05-04 (3m), 06-01 (5m)
+- Trend: Excellent velocity maintained across Phase 5 and Phase 6 start (2-5 min/plan)
 
-*Updated after plan 05-04 completion — Phase 5 complete*
+*Updated after plan 06-01 completion*
 
 ## Accumulated Context
 
@@ -122,6 +123,11 @@ Recent decisions affecting current work:
 - **Edge case fallback messages:** Every helper function returns meaningful message for empty input (e.g., "No source code references available. Run with --source ./path") — 05-03
 - **Barrel export pattern:** Clean imports from module namespaces (reports/index.ts exports all report modules), matches established pattern used in discovery/, execution/, analysis/ — 05-04
 - **Graceful report degradation:** Report generation wrapped in try/catch, failures log warnings but preserve execution exit code (reflects test results, not report generation status) — 05-04
+- **Core engine extraction:** runAfterburn() function encapsulates full pipeline, reusable by all interfaces (CLI, MCP, GitHub Action) without code duplication — 06-01
+- **onProgress callback pattern:** Stage-based progress reporting ('browser', 'discovery', 'execution', 'analysis', 'reporting', 'complete') enables interface-specific handling (ora spinners for CLI, structured logs for MCP/Action) — 06-01
+- **Report output directory change:** Changed from .afterburn/reports/ to ./afterburn-reports/{timestamp}/ for better UX (users expect reports in working directory, not hidden folder) — 06-01
+- **Commander.js CLI implementation:** Proper flag parsing with help text, replaces manual process.argv parsing — 06-01
+- **AfterBurnResult return pattern:** Engine returns all data needed by interfaces (health score, prioritized issues, report paths, exit code) without calling process.exit() — 06-01
 
 ### Pending Todos
 
@@ -181,6 +187,14 @@ None yet.
 - AI-parseability ensured: consistent H1/H2/H3 hierarchy, labeled tables, language-hinted code blocks
 - Edge case handling with fallback messages for empty data (no errors, no workflows, no source)
 
+**Phase 6 IN PROGRESS** — 1/3 plans complete
+- ✅ 06-01 complete — Core engine extraction and Commander.js CLI
+- Core engine extracted into reusable runAfterburn() function
+- Commander.js CLI with all required flags (--source, --email, --password, --output-dir, --flows, --max-pages)
+- Stage-based progress callback with ora spinners
+- Entry point reduced from 270 lines to 3 lines
+- Reports default to ./afterburn-reports/{timestamp}/
+
 **Timeline Risk:**
 - 7-day hackathon deadline is aggressive for 34 requirements
 - Must ruthlessly prioritize core features over nice-to-haves
@@ -188,8 +202,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07 — Completed 05-04-PLAN.md (CLI Report Integration) — Phase 5 complete
-Stopped at: Phase 5 complete (20/20 total plans across all phases)
+Last session: 2026-02-08 — Completed 06-01-PLAN.md (Core Engine & CLI)
+Stopped at: Phase 6 Plan 1 complete (21/22 total plans)
 Resume file: None
 
-**Next action:** Begin Phase 6 planning (Interfaces & Wrappers: CLI, MCP, GitHub Action)
+**Next action:** Execute Phase 6 Plan 2 (MCP Server) or Plan 3 (GitHub Action)
