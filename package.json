@@ -17,10 +17,15 @@
     "afterburn-mcp": "dist/mcp/entry.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "templates"
   ],
-  "keywords": [],
-  "author": "",
+  "keywords": ["testing", "automation", "playwright", "website-testing", "accessibility", "vibe-coding"],
+  "author": "Afterburn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gods-strongest-vibecoder/afterburn"
+  },
   "license": "MIT",
   "dependencies": {
     "@axe-core/playwright": "^4.11.1",
@@ -33,8 +38,8 @@
     "marked": "^17.0.1",
     "ora": "^9.3.0",
     "playwright": "^1.58.2",
-    "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "playwright-extra": "4.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2",
     "sharp": "^0.34.5",
     "ts-morph": "^27.0.2",
     "zod": "^4.3.6",
@@ -46,7 +51,6 @@
     "@actions/github": "^9.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.2.1",
-    "@types/puppeteer": "^5.4.7",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

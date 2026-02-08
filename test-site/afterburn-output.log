@@ -1,0 +1,46 @@
+- Checking browser installation...
+[32m✔[39m Browser ready
+Afterburn v0.1.0
+
+- Checking browser...
+[32m✔[39m Checking browser...
+- Crawling site...
+
+Site Map:
+FlowSync — Automate Your Workflow (/)
+  404 (/about)
+  404 (/blog)
+  Contact — FlowSync (/contact)
+  Pricing — FlowSync (/pricing)
+
+
+Using heuristic test plans (set GEMINI_API_KEY for smarter AI-driven testing)
+
+Discovered Workflows (heuristic):
+  1. General Form Submission (important) - 4 steps
+  2. Contact Form Submission (important) - 6 steps
+  3. Core Page Navigation (important) - 5 steps
+  4. Click "Get Started Free" Button (nice-to-have) - 3 steps
+  5. Click "Subscribe" Button (nice-to-have) - 3 steps
+  6. Click "Send Message" Button (nice-to-have) - 3 steps
+  7. Click "Get Started" Button (nice-to-have) - 3 steps
+  8. Click "Start Free Trial" Button (nice-to-have) - 3 steps
+[32m✔[39m Closing browser...
+- Testing workflows...
+[32m✔[39m 
+✓ Execution artifact saved
+- Analyzing results...
+UI auditing requires GEMINI_API_KEY. Skipping visual analysis.
+[32m✔[39m Analyzing results...
+- Generating reports...
+HTML report saved: afterburn-reports\1770556794126\report-96d116a8-6239-47d1-9533-0ed21f588d8c.html
+Markdown report saved: afterburn-reports\1770556794126\report-96d116a8-6239-47d1-9533-0ed21f588d8c.md
+[32m✔[39m Generating reports...
+[32m✔[39m Generating reports...
+
+Health: 61/100 — 77 issues found (1 high, 53 medium, 31 low)
+
+Reports saved:
+  HTML:     afterburn-reports\1770556794126\report-96d116a8-6239-47d1-9533-0ed21f588d8c.html
+  Markdown: afterburn-reports\1770556794126\report-96d116a8-6239-47d1-9533-0ed21f588d8c.md
+

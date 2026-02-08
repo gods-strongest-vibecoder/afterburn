@@ -2,3 +2,26 @@ node_modules/
 dist/
 .afterburn/
 *.tsbuildinfo
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+credentials*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Afterburn reports (generated output)
+afterburn-reports/
+
+# Claude Code framework (not project code)
+.agents/
+.claude/skills/
+.planning/agent-history.json
+SECURITY-REVIEW-CONTEXT.md

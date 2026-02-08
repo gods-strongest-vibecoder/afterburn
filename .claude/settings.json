@@ -8,7 +8,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-check-update.js"
+            "command": "node .claude/hooks/gsd-check-update.cjs"
           }
         ]
       },
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-intel-session.js"
+            "command": "node .claude/hooks/gsd-intel-session.cjs"
           }
         ]
       },
@@ -24,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-mode-check.js"
+            "command": "node .claude/hooks/gsd-mode-check.cjs"
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-mode-inject.js"
+            "command": "node .claude/hooks/gsd-mode-inject.cjs"
           }
         ]
       }
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-intel-index.js"
+            "command": "node .claude/hooks/gsd-intel-index.cjs"
           }
         ]
       }
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/gsd-intel-prune.js"
+            "command": "node .claude/hooks/gsd-intel-prune.cjs"
           }
         ]
       }
@@ -63,6 +63,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node .claude/hooks/statusline.js"
+    "command": "node .claude/hooks/statusline.cjs"
   }
 }

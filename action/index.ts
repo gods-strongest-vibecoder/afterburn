@@ -54,7 +54,7 @@ function buildPRComment(result: AfterBurnResult): string {
 
   comment += `---\n`;
   comment += `*Full reports available as workflow artifacts*\n`;
-  comment += `*Powered by [Afterburn](https://github.com/user/afterburn)*\n`;
+  comment += `*Powered by [Afterburn](https://github.com/gods-strongest-vibecoder/afterburn)*\n`;
 
   return comment;
 }
