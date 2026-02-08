@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-07)
 ## Current Position
 
 Phase: 6 of 7 (Interfaces & Integration)
-Plan: 2 of 3 complete
-Status: In progress
-Last activity: 2026-02-08 — Completed 06-03-PLAN.md (GitHub Action)
+Plan: 3 of 3 complete
+Status: Phase complete
+Last activity: 2026-02-08 — Completed 06-02-PLAN.md (MCP Server) - Phase 6 complete
 
-Progress: [██████████░] 96% (22/23 total plans complete across all phases)
+Progress: [███████████] 100% (22/22 total plans complete across all phases)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 22
-- Average duration: 4.7 minutes
-- Total execution time: 1.7 hours
+- Average duration: 4.9 minutes
+- Total execution time: 1.8 hours
 
 **By Phase:**
 
@@ -33,13 +33,13 @@ Progress: [██████████░] 96% (22/23 total plans complete ac
 | 3 - Execution | 4/4 | 15 min | 3.8 min |
 | 4 - Analysis | 3/3 | 17 min | 5.7 min |
 | 5 - Reporting | 4/4 | 13 min | 3.3 min |
-| 6 - Interfaces | 2/3 | 12 min | 6.0 min |
+| 6 - Interfaces | 2/3 | 18 min | 9.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-02 (5m), 05-03 (2m), 05-04 (3m), 06-01 (5m), 06-03 (7m)
-- Trend: Excellent velocity maintained (2-7 min/plan)
+- Last 5 plans: 05-03 (2m), 05-04 (3m), 06-01 (5m), 06-02 (13m)
+- Trend: Good velocity, 06-02 took longer due to SDK API discovery
 
-*Updated after plan 06-03 completion*
+*Updated after plan 06-02 completion*
 
 ## Accumulated Context
 
@@ -128,6 +128,10 @@ Recent decisions affecting current work:
 - **Report output directory change:** Changed from .afterburn/reports/ to ./afterburn-reports/{timestamp}/ for better UX (users expect reports in working directory, not hidden folder) — 06-01
 - **Commander.js CLI implementation:** Proper flag parsing with help text, replaces manual process.argv parsing — 06-01
 - **AfterBurnResult return pattern:** Engine returns all data needed by interfaces (health score, prioritized issues, report paths, exit code) without calling process.exit() — 06-01
+- **McpServer high-level API:** Use McpServer from server/mcp.js instead of deprecated Server class from server/index.js (recommended pattern for MCP servers) — 06-02
+- **Dual-format MCP responses:** Return both structured JSON and markdown in content array (enables AI parsing + human reading) — 06-02
+- **Best-effort progress notifications:** MCP progress notifications wrapped in try/catch, failures logged but don't stop scan (nice-to-have feature, not critical) — 06-02
+- **MCP error handling pattern:** Tool handlers catch errors and return isError:true response, server stays responsive for next request — 06-02
 - **Separate action/tsconfig.json:** action/ has own tsconfig with outDir: '.', rootDir: '.' so index.ts compiles to index.js in same directory (GitHub Actions expects index.js at action root) — 06-03
 - **Actions toolkit as devDependencies:** @actions/* packages installed as devDependencies (only used in CI, keeps production dependencies lean) — 06-03
 - **Import from dist/ in action:** action/index.ts imports from '../dist/core/index.js' because action/ is NOT under src/ rootDir — 06-03
@@ -193,13 +197,20 @@ None yet.
 - AI-parseability ensured: consistent H1/H2/H3 hierarchy, labeled tables, language-hinted code blocks
 - Edge case handling with fallback messages for empty data (no errors, no workflows, no source)
 
-**Phase 6 IN PROGRESS** — 2/3 plans complete
+**Phase 6 COMPLETE** — 3/3 plans complete
 - ✅ 06-01 complete — Core engine extraction and Commander.js CLI
   - Core engine extracted into reusable runAfterburn() function
   - Commander.js CLI with all required flags (--source, --email, --password, --output-dir, --flows, --max-pages)
   - Stage-based progress callback with ora spinners
   - Entry point reduced from 270 lines to 3 lines
   - Reports default to ./afterburn-reports/{timestamp}/
+- ✅ 06-02 complete — MCP server with scan_website tool
+  - McpServer with stdio transport for AI coding assistants
+  - scan_website tool with url, source, email, password, outputDir, maxPages params
+  - Dual-format response: structured JSON + markdown summary
+  - Progress notifications via MCP protocol when client provides progressToken
+  - Error handling returns isError:true without crashing server
+  - afterburn-mcp bin entry for MCP client configuration
 - ✅ 06-03 complete — GitHub Action with PR comments and artifacts
   - GitHub Action metadata (action.yml) with 6 inputs and 3 outputs
   - Action entry point calls runAfterburn() and posts PR comments
@@ -215,8 +226,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-08 — Completed 06-03-PLAN.md (GitHub Action)
-Stopped at: Phase 6 Plan 2 of 3 complete (22/23 total plans)
+Last session: 2026-02-08 — Completed Phase 6 (Interfaces & Integration)
+Stopped at: All 22 implementation plans complete. Ready for Phase 7 (Demo & Documentation)
 Resume file: None
 
-**Next action:** Execute Phase 6 Plan 2 (MCP Server) to complete Phase 6
+**Next action:** Phase 7 - Demo preparation, README, usage examples, final verification
