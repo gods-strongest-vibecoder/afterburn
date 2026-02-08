@@ -9,6 +9,7 @@ import type { DiscoveredElements } from './element-mapper.js';
 import { validateLinks } from './link-validator.js';
 import { buildSitemap, printSitemapTree } from './sitemap-builder.js';
 import { WorkflowPlanner } from '../planning/index.js';
+import { generateHeuristicPlans } from '../planning/heuristic-planner.js';
 import { GeminiClient } from '../ai/index.js';
 import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
@@ -231,7 +232,15 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
         console.warn('Continuing without workflow plans...');
       }
     } else {
-      console.warn('\nWarning: GEMINI_API_KEY not set — skipping AI workflow planning');
+      console.warn('\nUsing heuristic test plans (set GEMINI_API_KEY for smarter AI-driven testing)');
+      workflowPlans = generateHeuristicPlans(sitemap);
+
+      if (workflowPlans.length > 0) {
+        console.log('\nDiscovered Workflows (heuristic):');
+        workflowPlans.forEach((plan, index) => {
+          console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority}) - ${plan.steps.length} steps`);
+        });
+      }
     }
 
     // Step 9: Save discovery artifact

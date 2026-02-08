@@ -69,9 +69,9 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
 
     const discoveryResult = await runDiscovery(discoveryOptions);
 
-    // If no workflows, return early success
+    // If no workflows (site had no discoverable forms, buttons, or links), return early
     if (discoveryResult.workflowPlans.length === 0) {
-      options.onProgress?.('complete', 'No workflows found - scan complete');
+      options.onProgress?.('complete', 'No testable elements found on site - scan complete');
       return {
         healthScore: {
           overall: 100,
