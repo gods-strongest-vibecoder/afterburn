@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: animewafu468-create/afterburn@main
+      - uses: gods-strongest-vibecoder/afterburn@main
         with:
           url: https://your-staging-site.com
           source: ./src
