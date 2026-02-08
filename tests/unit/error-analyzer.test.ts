@@ -380,6 +380,324 @@ describe('analyzeErrors (pattern-matching fallback)', () => {
     expect(consoleErr).toBeDefined();
   });
 
+  // Spec 2B: SyntaxError and RangeError patterns
+  it('diagnoses SyntaxError in console errors', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Browse',
+          description: '',
+          totalSteps: 0,
+          passedSteps: 0,
+          failedSteps: 0,
+          skippedSteps: 0,
+          stepResults: [],
+          errors: {
+            consoleErrors: [
+              { message: "SyntaxError: Unexpected token '<'", url: 'https://example.com', timestamp: '' },
+            ],
+            networkFailures: [],
+            brokenImages: [],
+          },
+          overallStatus: 'passed',
+          duration: 100,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const syntaxErr = result.find(e => e.errorType === 'javascript' && e.summary.includes('syntax'));
+    expect(syntaxErr).toBeDefined();
+    expect(syntaxErr!.confidence).toBe('medium');
+  });
+
+  it('diagnoses RangeError in console errors', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Browse',
+          description: '',
+          totalSteps: 0,
+          passedSteps: 0,
+          failedSteps: 0,
+          skippedSteps: 0,
+          stepResults: [],
+          errors: {
+            consoleErrors: [
+              { message: 'RangeError: Maximum call stack size exceeded', url: 'https://example.com', timestamp: '' },
+            ],
+            networkFailures: [],
+            brokenImages: [],
+          },
+          overallStatus: 'passed',
+          duration: 100,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const rangeErr = result.find(e => e.errorType === 'javascript' && e.summary.includes('infinite loop'));
+    expect(rangeErr).toBeDefined();
+    expect(rangeErr!.confidence).toBe('medium');
+  });
+
+  it('diagnoses SyntaxError in failed steps', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Parse',
+          description: '',
+          totalSteps: 1,
+          passedSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+          stepResults: [
+            {
+              stepIndex: 0,
+              action: 'click',
+              selector: '#btn',
+              status: 'failed',
+              duration: 50,
+              error: "Uncaught SyntaxError: Unexpected end of input",
+            },
+          ],
+          errors: { consoleErrors: [], networkFailures: [], brokenImages: [] },
+          overallStatus: 'failed',
+          duration: 50,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const syntaxErr = result.find(e => e.errorType === 'javascript');
+    expect(syntaxErr).toBeDefined();
+    expect(syntaxErr!.summary).toContain('syntax');
+  });
+
+  it('diagnoses RangeError in failed steps', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Recurse',
+          description: '',
+          totalSteps: 1,
+          passedSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+          stepResults: [
+            {
+              stepIndex: 0,
+              action: 'click',
+              selector: '#loop',
+              status: 'failed',
+              duration: 50,
+              error: 'RangeError: Maximum call stack size exceeded',
+            },
+          ],
+          errors: { consoleErrors: [], networkFailures: [], brokenImages: [] },
+          overallStatus: 'failed',
+          duration: 50,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const rangeErr = result.find(e => e.errorType === 'javascript');
+    expect(rangeErr).toBeDefined();
+    expect(rangeErr!.summary).toContain('infinite loop');
+  });
+
+  // Spec 2C: Surface original error messages in fallback
+  it('surfaces original error text in fallback summary (not generic message)', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Unknown',
+          description: '',
+          totalSteps: 1,
+          passedSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+          stepResults: [
+            {
+              stepIndex: 0,
+              action: 'click',
+              selector: '#x',
+              status: 'failed',
+              duration: 10,
+              error: 'Something completely unexpected happened',
+            },
+          ],
+          errors: { consoleErrors: [], networkFailures: [], brokenImages: [] },
+          overallStatus: 'failed',
+          duration: 10,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const unknown = result.find(e => e.errorType === 'unknown');
+    expect(unknown).toBeDefined();
+    // Summary should contain the actual error text, not the old generic message
+    expect(unknown!.summary).toContain('Something completely unexpected happened');
+    expect(unknown!.summary).not.toContain('AI diagnosis unavailable');
+  });
+
+  it('truncates long error messages in fallback summary to 150 chars', async () => {
+    const longMessage = 'A'.repeat(300);
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Long',
+          description: '',
+          totalSteps: 1,
+          passedSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+          stepResults: [
+            {
+              stepIndex: 0,
+              action: 'click',
+              selector: '#x',
+              status: 'failed',
+              duration: 10,
+              error: longMessage,
+            },
+          ],
+          errors: { consoleErrors: [], networkFailures: [], brokenImages: [] },
+          overallStatus: 'failed',
+          duration: 10,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const err = result.find(e => e.errorType === 'unknown');
+    expect(err).toBeDefined();
+    expect(err!.summary.length).toBeLessThanOrEqual(150);
+    expect(err!.summary).toContain('...');
+  });
+
+  it('handles empty error message in fallback gracefully', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Empty',
+          description: '',
+          totalSteps: 1,
+          passedSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+          stepResults: [
+            {
+              stepIndex: 0,
+              action: 'click',
+              selector: '#x',
+              status: 'failed',
+              duration: 10,
+              error: '   ',
+            },
+          ],
+          errors: { consoleErrors: [], networkFailures: [], brokenImages: [] },
+          overallStatus: 'failed',
+          duration: 10,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const err = result.find(e => e.errorType === 'unknown');
+    expect(err).toBeDefined();
+    expect(err!.summary).toBe('An unknown error occurred');
+  });
+
+  // Spec 2D: Page URL attribution
+  it('populates pageUrl for console errors in fallback diagnosis', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Browse',
+          description: '',
+          totalSteps: 0,
+          passedSteps: 0,
+          failedSteps: 0,
+          skippedSteps: 0,
+          stepResults: [],
+          errors: {
+            consoleErrors: [
+              { message: 'TypeError: x is undefined', url: 'https://example.com/about', timestamp: '' },
+            ],
+            networkFailures: [],
+            brokenImages: [],
+          },
+          overallStatus: 'passed',
+          duration: 100,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    expect(result[0].pageUrl).toBe('https://example.com/about');
+  });
+
+  it('populates pageUrl for network failures in fallback diagnosis', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Browse',
+          description: '',
+          totalSteps: 0,
+          passedSteps: 0,
+          failedSteps: 0,
+          skippedSteps: 0,
+          stepResults: [],
+          errors: {
+            consoleErrors: [],
+            networkFailures: [
+              { url: 'https://example.com/api/data', status: 404, method: 'GET', resourceType: 'fetch' },
+            ],
+            brokenImages: [],
+          },
+          overallStatus: 'passed',
+          duration: 100,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    expect(result[0].pageUrl).toBe('https://example.com/api/data');
+  });
+
+  it('populates pageUrl for broken images in fallback diagnosis', async () => {
+    const artifact = makeArtifact({
+      workflowResults: [
+        {
+          workflowName: 'Images',
+          description: '',
+          totalSteps: 0,
+          passedSteps: 0,
+          failedSteps: 0,
+          skippedSteps: 0,
+          stepResults: [],
+          errors: {
+            consoleErrors: [],
+            networkFailures: [],
+            brokenImages: [
+              { url: 'https://example.com/logo.png', selector: 'img.logo', status: 404 },
+            ],
+          },
+          overallStatus: 'passed',
+          duration: 100,
+        },
+      ],
+    });
+
+    const result = await analyzeErrors(artifact);
+    const imgErr = result.find(e => e.summary.includes('image'));
+    expect(imgErr).toBeDefined();
+    expect(imgErr!.pageUrl).toBe('https://example.com/logo.png');
+  });
+
   it('skips failed steps that have no error message', async () => {
     const artifact = makeArtifact({
       workflowResults: [

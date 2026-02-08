@@ -257,6 +257,7 @@ function fallbackDiagnosis(
       ...diagnosis,
       originalError: step.error,
       screenshotRef: step.evidence?.screenshotRef?.pngPath,
+      pageUrl: step.evidence?.pageUrl || undefined,
     });
   }
 
@@ -274,6 +275,7 @@ function fallbackDiagnosis(
       diagnosedErrors.push({
         ...diagnosis,
         originalError: consoleError.message,
+        pageUrl: consoleError.url || undefined,
       });
     }
 
@@ -287,6 +289,7 @@ function fallbackDiagnosis(
       diagnosedErrors.push({
         ...diagnosis,
         originalError: `${networkFailure.status} ${networkFailure.url}`,
+        pageUrl: networkFailure.url || undefined,
       });
     }
 
@@ -303,6 +306,7 @@ function fallbackDiagnosis(
         confidence: 'medium',
         suggestedFix: 'Check if the image file exists and the URL is correct',
         originalError: `Broken image: ${brokenImage.url} (status ${brokenImage.status})`,
+        pageUrl: brokenImage.url || undefined,
       });
     }
   }
@@ -340,6 +344,30 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
     };
   }
 
+  // SyntaxError patterns
+  if (msg.includes('syntaxerror')) {
+    return {
+      summary: 'There\'s a syntax error in the code',
+      rootCause: 'The JavaScript code has invalid syntax that prevents it from running',
+      errorType: 'javascript',
+      confidence: 'medium',
+      suggestedFix: 'Check for missing brackets, semicolons, or unexpected characters in the code',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // RangeError patterns
+  if (msg.includes('rangeerror')) {
+    return {
+      summary: 'The code got stuck in an infinite loop or used too much memory',
+      rootCause: 'A value is out of the allowed range, often caused by infinite recursion or oversized arrays',
+      errorType: 'javascript',
+      confidence: 'medium',
+      suggestedFix: 'Check for recursive function calls without a proper exit condition',
+      technicalDetails: errorMessage,
+    };
+  }
+
   // Network error patterns
   if (msg.includes('networkerror') || msg.includes('fetch')) {
     return {
@@ -352,13 +380,23 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
     };
   }
 
-  // Default fallback
+  // Default fallback: surface original error message instead of generic text
+  const cleanedMessage = errorMessage.trim().replace(/\n/g, ' ');
+  const truncatedMessage = cleanedMessage.length > 120
+    ? cleanedMessage.slice(0, 120) + '...'
+    : cleanedMessage;
+  const summary = truncatedMessage
+    ? `JavaScript error: ${truncatedMessage}`
+    : 'An unknown error occurred';
+  // Cap total summary at 150 chars
+  const cappedSummary = summary.length > 150 ? summary.slice(0, 147) + '...' : summary;
+
   return {
-    summary: 'An error occurred (AI diagnosis unavailable - set GEMINI_API_KEY for detailed analysis)',
+    summary: cappedSummary,
     rootCause: 'Unable to determine root cause without AI analysis',
     errorType: 'unknown',
     confidence: 'low',
-    suggestedFix: 'Review the error message and check the browser console for more details',
+    suggestedFix: 'Set GEMINI_API_KEY for detailed AI diagnosis, or review the error in the browser console',
     technicalDetails: errorMessage,
   };
 }

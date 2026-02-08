@@ -33,7 +33,7 @@ export function prioritizeIssues(
         summary: error.summary,
         impact: 'This breaks a core user flow on your site',
         fixSuggestion: error.suggestedFix,
-        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : 'Unknown',
+        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
         screenshotRef: error.screenshotRef,
         technicalDetails: error.technicalDetails,
       });
@@ -49,7 +49,7 @@ export function prioritizeIssues(
         summary: error.summary,
         impact: 'This causes errors or confuses users',
         fixSuggestion: error.suggestedFix,
-        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : 'Unknown',
+        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
         screenshotRef: error.screenshotRef,
         technicalDetails: error.technicalDetails,
       });
@@ -148,7 +148,7 @@ export function prioritizeIssues(
         summary: error.summary,
         impact: 'This is a minor issue but worth fixing',
         fixSuggestion: error.suggestedFix,
-        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : 'Unknown',
+        location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
         screenshotRef: error.screenshotRef,
         technicalDetails: error.technicalDetails,
       });

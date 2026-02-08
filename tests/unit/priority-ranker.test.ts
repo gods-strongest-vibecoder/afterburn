@@ -329,4 +329,56 @@ describe('prioritizeIssues', () => {
     expect(categories.has('Dead Button')).toBe(true);
     expect(categories.has('Broken Form')).toBe(true);
   });
+
+  // Spec 2D: Location resolution
+  it('uses pageUrl from diagnosed error as issue location', () => {
+    const errors: DiagnosedError[] = [
+      {
+        summary: 'API call failed',
+        rootCause: 'Server down',
+        errorType: 'network',
+        confidence: 'medium',
+        suggestedFix: 'Check server',
+        originalError: 'fetch failed',
+        pageUrl: 'https://example.com/api/data',
+      },
+    ];
+
+    const result = prioritizeIssues(errors, [], makeArtifact());
+    expect(result[0].location).toBe('https://example.com/api/data');
+  });
+
+  it('prefers sourceLocation over pageUrl for issue location', () => {
+    const errors: DiagnosedError[] = [
+      {
+        summary: 'Auth fail',
+        rootCause: 'Bad logic',
+        errorType: 'navigation',
+        confidence: 'high',
+        suggestedFix: 'Fix auth',
+        originalError: 'auth error',
+        pageUrl: 'https://example.com/login',
+        sourceLocation: { file: 'src/auth.ts', line: 42, context: 'checkToken()' },
+      },
+    ];
+
+    const result = prioritizeIssues(errors, [], makeArtifact());
+    expect(result[0].location).toBe('src/auth.ts:42');
+  });
+
+  it('falls back to Unknown when no pageUrl or sourceLocation', () => {
+    const errors: DiagnosedError[] = [
+      {
+        summary: 'Unknown error',
+        rootCause: 'Unknown',
+        errorType: 'unknown',
+        confidence: 'low',
+        suggestedFix: 'Investigate',
+        originalError: 'mystery',
+      },
+    ];
+
+    const result = prioritizeIssues(errors, [], makeArtifact());
+    expect(result[0].location).toBe('Unknown');
+  });
 });

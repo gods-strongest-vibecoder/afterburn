@@ -65,6 +65,7 @@ export interface DiagnosedError extends ErrorDiagnosis {
   originalError: string; // Raw error message from ExecutionArtifact (used for source mapping)
   sourceLocation?: SourceLocation;
   screenshotRef?: string; // Path to screenshot if available
+  pageUrl?: string; // URL of the page where this error occurred
 }
 
 /**
