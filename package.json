@@ -13,6 +13,9 @@
   "bin": {
     "afterburn": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
