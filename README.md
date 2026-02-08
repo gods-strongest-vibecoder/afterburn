@@ -80,6 +80,14 @@ Every scan generates two reports:
 
 Reports are saved to `./afterburn-reports/{timestamp}/`.
 
+### Sample output
+
+See what Afterburn produces when scanning a site with real defects:
+
+- [Sample HTML report](demo-cache/report.html) — Health score, prioritized issues, fix suggestions
+- [Sample Markdown report](demo-cache/report.md) — Structured for AI coding tools
+- [Terminal output](demo-cache/terminal-output.txt) — What you see in the CLI
+
 ## How it works
 
 ```
