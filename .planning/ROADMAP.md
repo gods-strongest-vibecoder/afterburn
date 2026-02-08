@@ -134,10 +134,10 @@ Plans:
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 05-01-PLAN.md -- Health scorer, priority ranker, and npm dependencies (Handlebars, marked)
-- [ ] 05-02-PLAN.md -- HTML report generator with Handlebars templates and inline CSS
-- [ ] 05-03-PLAN.md -- Markdown report generator for AI coding tool consumption
-- [ ] 05-04-PLAN.md -- Pipeline integration and barrel exports
+- [x] 05-01-PLAN.md -- Health scorer, priority ranker, and npm dependencies (Handlebars, marked)
+- [x] 05-02-PLAN.md -- HTML report generator with Handlebars templates and inline CSS
+- [x] 05-03-PLAN.md -- Markdown report generator for AI coding tool consumption
+- [x] 05-04-PLAN.md -- Pipeline integration and barrel exports
 
 ### Phase 6: Interfaces & Integration
 **Goal**: Core engine is wrapped in three interfaces: zero-install CLI via npx, MCP server for AI coding assistants, and GitHub Action for CI/CD.
@@ -154,12 +154,12 @@ Plans:
   5. Reusable GitHub Action runs Afterburn on deploy and posts results as PR comment or workflow artifact
   6. GitHub Action accepts configuration for URL, auth credentials (via secrets), and pass/fail thresholds
 
-**Plans**: TBD (3-4 plans expected)
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 06-01: TBD during planning
-- [ ] 06-02: TBD during planning
-- [ ] 06-03: TBD during planning
+- [ ] 06-01-PLAN.md -- Core engine extraction and Commander.js CLI wrapper
+- [ ] 06-02-PLAN.md -- MCP server with scan_website tool
+- [ ] 06-03-PLAN.md -- GitHub Action with PR comments and artifact upload
 
 ### Phase 7: Demo Prep & Polish
 **Goal**: Demo is rock-solid with pre-recorded video fallback, cached example reports, offline mode, and comprehensive error handling for live presentation.
@@ -195,5 +195,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Execution & Testing | 4/4 | Complete | 2026-02-07 |
 | 4. Analysis & Diagnosis | 3/3 | Complete | 2026-02-07 |
 | 5. Reporting & Output | 4/4 | Complete | 2026-02-07 |
-| 6. Interfaces & Integration | 0/TBD | Not started | - |
+| 6. Interfaces & Integration | 0/3 | In Progress | - |
 | 7. Demo Prep & Polish | 0/TBD | Not started | - |
