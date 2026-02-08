@@ -104,9 +104,23 @@ export GEMINI_API_KEY=your-key-here
 ## Known Limitations
 
 - **First run downloads a browser** (~200MB, one-time). Subsequent runs are instant.
-- **Visual analysis requires GEMINI_API_KEY**. Without it, Afterburn skips screenshot-based UI analysis (contrast, layout, spacing) and relies on axe-core for accessibility only.
-- **Static sites only** (for now). SPA frameworks (React, Next.js, Vue) are detected but complex client-side routing may not be fully exercised.
-- **Heuristic mode is good, AI mode is better**. Without an API key, workflow planning uses heuristics that cover common patterns. With Gemini, it generates smarter, more targeted test plans.
+- **Visual analysis requires GEMINI_API_KEY**. Without it, Afterburn skips screenshot-based UI analysis and relies on axe-core plus pattern matching.
+- **SPA support is experimental**. React, Next.js, Vue, Angular, Svelte, and Astro are detected, but complex client-side routing may not be fully exercised.
+- **Desktop viewport only**. Tests run at 1280x720. Mobile viewport testing is planned for v2.
+- **AI mode unlocks smarter plans**. Without an API key, workflow planning uses heuristics that cover common patterns. Gemini generates more targeted test plans.
+
+## How is this different?
+
+| Feature | Afterburn | Lighthouse | axe-core | mabl |
+|---------|-----------|------------|----------|------|
+| Zero config (no test writing) | Yes | Yes | Needs integration | No |
+| Crawls entire site | Yes | Single page | No | Yes |
+| Form filling and submission testing | Yes | No | No | Yes |
+| Dead button detection | Yes | No | No | No |
+| Plain English reports | Yes | Partial | No | Yes |
+| AI report for coding tools | Yes | No | No | No |
+| Free and open source | Yes | Yes | Yes | No |
+| CI/CD integration | GitHub Action | CI plugin | CI plugin | SaaS |
 
 ## GitHub Action
 
