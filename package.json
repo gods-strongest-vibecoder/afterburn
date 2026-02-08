@@ -6,12 +6,14 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:action": "tsc -p action/tsconfig.json",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "afterburn": "dist/index.js"
+    "afterburn": "dist/index.js",
+    "afterburn-mcp": "dist/mcp/entry.js"
   },
   "files": [
     "dist"
