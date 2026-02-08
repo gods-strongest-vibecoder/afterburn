@@ -1,0 +1,41 @@
+name: 'Afterburn Web Testing'
+description: 'Automated testing for vibe-coded websites — find bugs, get fixes'
+author: 'Afterburn'
+
+branding:
+  icon: 'zap'
+  color: 'orange'
+
+inputs:
+  url:
+    description: 'URL to test'
+    required: true
+  source:
+    description: 'Source code directory for pinpointing bugs to specific files'
+    required: false
+  email:
+    description: 'Login email (store in GitHub Secrets)'
+    required: false
+  password:
+    description: 'Login password (store in GitHub Secrets)'
+    required: false
+  github-token:
+    description: 'GitHub token for posting PR comments'
+    required: false
+    default: '${{ github.token }}'
+  fail-on:
+    description: 'When to fail the workflow: "high" (default), "medium", "low", "never"'
+    required: false
+    default: 'high'
+
+outputs:
+  health-score:
+    description: 'Overall health score (0-100)'
+  total-issues:
+    description: 'Total number of issues found'
+  high-issues:
+    description: 'Number of high-priority issues'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
