@@ -2,6 +2,7 @@
 
 import { Page } from 'playwright';
 import { ErrorCollector } from '../types/execution.js';
+import { redactSensitiveData } from '../utils/sanitizer.js';
 
 /**
  * Set up page event listeners to capture errors passively
@@ -18,7 +19,7 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
   const consoleHandler = (msg: any) => {
     if (msg.type() === 'error') {
       collector.consoleErrors.push({
-        message: msg.text(),
+        message: redactSensitiveData(msg.text()),
         url: page.url(),
         timestamp: new Date().toISOString(),
       });

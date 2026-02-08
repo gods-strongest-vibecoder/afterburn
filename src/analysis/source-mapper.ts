@@ -63,14 +63,26 @@ function extractSearchTerms(errorMessage: string): string[] {
 /**
  * Map a single error message to source code location
  * Returns null if source path invalid, timeout occurs, or no match found
+ *
+ * Uses a cancelled flag so that when the timeout fires, the ts-morph scanning
+ * loop exits early and the Project reference is released for GC. Without this,
+ * Promise.race would leave the AST work running and consuming CPU/memory
+ * indefinitely on large codebases.
  */
 export async function mapErrorToSource(
   errorMessage: string,
   sourcePath: string
 ): Promise<SourceLocation | null> {
-  // 10-second timeout protection
+  let cancelled = false;
+  let projectRef: Project | null = null;
+
+  // 10-second timeout protection — sets cancellation flag and releases ts-morph Project
   const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), 10000);
+    setTimeout(() => {
+      cancelled = true;
+      projectRef = null; // Release for GC
+      resolve(null);
+    }, 10000);
   });
 
   const searchPromise = async (): Promise<SourceLocation | null> => {
@@ -82,14 +94,14 @@ export async function mapErrorToSource(
       }
 
       // Initialize ts-morph project
-      const project = new Project({
+      projectRef = new Project({
         skipAddingFilesFromTsConfig: true,
       });
 
       // Try to load from tsconfig.json
       const tsconfigPath = path.join(sourcePath, 'tsconfig.json');
       if (await fs.pathExists(tsconfigPath)) {
-        project.addSourceFilesFromTsConfig(tsconfigPath);
+        projectRef.addSourceFilesFromTsConfig(tsconfigPath);
       } else {
         // Fallback: manually add .ts/.tsx/.js/.jsx files
         const patterns = [
@@ -98,10 +110,12 @@ export async function mapErrorToSource(
           path.join(sourcePath, '**/*.js'),
           path.join(sourcePath, '**/*.jsx'),
         ];
-        project.addSourceFilesAtPaths(patterns);
+        projectRef.addSourceFilesAtPaths(patterns);
       }
 
-      const sourceFiles = project.getSourceFiles();
+      if (cancelled) return null;
+
+      const sourceFiles = projectRef.getSourceFiles();
       if (sourceFiles.length === 0) {
         console.warn(`[source-mapper] No source files found in: ${sourcePath}`);
         return null;
@@ -124,6 +138,9 @@ export async function mapErrorToSource(
       const matches: Match[] = [];
 
       for (const sourceFile of sourceFiles) {
+        // Check cancellation between files to avoid wasted CPU on timeout
+        if (cancelled) return null;
+
         const filePath = sourceFile.getFilePath();
 
         // Search function declarations and arrow functions
@@ -202,6 +219,8 @@ export async function mapErrorToSource(
       // Graceful degradation on any ts-morph errors
       console.warn(`[source-mapper] Failed to analyze source:`, error);
       return null;
+    } finally {
+      projectRef = null; // Ensure GC can collect ts-morph resources
     }
   };
 
@@ -210,18 +229,25 @@ export async function mapErrorToSource(
 }
 
 /**
- * Map multiple errors to source locations in a single batch
- * Shares 10-second timeout across all searches for efficiency
+ * Map multiple errors to source locations in a single batch.
+ * Shares 10-second timeout across all searches for efficiency.
+ * Uses cancellation flag to stop work when timeout fires (same pattern as mapErrorToSource).
  */
 export async function mapMultipleErrors(
   errors: Array<{ message: string }>,
   sourcePath: string
 ): Promise<Map<string, SourceLocation>> {
   const results = new Map<string, SourceLocation>();
+  let cancelled = false;
+  let projectRef: Project | null = null;
 
-  // 10-second timeout for entire batch
+  // 10-second timeout for entire batch — cancels ongoing work and frees ts-morph memory
   const timeoutPromise = new Promise<void>((resolve) => {
-    setTimeout(() => resolve(), 10000);
+    setTimeout(() => {
+      cancelled = true;
+      projectRef = null;
+      resolve();
+    }, 10000);
   });
 
   const batchSearchPromise = async (): Promise<void> => {
@@ -233,13 +259,13 @@ export async function mapMultipleErrors(
       }
 
       // Initialize ts-morph project ONCE
-      const project = new Project({
+      projectRef = new Project({
         skipAddingFilesFromTsConfig: true,
       });
 
       const tsconfigPath = path.join(sourcePath, 'tsconfig.json');
       if (await fs.pathExists(tsconfigPath)) {
-        project.addSourceFilesFromTsConfig(tsconfigPath);
+        projectRef.addSourceFilesFromTsConfig(tsconfigPath);
       } else {
         const patterns = [
           path.join(sourcePath, '**/*.ts'),
@@ -247,16 +273,20 @@ export async function mapMultipleErrors(
           path.join(sourcePath, '**/*.js'),
           path.join(sourcePath, '**/*.jsx'),
         ];
-        project.addSourceFilesAtPaths(patterns);
+        projectRef.addSourceFilesAtPaths(patterns);
       }
 
-      const sourceFiles = project.getSourceFiles();
+      if (cancelled) return;
+
+      const sourceFiles = projectRef.getSourceFiles();
       if (sourceFiles.length === 0) {
         return;
       }
 
       // Search for each error
       for (const error of errors) {
+        if (cancelled) return;
+
         const searchTerms = extractSearchTerms(error.message);
         if (searchTerms.length === 0) continue;
 
@@ -270,6 +300,8 @@ export async function mapMultipleErrors(
         const matches: Match[] = [];
 
         for (const sourceFile of sourceFiles) {
+          if (cancelled) return;
+
           const filePath = sourceFile.getFilePath();
 
           // Search functions
@@ -344,6 +376,8 @@ export async function mapMultipleErrors(
       }
     } catch (error) {
       console.warn(`[source-mapper] Batch analysis failed:`, error);
+    } finally {
+      projectRef = null; // Ensure GC can collect ts-morph resources
     }
   };
 

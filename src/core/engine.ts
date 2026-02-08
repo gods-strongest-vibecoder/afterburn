@@ -12,6 +12,7 @@ import type { AnalysisArtifact } from '../analysis/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
 import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport, calculateHealthScore, prioritizeIssues } from '../reports/index.js';
 import type { HealthScore, PrioritizedIssue } from '../reports/index.js';
+import { validateUrl, validatePath, validateMaxPages } from './validation.js';
 
 export interface AfterBurnOptions {
   targetUrl: string;
@@ -42,11 +43,18 @@ export interface AfterBurnResult {
 }
 
 export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurnResult> {
+  // Defense in depth: validate inputs even if caller already validated
+  const validatedTargetUrl = validateUrl(options.targetUrl);
+  const validatedSourcePath = options.sourcePath ? validatePath(options.sourcePath, 'sourcePath') : undefined;
+  const validatedMaxPages = validateMaxPages(options.maxPages);
+
   // Generate sessionId if not provided
   const sessionId = options.sessionId || crypto.randomUUID();
 
   // Create outputDir if it doesn't exist
-  const outputDir = options.outputDir || `./afterburn-reports/${Date.now()}`;
+  const outputDir = options.outputDir
+    ? validatePath(options.outputDir, 'outputDir')
+    : `./afterburn-reports/${Date.now()}`;
   await fs.ensureDir(outputDir);
 
   // Stage: browser check
@@ -57,10 +65,11 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     options.onProgress?.('discovery', 'Crawling site and discovering workflows...');
 
     const discoveryOptions: DiscoveryOptions = {
-      targetUrl: options.targetUrl,
+      targetUrl: validatedTargetUrl,
       sessionId,
       userHints: options.flowHints || [],
-      maxPages: options.maxPages || 0,
+      maxPages: validatedMaxPages,
+      headless: options.headless ?? true,
       onProgress: (msg: string) => {
         // Pass discovery progress messages through
         options.onProgress?.('discovery', msg);
@@ -98,11 +107,12 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     options.onProgress?.('execution', 'Testing workflows...');
 
     const executionOptions: ExecutionOptions = {
-      targetUrl: options.targetUrl,
+      targetUrl: validatedTargetUrl,
       sessionId,
       workflowPlans: discoveryResult.workflowPlans,
       email: options.email,
       password: options.password,
+      headless: options.headless ?? true,
       onProgress: (msg: string) => {
         // Pass execution progress messages through
         options.onProgress?.('execution', msg);
@@ -119,9 +129,9 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     const diagnosedErrors = await analyzeErrors(executionResult);
 
     // Source code mapping (if --source provided)
-    if (options.sourcePath) {
+    if (validatedSourcePath) {
       for (const diagnosed of diagnosedErrors) {
-        const sourceLocation = await mapErrorToSource(diagnosed.originalError, options.sourcePath);
+        const sourceLocation = await mapErrorToSource(diagnosed.originalError, validatedSourcePath);
         if (sourceLocation) {
           diagnosed.sourceLocation = sourceLocation;
         }
@@ -139,7 +149,7 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
       sessionId,
       diagnosedErrors,
       uiAudits,
-      sourceAnalysisAvailable: !!options.sourcePath,
+      sourceAnalysisAvailable: !!validatedSourcePath,
       aiPowered: !!process.env.GEMINI_API_KEY,
     };
 

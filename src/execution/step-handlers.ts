@@ -4,6 +4,7 @@ import type { Page } from 'playwright-core';
 import type { StepResult, DeadButtonResult, BrokenFormResult } from '../types/execution.js';
 import type { WorkflowStep, FormInfo, FormField } from '../types/discovery.js';
 import { getTestValueForField } from './test-data.js';
+import { validateUrl, validateSelector, sanitizeValue } from '../core/validation.js';
 
 // Step execution timeouts
 const STEP_TIMEOUT = 10_000;
@@ -24,9 +25,17 @@ export async function executeStep(
     // Dismiss any modals that might interfere
     await dismissModalIfPresent(page);
 
+    // Security: validate selector length to prevent injection via oversized strings
+    validateSelector(step.selector);
+
+    // Security: sanitize value to strip script injections from AI-generated content
+    const safeValue = step.value ? sanitizeValue(step.value) : undefined;
+
     switch (step.action) {
       case 'navigate':
-        await page.goto(step.value || step.selector, {
+        // Security: only allow http/https navigation targets
+        validateUrl(safeValue || step.selector);
+        await page.goto(safeValue || step.selector, {
           waitUntil: 'domcontentloaded',
           timeout: NAV_TIMEOUT,
         });
@@ -37,11 +46,11 @@ export async function executeStep(
         break;
 
       case 'fill':
-        await page.fill(step.selector, step.value || '', { timeout: STEP_TIMEOUT });
+        await page.fill(step.selector, safeValue || '', { timeout: STEP_TIMEOUT });
         break;
 
       case 'select':
-        await page.selectOption(step.selector, step.value || '', { timeout: STEP_TIMEOUT });
+        await page.selectOption(step.selector, safeValue || '', { timeout: STEP_TIMEOUT });
         break;
 
       case 'wait':

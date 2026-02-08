@@ -26,6 +26,7 @@ export interface ExecutionOptions {
   workflowPlans: WorkflowPlan[];
   email?: string;
   password?: string;
+  headless?: boolean;        // defaults to true
   onProgress?: (message: string) => void;
 }
 
@@ -40,7 +41,7 @@ export class WorkflowExecutor {
 
   constructor(options: ExecutionOptions) {
     this.options = options;
-    this.browserManager = new BrowserManager();
+    this.browserManager = new BrowserManager({ headless: options.headless ?? true });
     this.screenshotManager = new ScreenshotManager();
     this.artifactStorage = new ArtifactStorage();
   }

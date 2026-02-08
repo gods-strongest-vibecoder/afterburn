@@ -5,6 +5,7 @@ import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/proto
 import { z } from 'zod';
 import { runAfterburn } from '../core/engine.js';
 import type { AfterBurnResult } from '../core/engine.js';
+import { validateUrl, validatePath, validateMaxPages } from '../core/validation.js';
 
 export function registerTools(server: McpServer): void {
   // Register scan_website tool
@@ -23,6 +24,12 @@ export function registerTools(server: McpServer): void {
     },
     async (args, extra) => {
       try {
+        // Security: validate all string inputs at the MCP boundary
+        const validatedUrl = validateUrl(args.url);
+        const validatedSource = args.source ? validatePath(args.source, 'source') : undefined;
+        const validatedOutputDir = args.outputDir ? validatePath(args.outputDir, 'outputDir') : undefined;
+        const validatedMaxPages = validateMaxPages(args.maxPages);
+
         // Track progress if client supports it
         const progressToken = extra._meta?.progressToken;
         const sendProgress = async (stage: string, message: string) => {
@@ -44,14 +51,14 @@ export function registerTools(server: McpServer): void {
           }
         };
 
-        // Run Afterburn scan with progress callbacks
+        // Run Afterburn scan with validated inputs
         const result: AfterBurnResult = await runAfterburn({
-          targetUrl: args.url,
-          sourcePath: args.source,
+          targetUrl: validatedUrl,
+          sourcePath: validatedSource,
           email: args.email,
           password: args.password,
-          outputDir: args.outputDir,
-          maxPages: args.maxPages,
+          outputDir: validatedOutputDir,
+          maxPages: validatedMaxPages,
           onProgress: async (stage: string, message: string) => {
             await sendProgress(stage, message);
           }

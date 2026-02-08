@@ -28,7 +28,8 @@ export interface DiscoveryOptions {
   targetUrl: string;
   sessionId: string;
   userHints?: string[];      // from --flows flag
-  maxPages?: number;         // 0 = unlimited (default)
+  maxPages?: number;         // default 50, max 500
+  headless?: boolean;        // defaults to true
   onProgress?: (message: string) => void;
 }
 
@@ -44,12 +45,13 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     targetUrl,
     sessionId,
     userHints = [],
-    maxPages = 0,
+    maxPages = 50,
+    headless = true,
     onProgress = (msg: string) => console.log(msg)
   } = options;
 
   // Step 1: Initialize managers
-  const browserManager = new BrowserManager();
+  const browserManager = new BrowserManager({ headless });
   const screenshotManager = new ScreenshotManager();
   const artifactStorage = new ArtifactStorage();
 

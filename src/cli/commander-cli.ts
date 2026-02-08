@@ -13,11 +13,11 @@ program
   .version('0.1.0')
   .argument('<url>', 'URL to test')
   .option('--source <path>', 'Source code directory for pinpointing bugs')
-  .option('--email <email>', 'Login email for authenticated testing')
-  .option('--password <password>', 'Login password')
+  .option('--email <email>', 'Login email (or set AFTERBURN_EMAIL env var)')
+  .option('--password <password>', 'Login password (tip: use AFTERBURN_PASSWORD env var to avoid shell history exposure)')
   .option('--output-dir <path>', 'Custom output directory (default: ./afterburn-reports/{timestamp})')
   .option('--flows <hints>', 'Comma-separated workflow hints (e.g., "signup, checkout")')
-  .option('--max-pages <n>', 'Max pages to crawl (default: 0 = unlimited)', '0')
+  .option('--max-pages <n>', 'Max pages to crawl (default: 50, max: 500)', '50')
   .option('--no-headless', 'Show browser window (useful for debugging)')
   .option('--verbose', 'Show detailed progress output')
   .action(async (url: string, opts: {
@@ -30,11 +30,21 @@ program
     headless: boolean;
     verbose?: boolean;
   }) => {
+    // Resolve credentials: CLI flags take priority, env vars are fallback
+    const email = opts.email || process.env.AFTERBURN_EMAIL;
+    const password = opts.password || process.env.AFTERBURN_PASSWORD;
+
     // First-run browser check
     await ensureBrowserInstalled();
 
     // Print banner
     console.log('Afterburn v0.1.0\n');
+
+    // In verbose mode, show credential source without exposing actual values
+    if (opts.verbose) {
+      if (email) console.log(`  Auth email: ${email}`);
+      if (password) console.log(`  Auth password: ***`);
+    }
 
     // Create spinner for progress tracking
     let spinner: Ora | undefined;
@@ -46,21 +56,26 @@ program
       : undefined;
 
     // Parse --max-pages flag (Commander passes string, convert to number)
-    const maxPages = parseInt(opts.maxPages, 10);
+    // Security: NaN or invalid values fall back to safe default of 50
+    const parsedMaxPages = parseInt(opts.maxPages, 10);
+    const maxPages = isNaN(parsedMaxPages) || parsedMaxPages <= 0 ? 50 : Math.min(parsedMaxPages, 500);
 
     try {
       const result = await runAfterburn({
         targetUrl: url,
         sourcePath: opts.source,
-        email: opts.email,
-        password: opts.password,
+        email,
+        password,
         outputDir: opts.outputDir,
         flowHints,
         maxPages,
         headless: opts.headless,
         onProgress: (stage: string, message: string) => {
+          // Detect stage change before updating currentStage
+          const stageChanged = stage !== currentStage;
+
           // Map stage names to ora spinner text
-          if (stage !== currentStage) {
+          if (stageChanged) {
             currentStage = stage;
 
             // Stop previous spinner if exists
@@ -82,8 +97,8 @@ program
             }
           }
 
-          // Verbose mode: show detailed messages
-          if (opts.verbose && stage !== currentStage) {
+          // Verbose mode: show detailed messages within same stage
+          if (opts.verbose && !stageChanged) {
             if (spinner) {
               spinner.text = message;
             }

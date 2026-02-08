@@ -6,6 +6,26 @@ import { runAfterburn } from '../dist/core/index.js';
 import type { AfterBurnResult } from '../dist/core/index.js';
 
 /**
+ * Redact sensitive data from PR comments as defense-in-depth.
+ * Duplicated from src/utils/sanitizer.ts because action/ has its own tsconfig
+ * and imports from dist/, not src/.
+ */
+function redactSensitiveData(text: string): string {
+  if (!text) return text;
+  let r = text;
+  r = r.replace(/\b(sk-[a-zA-Z0-9]{20,})/g, '[REDACTED_API_KEY]');
+  r = r.replace(/\b(ghp_|ghu_|gho_|ghs_)[a-zA-Z0-9]{36,}/g, '[REDACTED_GITHUB_TOKEN]');
+  r = r.replace(/\b(github_pat_[a-zA-Z0-9_]{22,})/g, '[REDACTED_GITHUB_TOKEN]');
+  r = r.replace(/\b(AKIA[0-9A-Z]{16})/g, '[REDACTED_AWS_KEY]');
+  r = r.replace(/\b(sk-ant-[a-zA-Z0-9-]{20,})/g, '[REDACTED_API_KEY]');
+  r = r.replace(/\b(sk_live_|sk_test_|rk_live_|rk_test_)[a-zA-Z0-9]{20,}/g, '[REDACTED_STRIPE_KEY]');
+  r = r.replace(/(Bearer\s+)[a-zA-Z0-9._\-]{20,}/gi, '$1[REDACTED_TOKEN]');
+  r = r.replace(/((?:password|passwd|secret|token|apikey|api_key|access_token|auth_token)\s*[=:]\s*)("[^"]*"|'[^']*'|\S{8,})/gi, '$1[REDACTED]');
+  r = r.replace(/\b[0-9a-f]{40,}\b/gi, '[REDACTED_HEX_TOKEN]');
+  return r;
+}
+
+/**
  * Build PR comment with health score and top issues
  */
 function buildPRComment(result: AfterBurnResult): string {
@@ -89,7 +109,7 @@ async function run(): Promise<void> {
     if (github.context.payload.pull_request && githubToken) {
       core.info('Posting PR comment...');
       const octokit = github.getOctokit(githubToken);
-      const comment = buildPRComment(result);
+      const comment = redactSensitiveData(buildPRComment(result));
 
       await octokit.rest.issues.createComment({
         owner: github.context.repo.owner,
