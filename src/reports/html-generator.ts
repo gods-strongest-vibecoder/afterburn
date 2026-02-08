@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calculateHealthScore } from './health-scorer.js';
-import { prioritizeIssues } from './priority-ranker.js';
+import { prioritizeIssues, deduplicateIssues } from './priority-ranker.js';
 import type { ExecutionArtifact } from '../types/execution.js';
 import type { AnalysisArtifact } from '../analysis/diagnosis-schema.js';
 
@@ -72,11 +72,13 @@ export async function generateHtmlReport(
   // Calculate health score
   const healthScore = calculateHealthScore(executionArtifact);
 
-  // Prioritize issues
-  const prioritizedIssues = prioritizeIssues(
-    analysisArtifact.diagnosedErrors,
-    analysisArtifact.uiAudits,
-    executionArtifact
+  // Prioritize and deduplicate issues
+  const prioritizedIssues = deduplicateIssues(
+    prioritizeIssues(
+      analysisArtifact.diagnosedErrors,
+      analysisArtifact.uiAudits,
+      executionArtifact
+    )
   );
 
   // Load screenshots for each prioritized issue that has a screenshotRef

@@ -3,7 +3,7 @@
 import fs from 'fs-extra';
 import { dirname } from 'node:path';
 import { calculateHealthScore } from './health-scorer.js';
-import { prioritizeIssues } from './priority-ranker.js';
+import { prioritizeIssues, deduplicateIssues } from './priority-ranker.js';
 import type { HealthScore } from './health-scorer.js';
 import type { PrioritizedIssue } from './priority-ranker.js';
 import type { ExecutionArtifact, WorkflowExecutionResult } from '../types/execution.js';
@@ -13,7 +13,7 @@ import { redactSensitiveUrl, sanitizeForYaml } from '../utils/sanitizer.js';
 /**
  * Generate YAML frontmatter with machine-readable metadata
  */
-function generateFrontmatter(exec: ExecutionArtifact, analysis: AnalysisArtifact, healthScore: HealthScore): string {
+function generateFrontmatter(exec: ExecutionArtifact, analysis: AnalysisArtifact, healthScore: HealthScore, dedupedIssueCount: number): string {
   const workflowsPassed = exec.workflowResults.filter(w => w.overallStatus === 'passed').length;
   const workflowsFailed = exec.workflowResults.filter(w => w.overallStatus === 'failed').length;
 
@@ -25,7 +25,7 @@ timestamp: ${exec.timestamp}
 target_url: ${sanitizeForYaml(redactSensitiveUrl(exec.targetUrl))}
 health_score: ${healthScore.overall}
 health_label: ${healthScore.label}
-total_issues: ${exec.totalIssues}
+total_issues: ${dedupedIssueCount}
 workflows_tested: ${exec.workflowResults.length}
 workflows_passed: ${workflowsPassed}
 workflows_failed: ${workflowsFailed}
@@ -44,7 +44,11 @@ function generateIssueTable(issues: PrioritizedIssue[]): string {
 
   const rows = issues.map((issue, i) => {
     const priorityLabel = issue.priority.toUpperCase();
-    const summaryTruncated = issue.summary.length > 80 ? issue.summary.slice(0, 77) + '...' : issue.summary;
+    let summaryText = issue.summary;
+    if (issue.occurrenceCount && issue.occurrenceCount > 1) {
+      summaryText += ` (x${issue.occurrenceCount})`;
+    }
+    const summaryTruncated = summaryText.length > 80 ? summaryText.slice(0, 77) + '...' : summaryText;
     return `| ${i + 1} | ${priorityLabel} | ${issue.category} | ${summaryTruncated} | ${issue.location} |`;
   });
 
@@ -233,9 +237,11 @@ ${rows.join('\n')}`;
  */
 export function generateMarkdownReport(executionArtifact: ExecutionArtifact, analysisArtifact: AnalysisArtifact): string {
   const healthScore = calculateHealthScore(executionArtifact);
-  const prioritizedIssues = prioritizeIssues(analysisArtifact.diagnosedErrors, analysisArtifact.uiAudits, executionArtifact);
+  const prioritizedIssues = deduplicateIssues(
+    prioritizeIssues(analysisArtifact.diagnosedErrors, analysisArtifact.uiAudits, executionArtifact)
+  );
 
-  const frontmatter = generateFrontmatter(executionArtifact, analysisArtifact, healthScore);
+  const frontmatter = generateFrontmatter(executionArtifact, analysisArtifact, healthScore, prioritizedIssues.length);
   const issueTable = generateIssueTable(prioritizedIssues);
   const technicalDetails = generateTechnicalDetails(analysisArtifact.diagnosedErrors);
   const reproductionSteps = generateReproductionSteps(executionArtifact.workflowResults);
@@ -272,7 +278,7 @@ export function generateMarkdownReport(executionArtifact: ExecutionArtifact, ana
 | Workflows Tested | ${executionArtifact.workflowResults.length} |
 | Workflows Passed | ${workflowsPassed} |
 | Workflows Failed | ${workflowsFailed} |
-| Total Issues | ${executionArtifact.totalIssues} |
+| Total Issues | ${prioritizedIssues.length} |
 | Dead Buttons | ${deadButtonCount} |
 | Broken Forms | ${brokenFormCount} |
 | Accessibility Violations | ${accessibilityViolations} |

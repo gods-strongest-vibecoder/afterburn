@@ -72,7 +72,8 @@ describe('generateMarkdownReport', () => {
     expect(frontmatter).toContain('session_id:');
     expect(frontmatter).toContain('health_score:');
     expect(frontmatter).toContain('health_label:');
-    expect(frontmatter).toContain('total_issues: 5');
+    // total_issues reflects deduplicated prioritized count (0 here since no diagnosed errors provided)
+    expect(frontmatter).toContain('total_issues: 0');
     expect(frontmatter).toContain('ai_powered: true');
     expect(frontmatter).toContain('source_analysis: true');
   });
@@ -147,7 +148,8 @@ describe('generateMarkdownReport', () => {
     expect(report).toContain('| Workflows Tested | 2 |');
     expect(report).toContain('| Workflows Passed | 1 |');
     expect(report).toContain('| Workflows Failed | 1 |');
-    expect(report).toContain('| Total Issues | 12 |');
+    // Total Issues reflects deduplicated prioritized count (2: 1 dead button + 1 broken form)
+    expect(report).toContain('| Total Issues | 2 |');
     expect(report).toContain('| Dead Buttons | 1 |');
     expect(report).toContain('| Broken Forms | 1 |');
   });

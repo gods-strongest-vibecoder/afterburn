@@ -10,7 +10,7 @@ import type { ExecutionOptions } from '../execution/index.js';
 import { analyzeErrors, auditUI, mapErrorToSource } from '../analysis/index.js';
 import type { AnalysisArtifact } from '../analysis/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
-import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport, calculateHealthScore, prioritizeIssues } from '../reports/index.js';
+import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport, calculateHealthScore, prioritizeIssues, deduplicateIssues } from '../reports/index.js';
 import type { HealthScore, PrioritizedIssue } from '../reports/index.js';
 import { validateUrl, validatePath, validateMaxPages } from './validation.js';
 
@@ -161,7 +161,9 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
 
     // Calculate health score and prioritize issues
     const healthScore = calculateHealthScore(executionResult);
-    const prioritizedIssues = prioritizeIssues(diagnosedErrors, uiAudits, executionResult);
+    const prioritizedIssues = deduplicateIssues(
+      prioritizeIssues(diagnosedErrors, uiAudits, executionResult)
+    );
 
     let htmlReportPath: string | null = null;
     let markdownReportPath: string | null = null;
@@ -195,7 +197,7 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     return {
       healthScore,
       prioritizedIssues,
-      totalIssues: executionResult.totalIssues,
+      totalIssues: prioritizedIssues.length,
       highPriorityCount,
       mediumPriorityCount,
       lowPriorityCount,

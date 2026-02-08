@@ -56,7 +56,12 @@
                 <span class="priority-badge {{priority}}">{{priority}}</span>
                 <span class="category-badge">{{category}}</span>
               </div>
-              <div class="todo-summary">{{summary}}</div>
+              <div class="todo-summary">
+                {{summary}}
+                {{#if occurrenceCount}}
+                  <span class="occurrence-badge">Found {{occurrenceCount}} times</span>
+                {{/if}}
+              </div>
               <div class="todo-impact"><strong>Why it matters:</strong> {{impact}}</div>
               <div class="todo-fix"><strong>How to fix:</strong> {{fixSuggestion}}</div>
               <div class="todo-location">📍 {{location}}</div>

@@ -14,6 +14,7 @@ export interface PrioritizedIssue {
   location: string;         // URL or file:line
   screenshotRef?: string;   // Path to screenshot if available
   technicalDetails?: string; // For AI report only
+  occurrenceCount?: number; // How many times this issue was found (set when > 1)
 }
 
 export function prioritizeIssues(
@@ -224,4 +225,75 @@ export function prioritizeIssues(
   const lowPriority = issues.filter(i => i.priority === 'low');
 
   return [...highPriority, ...mediumPriority, ...lowPriority];
+}
+
+/**
+ * Build a deduplication key for an issue based on its category.
+ * Groups issues that represent the same underlying problem.
+ */
+function buildDedupKey(issue: PrioritizedIssue): string {
+  switch (issue.category) {
+    case 'Console Error':
+      // Strip URLs and variable-specific details from summary for grouping
+      const normalizedSummary = issue.summary
+        .replace(/https?:\/\/[^\s)]+/g, '<URL>')
+        .replace(/'[^']*'/g, "'...'");
+      return `${issue.category}|${normalizedSummary}|${issue.location}`;
+    case 'Dead Button':
+      return `${issue.category}|${issue.summary}|${issue.location}`;
+    case 'Broken Form':
+      return `${issue.category}|${issue.location}`;
+    case 'Accessibility':
+      return `${issue.category}|${issue.summary}|${issue.location}`;
+    case 'UI Issue':
+      return `${issue.category}|${issue.summary}|${issue.location}`;
+    case 'Workflow Error':
+      return `${issue.category}|${issue.summary}|${issue.location}`;
+    default:
+      return `${issue.category}|${issue.summary}|${issue.location}`;
+  }
+}
+
+const PRIORITY_RANK: Record<IssuePriority, number> = { high: 0, medium: 1, low: 2 };
+
+/**
+ * Deduplicate prioritized issues by grouping identical findings.
+ * Within each group, keeps the highest-priority instance and annotates with occurrence count.
+ * Returns a new array sorted by priority (high > medium > low).
+ */
+export function deduplicateIssues(issues: PrioritizedIssue[]): PrioritizedIssue[] {
+  if (issues.length === 0) return [];
+
+  const groups = new Map<string, { best: PrioritizedIssue; count: number }>();
+
+  for (const issue of issues) {
+    const key = buildDedupKey(issue);
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.count++;
+      // Keep the higher-priority instance
+      if (PRIORITY_RANK[issue.priority] < PRIORITY_RANK[existing.best.priority]) {
+        existing.best = issue;
+      }
+    } else {
+      groups.set(key, { best: issue, count: 1 });
+    }
+  }
+
+  // Build result with occurrence counts (only set when > 1)
+  const deduped: PrioritizedIssue[] = [];
+  for (const { best, count } of groups.values()) {
+    deduped.push({
+      ...best,
+      occurrenceCount: count > 1 ? count : undefined,
+    });
+  }
+
+  // Re-sort by priority
+  const high = deduped.filter(i => i.priority === 'high');
+  const medium = deduped.filter(i => i.priority === 'medium');
+  const low = deduped.filter(i => i.priority === 'low');
+
+  return [...high, ...medium, ...low];
 }

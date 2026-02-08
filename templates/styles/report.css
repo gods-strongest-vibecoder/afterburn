@@ -300,6 +300,18 @@ section h2::before {
   margin-top: 0.5rem;
 }
 
+.occurrence-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
 .todo-screenshot {
   margin-top: 1rem;
 }
