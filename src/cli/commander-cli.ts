@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { runAfterburn } from '../core/index.js';
 import { ensureBrowserInstalled, createSpinner } from './index.js';
+import { runDoctor, printDoctorResults } from './doctor.js';
 import type { Ora } from 'ora';
 
 export const program = new Command();
@@ -87,6 +88,7 @@ program
             // Stop previous spinner if exists
             if (spinner) {
               spinner.succeed();
+              spinner = undefined;
             }
 
             // Start new spinner for new stage (except 'complete')
@@ -149,4 +151,14 @@ program
       }
       process.exit(1);
     }
+  });
+
+// Doctor subcommand: pre-flight environment checks
+program
+  .command('doctor')
+  .description('Check if your environment is ready to run Afterburn')
+  .action(async () => {
+    const { results, exitCode } = await runDoctor();
+    printDoctorResults(results, exitCode);
+    process.exit(exitCode);
   });
