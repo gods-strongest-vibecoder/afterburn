@@ -138,10 +138,17 @@ function collectAggregateErrors(
   const aggregateErrors: Array<{ type: string; message: string }> = [];
   const diagnosedStepErrors = new Set(failedSteps.map((s) => s.error));
 
+  // Deduplicate: the same resource/error appears across multiple workflows visiting the same pages
+  const seen = new Set<string>();
+
   // Collect console errors not already diagnosed
   for (const workflow of artifact.workflowResults) {
     for (const consoleError of workflow.errors.consoleErrors) {
       if (!diagnosedStepErrors.has(consoleError.message)) {
+        const key = `console:${consoleError.message}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
         aggregateErrors.push({
           type: 'console',
           message: `Console error on ${consoleError.url}: ${consoleError.message}`,
@@ -153,6 +160,10 @@ function collectAggregateErrors(
     for (const networkFailure of workflow.errors.networkFailures) {
       const failureMsg = `${networkFailure.status} ${networkFailure.url}`;
       if (!diagnosedStepErrors.has(failureMsg)) {
+        const key = `network:${networkFailure.status}-${networkFailure.url}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
         aggregateErrors.push({
           type: 'network',
           message: `Network failure: ${failureMsg} (${networkFailure.method} ${networkFailure.resourceType})`,
@@ -162,6 +173,10 @@ function collectAggregateErrors(
 
     // Collect broken images
     for (const brokenImage of workflow.errors.brokenImages) {
+      const key = `image:${brokenImage.url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
       aggregateErrors.push({
         type: 'image',
         message: `Image failed to load: ${brokenImage.url} (status ${brokenImage.status})`,
@@ -245,9 +260,16 @@ function fallbackDiagnosis(
     });
   }
 
-  // Diagnose aggregate console errors
+  // Diagnose aggregate console errors, network failures, and broken images
+  // Deduplicate: the same resource/error appears across multiple workflows visiting the same pages
+  const seen = new Set<string>();
+
   for (const workflow of artifact.workflowResults) {
     for (const consoleError of workflow.errors.consoleErrors) {
+      const key = `console:${consoleError.message}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
       const diagnosis = patternMatchError(consoleError.message);
       diagnosedErrors.push({
         ...diagnosis,
@@ -257,6 +279,10 @@ function fallbackDiagnosis(
 
     // Diagnose network failures
     for (const networkFailure of workflow.errors.networkFailures) {
+      const key = `network:${networkFailure.status}-${networkFailure.url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
       const diagnosis = patternMatchNetworkFailure(networkFailure.status, networkFailure.url);
       diagnosedErrors.push({
         ...diagnosis,
@@ -266,6 +292,10 @@ function fallbackDiagnosis(
 
     // Diagnose broken images
     for (const brokenImage of workflow.errors.brokenImages) {
+      const key = `image:${brokenImage.url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
       diagnosedErrors.push({
         summary: 'An image failed to load',
         rootCause: `The image at ${brokenImage.url} is missing or inaccessible`,

@@ -3,6 +3,7 @@
 import { GeminiClient } from '../ai/gemini-client.js';
 import { ExecutionArtifact } from '../types/execution.js';
 import { UIAuditSchema, UIAuditResult } from './diagnosis-schema.js';
+import { redactSensitiveUrl } from '../utils/sanitizer.js';
 import fs from 'node:fs';
 
 /**
@@ -97,9 +98,10 @@ async function auditScreenshot(
  * Build vision LLM prompt for UI auditing
  */
 function buildVisionPrompt(pageUrl: string): string {
+  const safeUrl = redactSensitiveUrl(pageUrl);
   return `You are a UI/UX expert reviewing a web page screenshot. Analyze it for visual issues.
 
-Page URL: ${pageUrl}
+Page URL: ${safeUrl}
 
 Look for these specific issues:
 

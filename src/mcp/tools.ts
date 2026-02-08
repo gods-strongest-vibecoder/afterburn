@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { runAfterburn } from '../core/engine.js';
 import type { AfterBurnResult } from '../core/engine.js';
 import { validateUrl, validatePath, validateMaxPages } from '../core/validation.js';
+import { sanitizeForMarkdown } from '../utils/sanitizer.js';
 
 export function registerTools(server: McpServer): void {
   // Register scan_website tool
@@ -19,15 +20,15 @@ export function registerTools(server: McpServer): void {
         email: z.string().optional().describe('Optional email for login workflow testing'),
         password: z.string().optional().describe('Optional password for login workflow testing'),
         outputDir: z.string().optional().describe('Optional custom output directory for reports'),
-        maxPages: z.number().optional().describe('Optional maximum number of pages to crawl (default: 10)')
+        maxPages: z.number().optional().describe('Optional maximum number of pages to crawl (default: 50)')
       })
     },
     async (args, extra) => {
       try {
         // Security: validate all string inputs at the MCP boundary
         const validatedUrl = validateUrl(args.url);
-        const validatedSource = args.source ? validatePath(args.source, 'source') : undefined;
-        const validatedOutputDir = args.outputDir ? validatePath(args.outputDir, 'outputDir') : undefined;
+        const validatedSource = args.source ? validatePath(args.source, 'source', process.cwd()) : undefined;
+        const validatedOutputDir = args.outputDir ? validatePath(args.outputDir, 'outputDir', process.cwd()) : undefined;
         const validatedMaxPages = validateMaxPages(args.maxPages);
 
         // Track progress if client supports it
@@ -138,8 +139,8 @@ function buildMarkdownSummary(result: AfterBurnResult): string {
     const topIssues = result.prioritizedIssues.slice(0, 5);
     topIssues.forEach((issue, idx) => {
       lines.push(`### ${idx + 1}. [${issue.priority.toUpperCase()}] ${issue.category}`);
-      lines.push(`**Problem:** ${issue.summary}`);
-      lines.push(`**Fix:** ${issue.fixSuggestion}`);
+      lines.push(`**Problem:** ${sanitizeForMarkdown(issue.summary)}`);
+      lines.push(`**Fix:** ${sanitizeForMarkdown(issue.fixSuggestion)}`);
       lines.push(`**Location:** ${issue.location}\n`);
     });
   } else {

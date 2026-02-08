@@ -42,7 +42,13 @@ program
 
     // In verbose mode, show credential source without exposing actual values
     if (opts.verbose) {
-      if (email) console.log(`  Auth email: ${email}`);
+      if (email) {
+        const atIndex = email.indexOf('@');
+        const masked = atIndex > 3
+          ? email.substring(0, 3) + '***' + email.substring(atIndex)
+          : '***' + email.substring(atIndex);
+        console.log(`  Auth email: ${masked}`);
+      }
       if (password) console.log(`  Auth password: ***`);
     }
 
@@ -137,7 +143,7 @@ program
       }
 
       console.error('\n✗ Error:', error instanceof Error ? error.message : String(error));
-      if (error instanceof Error && error.stack) {
+      if (opts.verbose && error instanceof Error && error.stack) {
         console.error('\nStack trace:');
         console.error(error.stack);
       }

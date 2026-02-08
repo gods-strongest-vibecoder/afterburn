@@ -3,6 +3,7 @@
 import type { Page } from 'playwright-core';
 import type { ErrorEvidence, ErrorCollector } from '../types/execution.js';
 import { ScreenshotManager } from '../screenshots/index.js';
+import { redactSensitiveUrl } from '../utils/sanitizer.js';
 
 /**
  * Capture error evidence when a workflow step fails
@@ -35,7 +36,7 @@ export async function captureErrorEvidence(
       screenshotRef,
       consoleErrors: recentConsoleErrors,
       networkFailures: recentNetworkFailures,
-      pageUrl: page.url(),
+      pageUrl: redactSensitiveUrl(page.url()),
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
@@ -43,7 +44,7 @@ export async function captureErrorEvidence(
     return {
       consoleErrors: [],
       networkFailures: [],
-      pageUrl: page.url(),
+      pageUrl: redactSensitiveUrl(page.url()),
       timestamp: new Date().toISOString(),
     };
   }

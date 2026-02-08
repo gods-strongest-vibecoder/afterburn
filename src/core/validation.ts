@@ -29,7 +29,7 @@ export function validateUrl(url: string): string {
  * Validate a filesystem path has no path traversal sequences.
  * Resolves to absolute path and rejects ../ sequences.
  */
-export function validatePath(inputPath: string, label: string): string {
+export function validatePath(inputPath: string, label: string, workspaceRoot?: string): string {
   const trimmed = inputPath.trim();
 
   // Reject obvious traversal patterns before resolving
@@ -42,7 +42,36 @@ export function validatePath(inputPath: string, label: string): string {
 
   // Resolve to absolute path
   const resolved = path.resolve(trimmed);
+
+  // If workspace root specified, enforce containment
+  if (workspaceRoot) {
+    const resolvedRoot = path.resolve(workspaceRoot);
+    if (!resolved.startsWith(resolvedRoot)) {
+      throw new Error(`${label} must be within workspace root "${resolvedRoot}". Got: "${resolved}"`);
+    }
+  }
+
   return resolved;
+}
+
+/**
+ * Validate that a navigation URL stays within the same origin as the base URL.
+ * Allows same hostname or subdomains of the base hostname.
+ */
+export function validateNavigationUrl(navigationUrl: string, baseUrl: string): string {
+  const validated = validateUrl(navigationUrl);
+  const navParsed = new URL(validated);
+  const baseParsed = new URL(baseUrl);
+
+  // Allow same hostname or subdomains
+  if (navParsed.hostname !== baseParsed.hostname &&
+      !navParsed.hostname.endsWith('.' + baseParsed.hostname)) {
+    throw new Error(
+      `Navigation to "${navParsed.hostname}" blocked. Only same-origin navigation allowed (base: "${baseParsed.hostname}").`
+    );
+  }
+
+  return validated;
 }
 
 /**

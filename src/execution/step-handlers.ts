@@ -4,7 +4,7 @@ import type { Page } from 'playwright-core';
 import type { StepResult, DeadButtonResult, BrokenFormResult } from '../types/execution.js';
 import type { WorkflowStep, FormInfo, FormField } from '../types/discovery.js';
 import { getTestValueForField } from './test-data.js';
-import { validateUrl, validateSelector, sanitizeValue } from '../core/validation.js';
+import { validateUrl, validateNavigationUrl, validateSelector, sanitizeValue } from '../core/validation.js';
 
 // Step execution timeouts
 const STEP_TIMEOUT = 10_000;
@@ -17,7 +17,8 @@ const DEAD_BUTTON_WAIT = 1000;
 export async function executeStep(
   page: Page,
   step: WorkflowStep,
-  stepIndex: number
+  stepIndex: number,
+  baseUrl?: string
 ): Promise<StepResult> {
   const startTime = Date.now();
 
@@ -33,8 +34,12 @@ export async function executeStep(
 
     switch (step.action) {
       case 'navigate':
-        // Security: only allow http/https navigation targets
-        validateUrl(safeValue || step.selector);
+        // Security: validate navigation targets; enforce same-origin when baseUrl is known
+        if (baseUrl) {
+          validateNavigationUrl(safeValue || step.selector, baseUrl);
+        } else {
+          validateUrl(safeValue || step.selector);
+        }
         await page.goto(safeValue || step.selector, {
           waitUntil: 'domcontentloaded',
           timeout: NAV_TIMEOUT,
@@ -105,11 +110,16 @@ async function fillField(
   }
 
   try {
-    // Build selector - try by name first, fall back to label
-    const selector = `[name="${field.name}"]`;
+    // Build selector - try by name first, fall back to id
+    let selector = field.name.startsWith('#') ? field.name : `[name="${field.name}"]`;
 
     // Check if field exists and is visible
-    const exists = await page.locator(selector).count();
+    let exists = await page.locator(selector).count();
+    if (exists === 0) {
+      // Fallback: try by id
+      selector = `#${field.name}`;
+      exists = await page.locator(selector).count();
+    }
     if (exists === 0) {
       return { skipped: true, reason: 'Field not found' };
     }
@@ -159,58 +169,41 @@ export async function fillFormFields(
 }
 
 /**
- * Detect dead buttons using 3-way state comparison
- * Checks: URL, DOM structure, network activity
+ * Snapshot of page state used for dead-button comparison (no re-click needed)
  */
-export async function detectDeadButton(
-  page: Page,
-  selector: string
-): Promise<DeadButtonResult> {
-  try {
-    // Capture pre-click state
-    const urlBefore = page.url();
-    const domBefore = await page.evaluate(() => document.body.innerHTML.length);
+export interface ClickStateSnapshot {
+  url: string;
+  domSize: number;
+  hadNetworkActivity: boolean;
+}
 
-    // Set up network activity listener
-    let networkActivity = false;
-    const networkListener = () => { networkActivity = true; };
-    page.on('request', networkListener);
+/**
+ * Capture current page state for dead-button comparison
+ */
+export async function captureClickState(page: Page): Promise<ClickStateSnapshot> {
+  return {
+    url: page.url(),
+    domSize: await page.evaluate(() => document.body.innerHTML.length),
+    hadNetworkActivity: false, // Caller sets this via network listener
+  };
+}
 
-    // Click and wait for any effects
-    await page.click(selector, { timeout: STEP_TIMEOUT });
-    await page.waitForTimeout(DEAD_BUTTON_WAIT);
+/**
+ * Compare pre/post click state to detect dead buttons (no re-click)
+ */
+export function checkDeadButton(
+  selector: string,
+  before: ClickStateSnapshot,
+  after: ClickStateSnapshot
+): DeadButtonResult {
+  const urlChanged = before.url !== after.url;
+  const domChanged = Math.abs(after.domSize - before.domSize) > 100;
+  const hasNetwork = after.hadNetworkActivity;
 
-    // Capture post-click state
-    const urlAfter = page.url();
-    const domAfter = await page.evaluate(() => document.body.innerHTML.length);
-
-    // Clean up listener
-    page.off('request', networkListener);
-
-    // Check if anything changed
-    const urlChanged = urlBefore !== urlAfter;
-    const domChanged = Math.abs(domAfter - domBefore) > 100; // Allow small DOM mutations
-    const hasNetworkActivity = networkActivity;
-
-    if (!urlChanged && !domChanged && !hasNetworkActivity) {
-      return {
-        isDead: true,
-        selector,
-        reason: 'No URL change, DOM change, or network activity detected',
-      };
-    }
-
-    return {
-      isDead: false,
-      selector,
-    };
-  } catch (error) {
-    return {
-      isDead: false,
-      selector,
-      reason: `Detection failed: ${error instanceof Error ? error.message : String(error)}`,
-    };
+  if (!urlChanged && !domChanged && !hasNetwork) {
+    return { isDead: true, selector, reason: 'No URL change, DOM change, or network activity detected' };
   }
+  return { isDead: false, selector };
 }
 
 /**
@@ -241,11 +234,12 @@ export async function detectBrokenForm(
       const fields: FormField[] = [];
       const inputs = form.querySelectorAll('input, select, textarea');
       inputs.forEach((input: any) => {
-        if (input.name && input.type !== 'submit' && input.type !== 'button') {
+        const fieldName = input.name || input.id;
+        if (fieldName && input.type !== 'submit' && input.type !== 'button') {
           fields.push({
             type: input.type || 'text',
-            name: input.name,
-            label: input.placeholder || input.name,
+            name: fieldName,
+            label: input.placeholder || input.name || input.id || '',
             required: input.required || false,
             placeholder: input.placeholder || '',
           });
@@ -280,7 +274,9 @@ export async function detectBrokenForm(
     page.on('request', networkListener);
 
     // Submit form
-    const submitButton = await page.locator(`${formSelector} button[type="submit"], ${formSelector} input[type="submit"]`).first();
+    const submitButton = await page.locator(
+      `${formSelector} button[type="submit"], ${formSelector} input[type="submit"], ${formSelector} button[type="button"], ${formSelector} button:not([type])`
+    ).first();
     if (await submitButton.count() > 0) {
       await submitButton.click({ timeout: STEP_TIMEOUT });
     } else {

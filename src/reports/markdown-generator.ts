@@ -8,6 +8,7 @@ import type { HealthScore } from './health-scorer.js';
 import type { PrioritizedIssue } from './priority-ranker.js';
 import type { ExecutionArtifact, WorkflowExecutionResult } from '../types/execution.js';
 import type { AnalysisArtifact, DiagnosedError, UIAuditResult } from '../analysis/diagnosis-schema.js';
+import { redactSensitiveUrl, sanitizeForYaml } from '../utils/sanitizer.js';
 
 /**
  * Generate YAML frontmatter with machine-readable metadata
@@ -19,9 +20,9 @@ function generateFrontmatter(exec: ExecutionArtifact, analysis: AnalysisArtifact
   return `---
 tool: afterburn
 version: "1.0"
-session_id: ${exec.sessionId}
+session_id: ${sanitizeForYaml(exec.sessionId)}
 timestamp: ${exec.timestamp}
-target_url: ${exec.targetUrl}
+target_url: ${sanitizeForYaml(redactSensitiveUrl(exec.targetUrl))}
 health_score: ${healthScore.overall}
 health_label: ${healthScore.label}
 total_issues: ${exec.totalIssues}

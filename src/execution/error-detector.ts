@@ -2,7 +2,7 @@
 
 import { Page } from 'playwright';
 import { ErrorCollector } from '../types/execution.js';
-import { redactSensitiveData } from '../utils/sanitizer.js';
+import { redactSensitiveData, redactSensitiveUrl } from '../utils/sanitizer.js';
 
 /**
  * Set up page event listeners to capture errors passively
@@ -37,7 +37,7 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
 
       // Add to network failures
       collector.networkFailures.push({
-        url,
+        url: redactSensitiveUrl(url),
         status,
         method: response.request().method(),
         resourceType,
@@ -74,14 +74,25 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
     }
   };
 
+  // Uncaught exception capture (TypeError, ReferenceError, SyntaxError, etc.)
+  const pageErrorHandler = (error: Error) => {
+    collector.consoleErrors.push({
+      message: redactSensitiveData(`Uncaught ${error.name}: ${error.message}`),
+      url: page.url(),
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   // Register listeners
   page.on('console', consoleHandler);
   page.on('response', responseHandler);
+  page.on('pageerror', pageErrorHandler);
 
   // Cleanup function to remove listeners
   const cleanup = () => {
     page.off('console', consoleHandler);
     page.off('response', responseHandler);
+    page.off('pageerror', pageErrorHandler);
   };
 
   return { collector, cleanup };

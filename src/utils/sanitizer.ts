@@ -50,3 +50,46 @@ export function redactSensitiveData(text: string): string {
 
   return redacted;
 }
+
+/**
+ * Redact sensitive query parameters from URLs before they reach reports or LLM prompts.
+ * Falls back to general text redaction if the URL cannot be parsed.
+ */
+export function redactSensitiveUrl(url: string): string {
+  if (!url) return url;
+  try {
+    const parsed = new URL(url);
+    const sensitiveParams = ['token', 'key', 'apikey', 'api_key', 'secret', 'password', 'passwd', 'access_token', 'auth_token', 'session', 'jwt'];
+    for (const param of sensitiveParams) {
+      if (parsed.searchParams.has(param)) {
+        parsed.searchParams.set(param, '[REDACTED]');
+      }
+    }
+    return parsed.toString();
+  } catch {
+    return redactSensitiveData(url);
+  }
+}
+
+/**
+ * Sanitize a string for safe inclusion in YAML values.
+ * Wraps in double quotes and escapes if value contains YAML special characters.
+ */
+export function sanitizeForYaml(value: string): string {
+  if (!value) return '""';
+  // If value contains YAML special chars, wrap in double quotes and escape internal quotes
+  if (/[:{}\[\]#&*!|>'"% @`\n]/.test(value)) {
+    return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  }
+  return value;
+}
+
+/**
+ * Sanitize a string for safe inclusion in Markdown tables.
+ * Escapes pipe characters and removes newlines.
+ */
+export function sanitizeForMarkdown(text: string): string {
+  if (!text) return '';
+  // Escape pipe chars (for tables) and newlines
+  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+}

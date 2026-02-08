@@ -15,7 +15,8 @@ import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
 import { setupErrorListeners } from './error-detector.js';
-import { executeStep, detectDeadButton, detectBrokenForm } from './step-handlers.js';
+import { executeStep, captureClickState, checkDeadButton, detectBrokenForm } from './step-handlers.js';
+import type { ClickStateSnapshot } from './step-handlers.js';
 import { captureErrorEvidence } from './evidence-capture.js';
 import { auditAccessibility } from '../testing/accessibility-auditor.js';
 import { capturePerformanceMetrics } from '../testing/performance-monitor.js';
@@ -75,9 +76,9 @@ export class WorkflowExecutor {
       await this.browserManager.close();
     }
 
-    // Calculate exit code and total issues
-    const exitCode = workflowResults.some(r => r.overallStatus === 'failed') ? 1 : 0;
+    // Calculate total issues and exit code
     const totalIssues = this.calculateTotalIssues(workflowResults, pageAudits, allDeadButtons, allBrokenForms);
+    const exitCode = (workflowResults.some(r => r.overallStatus === 'failed') || totalIssues > 0) ? 1 : 0;
 
     // Build execution artifact
     const artifact: ExecutionArtifact = {
@@ -132,8 +133,35 @@ export class WorkflowExecutor {
         // Inject credentials if this is a login workflow
         const stepWithCreds = this.injectCredentialsIfNeeded(step, plan);
 
+        // Capture pre-click state for dead-button detection (before executeStep clicks)
+        let preClickState: ClickStateSnapshot | undefined;
+        let networkActivity = false;
+        let networkListener: (() => void) | undefined;
+
+        if (step.action === 'click') {
+          preClickState = await captureClickState(page);
+          networkListener = () => { networkActivity = true; };
+          page.on('request', networkListener);
+        }
+
         // Execute the step
-        const result = await executeStep(page, stepWithCreds, i);
+        const result = await executeStep(page, stepWithCreds, i, this.options.targetUrl);
+
+        // After step, check for dead button using pre/post state comparison (no re-click)
+        if (step.action === 'click' && result.status === 'passed' && preClickState) {
+          await page.waitForTimeout(1000);
+          const postState = await captureClickState(page);
+          postState.hadNetworkActivity = networkActivity;
+          if (networkListener) page.off('request', networkListener);
+
+          const deadResult = checkDeadButton(step.selector, preClickState, postState);
+          if (deadResult.isDead) {
+            allDeadButtons.push(deadResult);
+            this.log(`    Warning: Dead button detected`);
+          }
+        } else if (networkListener) {
+          page.off('request', networkListener);
+        }
 
         // Capture evidence on failure
         if (result.status === 'failed') {
@@ -151,27 +179,23 @@ export class WorkflowExecutor {
         // Track last URL
         lastUrl = page.url();
 
-        // Dead button detection on click steps
-        if (step.action === 'click' && result.status === 'passed') {
-          const deadResult = await detectDeadButton(page, step.selector);
-          if (deadResult.isDead) {
-            allDeadButtons.push(deadResult);
-            this.log(`    Warning: Dead button detected`);
-          }
-        }
+        // Form detection: check if this step interacts with a form
+        const isFormFillThenSubmit =
+          step.action === 'fill' &&
+          i + 1 < plan.steps.length &&
+          plan.steps[i + 1].action === 'click' &&
+          plan.steps[i + 1].selector.includes('submit');
 
-        // Form detection: check if this step filled a form, and next step submits it
-        if (step.action === 'fill' && i + 1 < plan.steps.length) {
-          const nextStep = plan.steps[i + 1];
-          if (nextStep.action === 'click' && nextStep.selector.includes('submit')) {
-            // Find the form selector (parent form of the fill field)
-            const formSelector = await this.findFormSelector(page, step.selector);
-            if (formSelector) {
-              const brokenResult = await detectBrokenForm(page, formSelector);
-              if (brokenResult.isBroken) {
-                allBrokenForms.push(brokenResult);
-                this.log(`    Warning: Broken form detected`);
-              }
+        const isClickInsideForm =
+          step.action === 'click' && result.status === 'passed';
+
+        if (isFormFillThenSubmit || isClickInsideForm) {
+          const formSelector = await this.findFormSelector(page, step.selector);
+          if (formSelector) {
+            const brokenResult = await detectBrokenForm(page, formSelector);
+            if (brokenResult.isBroken) {
+              allBrokenForms.push(brokenResult);
+              this.log(`    Warning: Broken form detected`);
             }
           }
         }
