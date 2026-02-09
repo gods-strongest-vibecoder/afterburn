@@ -54,16 +54,29 @@ describe('deduplicateIssues', () => {
     expect(result[0].occurrenceCount).toBe(4);
   });
 
-  it('does NOT deduplicate issues with different locations', () => {
+  it('deduplicates Console Errors with same summary across different pages', () => {
     const issues: PrioritizedIssue[] = [
       makeIssue({ summary: 'Same error', location: 'https://example.com/page1' }),
       makeIssue({ summary: 'Same error', location: 'https://example.com/page2' }),
     ];
 
     const result = deduplicateIssues(issues);
+    // Same console error on different pages = one issue
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(2);
+    // Location should note multiple pages
+    expect(result[0].location).toContain('and 1 other page');
+  });
+
+  it('does NOT deduplicate Workflow Errors with different locations', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({ category: 'Workflow Error', summary: 'Same error', location: 'https://example.com/page1' }),
+      makeIssue({ category: 'Workflow Error', summary: 'Same error', location: 'https://example.com/page2' }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    // Workflow errors on different pages are separate issues
     expect(result).toHaveLength(2);
-    expect(result[0].occurrenceCount).toBeUndefined();
-    expect(result[1].occurrenceCount).toBeUndefined();
   });
 
   it('does NOT deduplicate issues with different categories', () => {
@@ -126,7 +139,7 @@ describe('deduplicateIssues', () => {
     expect(result[0].occurrenceCount).toBe(2);
   });
 
-  it('deduplicates Dead Button issues by selector', () => {
+  it('deduplicates Dead Button issues by selector regardless of page', () => {
     const issues: PrioritizedIssue[] = [
       makeIssue({
         category: 'Dead Button',
@@ -145,7 +158,28 @@ describe('deduplicateIssues', () => {
     expect(result[0].occurrenceCount).toBe(2);
   });
 
-  it('deduplicates Accessibility issues by summary + location', () => {
+  it('deduplicates Dead Button issues found on different pages', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'Dead Button',
+        summary: '"Subscribe" button doesn\'t do anything when clicked',
+        location: 'https://example.com/page1',
+      }),
+      makeIssue({
+        category: 'Dead Button',
+        summary: '"Subscribe" button doesn\'t do anything when clicked',
+        location: 'https://example.com/page2',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    // Same dead button on different pages = one issue
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(2);
+    expect(result[0].location).toContain('and 1 other page');
+  });
+
+  it('deduplicates Accessibility issues across pages by summary', () => {
     const issues: PrioritizedIssue[] = [
       makeIssue({
         category: 'Accessibility',
@@ -165,13 +199,49 @@ describe('deduplicateIssues', () => {
     ];
 
     const result = deduplicateIssues(issues);
-    // Same summary + same location = deduped, different location = separate
+    // Same accessibility violation across pages = one issue
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(3);
+    expect(result[0].location).toContain('and 1 other page');
+  });
+
+  it('deduplicates Console Errors by resource URL from technicalDetails', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'Console Error',
+        summary: 'Page or resource not found',
+        location: 'https://example.com/images/icon.png',
+        technicalDetails: 'HTTP 404: https://example.com/images/icon.png',
+      }),
+      makeIssue({
+        category: 'Console Error',
+        summary: 'Page or resource not found',
+        location: 'https://example.com/images/icon.png',
+        technicalDetails: 'HTTP 404: https://example.com/images/icon.png',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(2);
+  });
+
+  it('keeps different resource URLs as separate issues', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'Console Error',
+        summary: 'Page or resource not found',
+        technicalDetails: 'HTTP 404: https://example.com/images/icon-a.png',
+      }),
+      makeIssue({
+        category: 'Console Error',
+        summary: 'Page or resource not found',
+        technicalDetails: 'HTTP 404: https://example.com/images/icon-b.png',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    // Different resource URLs = different issues
     expect(result).toHaveLength(2);
-
-    const aboutIssue = result.find(i => i.location === 'https://example.com/about');
-    expect(aboutIssue?.occurrenceCount).toBe(2);
-
-    const contactIssue = result.find(i => i.location === 'https://example.com/contact');
-    expect(contactIssue?.occurrenceCount).toBeUndefined();
   });
 });

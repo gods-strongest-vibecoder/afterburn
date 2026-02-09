@@ -265,23 +265,42 @@ export function prioritizeIssues(
 }
 
 /**
+ * Extract a resource URL from technicalDetails if present (e.g., "HTTP 404: http://...").
+ * Returns the URL if found, undefined otherwise.
+ */
+function extractResourceUrl(issue: PrioritizedIssue): string | undefined {
+  if (!issue.technicalDetails) return undefined;
+  const match = issue.technicalDetails.match(/https?:\/\/[^\s)]+/);
+  return match?.[0];
+}
+
+/**
  * Build a deduplication key for an issue based on its category.
- * Groups issues that represent the same underlying problem.
+ * Groups issues that represent the same underlying problem, even across different pages.
  */
 function buildDedupKey(issue: PrioritizedIssue): string {
   switch (issue.category) {
-    case 'Console Error':
-      // Strip URLs and variable-specific details from summary for grouping
+    case 'Console Error': {
+      // For network errors with a specific resource URL (e.g., "HTTP 404: http://..."),
+      // deduplicate by the resource URL alone — the same broken resource on multiple pages is one issue.
+      const resourceUrl = extractResourceUrl(issue);
+      if (resourceUrl) {
+        return `${issue.category}|resource:${resourceUrl}`;
+      }
+      // For other console errors, strip URLs and variable-specific details from summary for grouping
       const normalizedSummary = issue.summary
         .replace(/https?:\/\/[^\s)]+/g, '<URL>')
         .replace(/'[^']*'/g, "'...'");
-      return `${issue.category}|${normalizedSummary}|${issue.location}`;
+      return `${issue.category}|${normalizedSummary}`;
+    }
     case 'Dead Button':
-      return `${issue.category}|${issue.summary}|${issue.location}`;
+      // Same button summary = same dead button, regardless of which page it was found on
+      return `${issue.category}|${issue.summary}`;
     case 'Broken Form':
       return `${issue.category}|${issue.location}`;
     case 'Accessibility':
-      return `${issue.category}|${issue.summary}|${issue.location}`;
+      // Same accessibility violation across pages = one issue (e.g., missing lang on every page)
+      return `${issue.category}|${issue.summary}`;
     case 'UI Issue':
       return `${issue.category}|${issue.summary}|${issue.location}`;
     case 'Workflow Error':
@@ -296,12 +315,13 @@ const PRIORITY_RANK: Record<IssuePriority, number> = { high: 0, medium: 1, low: 
 /**
  * Deduplicate prioritized issues by grouping identical findings.
  * Within each group, keeps the highest-priority instance and annotates with occurrence count.
+ * When issues from different pages are merged, aggregates unique page locations.
  * Returns a new array sorted by priority (high > medium > low).
  */
 export function deduplicateIssues(issues: PrioritizedIssue[]): PrioritizedIssue[] {
   if (issues.length === 0) return [];
 
-  const groups = new Map<string, { best: PrioritizedIssue; count: number }>();
+  const groups = new Map<string, { best: PrioritizedIssue; count: number; locations: Set<string> }>();
 
   for (const issue of issues) {
     const key = buildDedupKey(issue);
@@ -309,22 +329,28 @@ export function deduplicateIssues(issues: PrioritizedIssue[]): PrioritizedIssue[
 
     if (existing) {
       existing.count++;
+      existing.locations.add(issue.location);
       // Keep the higher-priority instance
       if (PRIORITY_RANK[issue.priority] < PRIORITY_RANK[existing.best.priority]) {
         existing.best = issue;
       }
     } else {
-      groups.set(key, { best: issue, count: 1 });
+      groups.set(key, { best: issue, count: 1, locations: new Set([issue.location]) });
     }
   }
 
-  // Build result with occurrence counts (only set when > 1)
+  // Build result with occurrence counts and aggregated locations
   const deduped: PrioritizedIssue[] = [];
-  for (const { best, count } of groups.values()) {
-    deduped.push({
+  for (const { best, count, locations } of groups.values()) {
+    const dedupedIssue = {
       ...best,
       occurrenceCount: count > 1 ? count : undefined,
-    });
+    };
+    // If the issue was found on multiple distinct pages, annotate the location
+    if (locations.size > 1) {
+      dedupedIssue.location = `${best.location} (and ${locations.size - 1} other page${locations.size - 1 > 1 ? 's' : ''})`;
+    }
+    deduped.push(dedupedIssue);
   }
 
   // Re-sort by priority

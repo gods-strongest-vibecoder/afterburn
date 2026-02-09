@@ -116,6 +116,14 @@ function collectAggregateErrors(
   // Deduplicate: the same resource/error appears across multiple workflows visiting the same pages
   const seen = new Set<string>();
 
+  // Collect all broken image URLs first so we can skip duplicate network failure entries
+  const brokenImageUrls = new Set<string>();
+  for (const workflow of artifact.workflowResults) {
+    for (const brokenImage of workflow.errors.brokenImages) {
+      brokenImageUrls.add(brokenImage.url);
+    }
+  }
+
   // Collect console errors not already diagnosed
   for (const workflow of artifact.workflowResults) {
     for (const consoleError of workflow.errors.consoleErrors) {
@@ -132,7 +140,10 @@ function collectAggregateErrors(
     }
 
     // Collect network failures not already diagnosed
+    // Skip network failures for URLs already reported as broken images (avoids double-counting)
     for (const networkFailure of workflow.errors.networkFailures) {
+      if (brokenImageUrls.has(networkFailure.url)) continue;
+
       const failureMsg = `${networkFailure.status} ${networkFailure.url}`;
       if (!diagnosedStepErrors.has(failureMsg)) {
         const key = `network:${networkFailure.status}-${networkFailure.url}`;
@@ -240,6 +251,14 @@ function fallbackDiagnosis(
   // Deduplicate: the same resource/error appears across multiple workflows visiting the same pages
   const seen = new Set<string>();
 
+  // Collect all broken image URLs first so we can skip duplicate network failure entries
+  const brokenImageUrls = new Set<string>();
+  for (const workflow of artifact.workflowResults) {
+    for (const brokenImage of workflow.errors.brokenImages) {
+      brokenImageUrls.add(brokenImage.url);
+    }
+  }
+
   for (const workflow of artifact.workflowResults) {
     for (const consoleError of workflow.errors.consoleErrors) {
       const key = `console:${consoleError.message}`;
@@ -255,7 +274,10 @@ function fallbackDiagnosis(
     }
 
     // Diagnose network failures
+    // Skip network failures for URLs already reported as broken images (avoids double-counting)
     for (const networkFailure of workflow.errors.networkFailures) {
+      if (brokenImageUrls.has(networkFailure.url)) continue;
+
       const key = `network:${networkFailure.status}-${networkFailure.url}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -371,7 +393,7 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
     rootCause: 'Unable to determine root cause without AI analysis',
     errorType: 'unknown',
     confidence: 'low',
-    suggestedFix: 'Set GEMINI_API_KEY for detailed AI diagnosis, or review the error in the browser console',
+    suggestedFix: 'Review the error in the browser console and check the surrounding code',
     technicalDetails: errorMessage,
   };
 }
