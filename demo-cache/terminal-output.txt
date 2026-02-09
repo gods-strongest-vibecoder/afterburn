@@ -1,6 +1,6 @@
 $ npx afterburn https://flowsync.demo.dev
 
-Afterburn v0.1.0
+Afterburn v1.0.0
 
 ✔ Checking browser...
 ✔ Crawling site...
