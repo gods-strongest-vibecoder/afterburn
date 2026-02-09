@@ -17,12 +17,25 @@ export interface PrioritizedIssue {
   occurrenceCount?: number; // How many times this issue was found (set when > 1)
 }
 
+/**
+ * Find a page screenshot from workflow results (for issues without their own screenshot)
+ */
+function findPageScreenshot(workflowResults: ExecutionArtifact['workflowResults']): string | undefined {
+  for (const workflow of workflowResults) {
+    if (workflow.pageScreenshotRef) {
+      return workflow.pageScreenshotRef;
+    }
+  }
+  return undefined;
+}
+
 export function prioritizeIssues(
   diagnosedErrors: DiagnosedError[],
   uiAudits: UIAuditResult[],
   executionArtifact: ExecutionArtifact
 ): PrioritizedIssue[] {
   const issues: PrioritizedIssue[] = [];
+  const fallbackScreenshot = findPageScreenshot(executionArtifact.workflowResults);
 
   // HIGH PRIORITY: Workflow-blocking errors
   for (const error of diagnosedErrors) {
@@ -66,7 +79,7 @@ export function prioritizeIssues(
         impact: 'This causes errors or confuses users',
         fixSuggestion: deadButton.reason || 'Add an event handler or make the button do something when clicked',
         location: executionArtifact.targetUrl,
-        screenshotRef: undefined,
+        screenshotRef: fallbackScreenshot,
         technicalDetails: deadButton.reason,
       });
     }
@@ -82,7 +95,7 @@ export function prioritizeIssues(
         impact: 'This causes errors or confuses users',
         fixSuggestion: brokenForm.reason || 'Check form validation and submission handlers',
         location: `${executionArtifact.targetUrl} (${brokenForm.formSelector})`,
-        screenshotRef: undefined,
+        screenshotRef: fallbackScreenshot,
         technicalDetails: `Filled fields: ${brokenForm.filledFields}, Skipped fields: ${brokenForm.skippedFields}`,
       });
     }
@@ -131,7 +144,7 @@ export function prioritizeIssues(
             impact: 'This causes errors or confuses users',
             fixSuggestion: `Check accessibility guidelines at ${violation.helpUrl}`,
             location: pageAudit.url,
-            screenshotRef: undefined,
+            screenshotRef: fallbackScreenshot,
             technicalDetails: `${violation.nodes} element(s) affected`,
           });
         }
@@ -211,7 +224,7 @@ export function prioritizeIssues(
             impact: 'This is a minor issue but worth fixing',
             fixSuggestion: `Check accessibility guidelines at ${violation.helpUrl}`,
             location: pageAudit.url,
-            screenshotRef: undefined,
+            screenshotRef: fallbackScreenshot,
             technicalDetails: `${violation.nodes} element(s) affected`,
           });
         }

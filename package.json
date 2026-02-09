@@ -1,9 +1,13 @@
 {
   "name": "afterburn",
-  "version": "0.1.0",
-  "description": "Automated testing for vibe-coded websites",
+  "version": "1.0.0",
+  "description": "Automated testing for vibe-coded websites. One command finds broken forms, dead buttons, JS crashes, and more.",
   "main": "dist/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://github.com/gods-strongest-vibecoder/afterburn#readme",
   "scripts": {
     "build": "tsc",
     "build:action": "tsc -p action/tsconfig.json",
@@ -20,7 +24,7 @@
     "dist",
     "templates"
   ],
-  "keywords": ["testing", "automation", "playwright", "website-testing", "accessibility", "vibe-coding"],
+  "keywords": ["testing", "automation", "playwright", "website-testing", "accessibility", "vibe-coding", "cli-tool", "developer-tools", "bug-detection", "qa-automation", "mcp", "ai-tools", "web-development"],
   "author": "Afterburn",
   "repository": {
     "type": "git",

@@ -102,6 +102,7 @@ export interface WorkflowExecutionResult {
   errors: ErrorCollector;
   overallStatus: 'passed' | 'failed';
   duration: number;
+  pageScreenshotRef?: string; // PNG path of page at end of workflow (for report embedding)
 }
 
 /**

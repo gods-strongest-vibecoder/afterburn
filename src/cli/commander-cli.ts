@@ -11,7 +11,7 @@ export const program = new Command();
 program
   .name('afterburn')
   .description('Automated testing for vibe-coded websites')
-  .version('0.1.0')
+  .version('1.0.0')
   .argument('<url>', 'URL to test')
   .option('--source <path>', 'Source code directory for pinpointing bugs')
   .option('--email <email>', 'Login email (or set AFTERBURN_EMAIL env var)')
@@ -39,7 +39,7 @@ program
     await ensureBrowserInstalled();
 
     // Print banner
-    console.log('Afterburn v0.1.0\n');
+    console.log('Afterburn v1.0.0\n');
 
     // In verbose mode, show credential source without exposing actual values
     if (opts.verbose) {

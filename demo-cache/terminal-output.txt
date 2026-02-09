@@ -1,4 +1,4 @@
-$ npx afterburn http://localhost:3847
+$ npx afterburn https://flowsync.demo.dev
 
 Afterburn v0.1.0
 

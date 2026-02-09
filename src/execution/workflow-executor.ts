@@ -122,6 +122,7 @@ export class WorkflowExecutor {
     const stepResults: StepResult[] = [];
     let firstNavUrl: string | null = null;
     let lastUrl = '';
+    let pageScreenshotPath: string | undefined;
 
     try {
       // Execute each step sequentially
@@ -209,6 +210,14 @@ export class WorkflowExecutor {
         await this.auditPage(page, lastUrl, pageAudits);
       }
 
+      // Capture page-level screenshot for report embedding (before page closes)
+      try {
+        const pageScreenshot = await this.screenshotManager.capture(page, `workflow-${plan.workflowName.replace(/\s+/g, '-').toLowerCase()}`);
+        pageScreenshotPath = pageScreenshot.pngPath;
+      } catch {
+        // Graceful degradation — screenshot failure doesn't break workflow
+      }
+
     } finally {
       // Clean up error listeners
       cleanup();
@@ -232,6 +241,7 @@ export class WorkflowExecutor {
       errors: collector,
       overallStatus,
       duration: Date.now() - workflowStart,
+      pageScreenshotRef: pageScreenshotPath,
     };
   }
 

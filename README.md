@@ -1,6 +1,13 @@
 # Afterburn
 
+[![npm version](https://img.shields.io/npm/v/afterburn)](https://www.npmjs.com/package/afterburn)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/tests-191%20passing-brightgreen)]()
+
 Automated website testing for vibe coders. Point it at a URL, get a bug report. Zero config.
+
+**One command finds broken forms, dead buttons, JS crashes, missing images, accessibility issues -- and generates a fix list for your AI coding tool.**
 
 ```bash
 npx afterburn https://your-site.com
@@ -82,7 +89,7 @@ Reports are saved to `./afterburn-reports/{timestamp}/`.
 
 ### Sample output
 
-See what Afterburn produces when scanning a site with real defects:
+See what Afterburn produces when scanning a test app with 20+ intentional defects (broken forms, dead buttons, missing images, console errors, accessibility violations):
 
 - [Sample HTML report](demo-cache/report.html) — Health score, prioritized issues, fix suggestions
 - [Sample Markdown report](demo-cache/report.md) — Structured for AI coding tools
@@ -188,6 +195,16 @@ Use Afterburn as a tool inside AI coding assistants (Claude, etc.):
 
 This exposes a `scan_website` tool that returns structured results your AI assistant can act on.
 
+## Pre-flight check
+
+Verify your environment is ready before scanning:
+
+```bash
+npx afterburn doctor
+```
+
+Checks Node.js version, browser installation, API key, and network connectivity.
+
 ## CLI reference
 
 ```
@@ -207,6 +224,9 @@ Options:
   --no-headless          Show browser window
   --verbose              Show detailed progress output
   -h, --help             display help for command
+
+Commands:
+  doctor                 Run pre-flight environment checks
 ```
 
 ## Health score

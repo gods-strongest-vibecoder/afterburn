@@ -27,6 +27,9 @@ npx afterburn <url>         # Run Afterburn locally
   - Explicit KPIs (measurable success criteria)
   - Verification goals (how to confirm the fix works)
   - Constraints (what NOT to touch)
+- **Subagent output**: Verify each agent's output is non-empty before reporting success. Auto-retry once on crash/empty output.
+- **Plans location**: Plans live in `plans/` at project root, NOT in `.planning/phases/`. Check there first.
+- **Paths**: Use forward slashes in shell commands. Never use `\` in Bash — use PowerShell for path-sensitive ops if needed.
 
 ## Notes
 - **Hackathon deadline**: Feb 14, 2026 (BridgeMind Vibeathon)
