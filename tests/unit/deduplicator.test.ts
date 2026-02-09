@@ -130,12 +130,12 @@ describe('deduplicateIssues', () => {
     const issues: PrioritizedIssue[] = [
       makeIssue({
         category: 'Dead Button',
-        summary: "A button labeled '#submit-btn' doesn't do anything when clicked",
+        summary: 'The "#submit-btn" button doesn\'t do anything when clicked',
         location: 'https://example.com',
       }),
       makeIssue({
         category: 'Dead Button',
-        summary: "A button labeled '#submit-btn' doesn't do anything when clicked",
+        summary: 'The "#submit-btn" button doesn\'t do anything when clicked',
         location: 'https://example.com',
       }),
     ];
