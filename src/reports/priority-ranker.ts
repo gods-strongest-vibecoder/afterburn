@@ -5,20 +5,25 @@ import { ExecutionArtifact } from '../types/execution.js';
 
 /**
  * Convert raw Playwright selectors into human-readable button labels.
- * e.g. 'button:has-text("Subscribe")' → 'Subscribe'
- *      'form:nth-of-type(1) [type="submit"]' → 'Submit button in form'
+ * e.g. 'button:has-text("Subscribe")' → '"Subscribe" button'
+ *      'form:nth-of-type(1) [type="submit"]' → 'Submit button'
  */
 function humanizeSelector(selector: string): string {
-  // Extract text from has-text("...") patterns
-  const hasTextMatch = selector.match(/has-text\(["'](.+?)["']\)/);
-  if (hasTextMatch) return hasTextMatch[1];
+  // Extract button text from :has-text("...") patterns
+  const hasTextMatch = selector.match(/:?has-text\("([^"]+)"\)/);
+  if (hasTextMatch) return `"${hasTextMatch[1]}" button`;
 
-  // Descriptive labels for common raw selector patterns
-  if (/\[type=["']submit["']\]/.test(selector)) return 'Submit button in form';
-  if (/\[type=["']reset["']\]/.test(selector)) return 'Reset button in form';
-  if (/button:last-of-type/.test(selector)) return 'Button in form';
-  if (/^#[\w-]+$/.test(selector)) return selector; // Keep simple IDs as-is
+  // Identify submit buttons
+  if (selector.includes('[type="submit"]')) {
+    const formMatch = selector.match(/form#([\w-]+)/);
+    if (formMatch) return `Submit button (${formMatch[1].replace(/-/g, ' ')} form)`;
+    return 'Submit button';
+  }
 
+  // Keep simple IDs as-is (e.g. #submit-btn)
+  if (/^#[\w-]+$/.test(selector)) return selector;
+
+  // Generic fallback
   return 'A button on the page';
 }
 
@@ -94,7 +99,7 @@ export function prioritizeIssues(
       issues.push({
         priority: 'medium',
         category: 'Dead Button',
-        summary: `The "${humanizeSelector(deadButton.selector)}" button doesn't do anything when clicked`,
+        summary: `${humanizeSelector(deadButton.selector)} doesn't do anything when clicked`,
         impact: 'This causes errors or confuses users',
         fixSuggestion: deadButton.reason || 'Add an event handler or make the button do something when clicked',
         location: executionArtifact.targetUrl,
@@ -251,25 +256,10 @@ export function prioritizeIssues(
     }
   }
 
-  // DEDUP: Remove Console Error entries that duplicate Dead Button entries.
-  // Dead buttons get added twice: once from executionArtifact.deadButtons (MEDIUM "Dead Button")
-  // and again from error-analyzer's diagnosed errors (LOW "Console Error" with errorType=dom).
-  const deadButtonSelectors = new Set(
-    executionArtifact.deadButtons.filter(b => b.isDead).map(b => b.selector)
-  );
-  const filtered = issues.filter(issue => {
-    if (issue.category !== 'Console Error') return true;
-    // Check if this console error's summary references a dead button selector
-    for (const sel of deadButtonSelectors) {
-      if (issue.summary.includes(sel)) return false;
-    }
-    return true;
-  });
-
   // SORT: high first, then medium, then low (within each priority, maintain insertion order)
-  const highPriority = filtered.filter(i => i.priority === 'high');
-  const mediumPriority = filtered.filter(i => i.priority === 'medium');
-  const lowPriority = filtered.filter(i => i.priority === 'low');
+  const highPriority = issues.filter(i => i.priority === 'high');
+  const mediumPriority = issues.filter(i => i.priority === 'medium');
+  const lowPriority = issues.filter(i => i.priority === 'low');
 
   return [...highPriority, ...mediumPriority, ...lowPriority];
 }

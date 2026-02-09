@@ -19,10 +19,9 @@ export async function analyzeErrors(
     workflow.stepResults.filter((step) => step.status === 'failed')
   );
 
-  const deadButtons = artifact.deadButtons.filter((btn) => btn.isDead);
-  const brokenForms = artifact.brokenForms.filter((form) => form.isBroken);
-
   // Use LLM diagnosis if API key available, otherwise fallback
+  // Note: dead buttons and broken forms are handled directly by priority-ranker.ts
+  // from the execution artifact — no need to inject them here as DiagnosedErrors.
   if (apiKey) {
     try {
       const llmDiagnoses = await diagnoseWithLLM(artifact, failedSteps, apiKey);
@@ -35,30 +34,6 @@ export async function analyzeErrors(
   } else {
     const fallbackDiagnoses = fallbackDiagnosis(artifact, failedSteps);
     diagnosedErrors.push(...fallbackDiagnoses);
-  }
-
-  // Diagnose dead buttons
-  for (const btn of deadButtons) {
-    diagnosedErrors.push({
-      summary: `Button "${btn.selector}" doesn't do anything when clicked`,
-      rootCause: 'The button is not connected to any functionality',
-      errorType: 'dom',
-      confidence: 'high',
-      suggestedFix: 'Connect the button to a click handler or navigation action',
-      originalError: `Dead button: ${btn.selector}`,
-    });
-  }
-
-  // Diagnose broken forms
-  for (const form of brokenForms) {
-    diagnosedErrors.push({
-      summary: `Form "${form.formSelector}" submission isn't working`,
-      rootCause: form.reason || 'The form submission handler is not functioning properly',
-      errorType: 'form',
-      confidence: 'high',
-      suggestedFix: 'Check the form submit handler and network requests',
-      originalError: `Broken form: ${form.formSelector} - ${form.reason}`,
-    });
   }
 
   return diagnosedErrors;

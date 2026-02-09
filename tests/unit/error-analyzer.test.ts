@@ -285,7 +285,7 @@ describe('analyzeErrors (pattern-matching fallback)', () => {
     expect(forbidden!.errorType).toBe('authentication');
   });
 
-  it('diagnoses dead buttons as dom errors', async () => {
+  it('does not inject dead buttons (handled by priority-ranker)', async () => {
     const artifact = makeArtifact({
       deadButtons: [
         { isDead: true, selector: '#ghost-btn', reason: 'No handler' },
@@ -293,12 +293,10 @@ describe('analyzeErrors (pattern-matching fallback)', () => {
     });
 
     const result = await analyzeErrors(artifact);
-    expect(result).toHaveLength(1);
-    expect(result[0].errorType).toBe('dom');
-    expect(result[0].summary).toContain('ghost-btn');
+    expect(result).toHaveLength(0);
   });
 
-  it('diagnoses broken forms as form errors', async () => {
+  it('does not inject broken forms (handled by priority-ranker)', async () => {
     const artifact = makeArtifact({
       brokenForms: [
         { isBroken: true, formSelector: '#login-form', reason: 'No action', filledFields: 3, skippedFields: 1 },
@@ -306,9 +304,7 @@ describe('analyzeErrors (pattern-matching fallback)', () => {
     });
 
     const result = await analyzeErrors(artifact);
-    expect(result).toHaveLength(1);
-    expect(result[0].errorType).toBe('form');
-    expect(result[0].summary).toContain('login-form');
+    expect(result).toHaveLength(0);
   });
 
   it('ignores non-dead buttons and non-broken forms', async () => {
