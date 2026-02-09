@@ -1,4 +1,4 @@
-$ npx afterburn https://flowsync.demo.dev
+$ npx afterburn-cli https://flowsync.demo.dev
 
 Afterburn v1.0.0
 

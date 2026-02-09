@@ -1,6 +1,6 @@
 # Afterburn
 
-[![npm version](https://img.shields.io/npm/v/afterburn)](https://www.npmjs.com/package/afterburn)
+[![npm version](https://img.shields.io/npm/v/afterburn-cli)](https://www.npmjs.com/package/afterburn-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
 [![Tests](https://img.shields.io/badge/tests-191%20passing-brightgreen)]()
@@ -10,7 +10,7 @@ Automated website testing for vibe coders. Point it at a URL, get a bug report. 
 **One command finds broken forms, dead buttons, JS crashes, missing images, accessibility issues -- and generates a fix list for your AI coding tool.**
 
 ```bash
-npx afterburn https://your-site.com
+npx afterburn-cli https://your-site.com
 ```
 
 Afterburn crawls your site, simulates real user workflows (signup, login, checkout), finds bugs, and generates two reports: one for you to read, one for your AI coding tool to fix.
@@ -35,10 +35,10 @@ You ship fast with Cursor, Bolt, v0, or Lovable. But you don't write tests. When
 
 ```bash
 # No install needed - run directly
-npx afterburn https://your-site.com
+npx afterburn-cli https://your-site.com
 
 # Or install globally
-npm install -g afterburn
+npm install -g afterburn-cli
 ```
 
 Afterburn downloads a browser automatically on first run.
@@ -47,25 +47,25 @@ Afterburn downloads a browser automatically on first run.
 
 ```bash
 # Basic scan
-npx afterburn https://your-site.com
+npx afterburn-cli https://your-site.com
 
 # Test login flows
-npx afterburn https://your-site.com --email test@example.com --password mypass123
+npx afterburn-cli https://your-site.com --email test@example.com --password mypass123
 
 # Hint at specific workflows to test
-npx afterburn https://your-site.com --flows "signup, checkout, profile edit"
+npx afterburn-cli https://your-site.com --flows "signup, checkout, profile edit"
 
 # Limit crawl depth
-npx afterburn https://your-site.com --max-pages 10
+npx afterburn-cli https://your-site.com --max-pages 10
 
 # Point at your source code for file:line bug mapping
-npx afterburn https://your-site.com --source ./src
+npx afterburn-cli https://your-site.com --source ./src
 
 # Show the browser window (useful for debugging)
-npx afterburn https://your-site.com --no-headless
+npx afterburn-cli https://your-site.com --no-headless
 
 # Detailed output
-npx afterburn https://your-site.com --verbose
+npx afterburn-cli https://your-site.com --verbose
 ```
 
 ### Environment variables
@@ -74,7 +74,7 @@ npx afterburn https://your-site.com --verbose
 # Avoid exposing credentials in shell history
 export AFTERBURN_EMAIL=test@example.com
 export AFTERBURN_PASSWORD=mypass123
-npx afterburn https://your-site.com
+npx afterburn-cli https://your-site.com
 ```
 
 ## Reports
@@ -200,7 +200,7 @@ This exposes a `scan_website` tool that returns structured results your AI assis
 Verify your environment is ready before scanning:
 
 ```bash
-npx afterburn doctor
+npx afterburn-cli doctor
 ```
 
 Checks Node.js version, browser installation, API key, and network connectivity.

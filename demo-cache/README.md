@@ -20,7 +20,7 @@ Issues Found: 40 (2 high, 28 medium, 10 low)
 ```bash
 cd test-site && node server.js &
 npm run build
-npx afterburn https://flowsync.demo.dev
+npx afterburn-cli https://flowsync.demo.dev
 cp afterburn-reports/*/report-*.html demo-cache/report.html
 cp afterburn-reports/*/report-*.md demo-cache/report.md
 ```

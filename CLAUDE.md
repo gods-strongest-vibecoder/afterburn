@@ -13,7 +13,7 @@
 ```bash
 npm test                    # Run all tests
 npm run build               # Compile TypeScript
-npx afterburn <url>         # Run Afterburn locally
+npx afterburn-cli <url>     # Run Afterburn locally
 ```
 
 ## Rules

@@ -16,7 +16,7 @@ If you build with Cursor, Bolt, v0, or Lovable, you probably ship fast and test 
 So I built **Afterburn**. You point it at a URL, it crawls your entire site, fills out your forms, clicks every button, and generates a bug report. One command, zero config:
 
 ```
-npx afterburn https://your-site.com
+npx afterburn-cli https://your-site.com
 ```
 
 **What it actually does:**
