@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowSync — Automate Your Workflow</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="logo">FlowSync</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1>Ship faster.<br>Break nothing.</h1>
+      <p class="hero-subtitle">FlowSync automates your deployment pipeline so you can focus on building great products.</p>
+      <a href="/pricing" class="btn btn-primary btn-large" id="hero-cta">
+        Get Started Free
+      </a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <h2>Why teams love FlowSync</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <img src="/images/icon-deploy.png" alt="Deploy icon" class="feature-icon">
+          <h3>One-Click Deploy</h3>
+          <p>Push to production with a single click. No more complex CI/CD configs.</p>
+        </div>
+        <div class="feature-card">
+          <img src="/images/icon-monitor.png" alt="Monitor icon" class="feature-icon">
+          <h3>Real-Time Monitoring</h3>
+          <p>See every request, error, and metric in a beautiful live dashboard.</p>
+        </div>
+        <div class="feature-card">
+          <img src="/images/icon-team.png" alt="Team collaboration icon" class="feature-icon">
+          <h3>Team Collaboration</h3>
+          <p>Invite your whole team. Granular permissions, audit logs, and SSO built in from day one.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metrics -->
+  <section class="metrics">
+    <div class="container">
+      <div class="metrics-grid">
+        <div class="metric">
+          <span class="metric-number">12,000+</span>
+          <span class="metric-label">Teams using FlowSync</span>
+        </div>
+        <div class="metric">
+          <span class="metric-number">99.9%</span>
+          <span class="metric-label">Uptime SLA</span>
+        </div>
+        <div class="metric">
+          <span class="metric-number">3.2M</span>
+          <span class="metric-label">Deploys per month</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section class="testimonial">
+    <div class="container">
+      <blockquote>
+        <p>"FlowSync cut our deploy time from 45 minutes to under 2. It's genuinely magic."</p>
+        <cite>— Jordan Lee, CTO at PixelForge</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="newsletter">
+    <div class="container">
+      <h2>Stay in the loop</h2>
+      <p>Get product updates and engineering tips. No spam, ever.</p>
+      <form class="newsletter-form" id="newsletter-form" onsubmit="return handleNewsletterSubmit(event)">
+        <label for="newsletter-email" class="sr-only">Email address</label>
+        <input type="email" id="newsletter-email" name="email" placeholder="you@company.com" class="input-email" required>
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      </form>
+      <p id="newsletter-status" class="form-status"></p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; 2026 FlowSync Inc.</p>
+      <div class="footer-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/blog">Blog</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -4,6 +4,8 @@ import type { Browser, BrowserContext, Page } from 'playwright';
 import type { BrowserConfig } from '../types/artifacts.js';
 import { createStealthBrowser } from './stealth-browser.js';
 import { dismissCookieBanner } from './cookie-dismisser.js';
+import { detectChallengePage } from './challenge-detector.js';
+import type { ChallengeDetectionResult } from './challenge-detector.js';
 
 /**
  * Manages browser lifecycle: launch, navigation, and cleanup.
@@ -27,9 +29,19 @@ export class BrowserManager {
     this.context = context;
   }
 
+  // Tracks whether the last navigated page was a bot-challenge page
+  private _lastChallengeResult: ChallengeDetectionResult = { isChallengePage: false, provider: null };
+
+  /**
+   * Returns the challenge detection result from the most recent newPage() navigation.
+   */
+  get lastChallengeResult(): ChallengeDetectionResult {
+    return this._lastChallengeResult;
+  }
+
   /**
    * Creates a new page and optionally navigates to a URL.
-   * Automatically dismisses cookie banners after navigation.
+   * Automatically dismisses cookie banners and detects bot-challenge pages after navigation.
    *
    * @param url - Optional URL to navigate to
    * @returns Playwright page instance
@@ -44,6 +56,12 @@ export class BrowserManager {
     if (url) {
       // Navigate with DOM ready first
       await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+      // Detect anti-bot challenge pages before processing content
+      this._lastChallengeResult = await detectChallengePage(page);
+      if (this._lastChallengeResult.isChallengePage) {
+        console.warn(`Anti-bot challenge detected (${this._lastChallengeResult.provider}) on ${url}. Results may be incomplete.`);
+      }
 
       // Try to dismiss cookie banner
       await dismissCookieBanner(page);

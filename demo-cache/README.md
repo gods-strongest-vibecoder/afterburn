@@ -3,11 +3,11 @@
 Pre-generated Afterburn reports from scanning the FlowSync test site.
 These serve as emergency fallback if the live scan fails during demo.
 
-Generated: 2026-02-08
-Target: https://flowsync.demo.dev (FlowSync test site)
+Generated: 2026-02-09
+Target: http://localhost:3847 (FlowSync test site via `test-site/server.js`)
 Mode: Heuristic (no GEMINI_API_KEY)
 Health Score: 62/100
-Issues Found: 40 (2 high, 28 medium, 10 low)
+Issues Found: 31 (0 high, 28 medium, 3 low)
 
 ## Files
 
@@ -15,12 +15,19 @@ Issues Found: 40 (2 high, 28 medium, 10 low)
 - `report.md` — AI-readable Markdown report with YAML frontmatter for Claude/Cursor consumption
 - `terminal-output.txt` — CLI terminal output from the scan
 
+## Fixed Test Site (for before/after demo)
+
+A "fixed" version of the FlowSync test site lives at `test-site/public-fixed/` with `test-site/server-fixed.js`.
+Run on port 3848: `cd test-site && node server-fixed.js`
+
+All 23 intentional defects are resolved in the fixed version. Use this for the "re-scan shows improvement" part of the demo video.
+
 ## To Regenerate
 
 ```bash
 cd test-site && node server.js &
 npm run build
-npx afterburn-cli https://flowsync.demo.dev
-cp afterburn-reports/*/report-*.html demo-cache/report.html
-cp afterburn-reports/*/report-*.md demo-cache/report.md
+node dist/index.js http://localhost:3847 --output-dir ./demo-cache-new
+cp demo-cache-new/report-*.html demo-cache/report.html
+cp demo-cache-new/report-*.md demo-cache/report.md
 ```

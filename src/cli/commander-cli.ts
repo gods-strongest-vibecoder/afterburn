@@ -12,6 +12,7 @@ program
   .name('afterburn')
   .description('Automated testing for vibe-coded websites')
   .version('1.0.0')
+  .showHelpAfterError(true)
   .argument('<url>', 'URL to test')
   .option('--source <path>', 'Source code directory for pinpointing bugs')
   .option('--email <email>', 'Login email (or set AFTERBURN_EMAIL env var)')

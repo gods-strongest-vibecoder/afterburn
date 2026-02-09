@@ -1,4 +1,4 @@
-$ npx afterburn-cli https://flowsync.demo.dev
+$ npx afterburn-cli http://localhost:3847
 
 Afterburn v1.0.0
 
@@ -8,8 +8,8 @@ Afterburn v1.0.0
 ✔ Analyzing results...
 ✔ Generating reports...
 
-Health: 62/100 — 40 issues found (2 high, 28 medium, 10 low)
+Health: 62/100 — 31 issues found (0 high, 28 medium, 3 low)
 
 Reports saved:
-  HTML:     afterburn-reports/1770564079516/report.html
-  Markdown: afterburn-reports/1770564079516/report.md
+  HTML:     afterburn-reports/1739117122000/report.html
+  Markdown: afterburn-reports/1739117122000/report.md

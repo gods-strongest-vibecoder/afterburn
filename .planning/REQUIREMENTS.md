@@ -123,24 +123,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DISC-01 | Phase 2 | Pending |
-| DISC-02 | Phase 2 | Pending |
-| DISC-03 | Phase 2 | Pending |
-| DISC-04 | Phase 2 | Pending |
+| DISC-01 | Phase 2 | Complete |
+| DISC-02 | Phase 2 | Complete |
+| DISC-03 | Phase 2 | Complete |
+| DISC-04 | Phase 2 | Complete |
 | DISC-05 | Phase 1 | Complete |
 | DISC-06 | Phase 1 | Complete |
-| WKFL-01 | Phase 2 | Pending |
-| WKFL-02 | Phase 2 | Pending |
-| WKFL-03 | Phase 3 | Pending |
-| WKFL-04 | Phase 3 | Pending |
-| WKFL-05 | Phase 3 | Pending |
-| WKFL-06 | Phase 3 | Pending |
-| TEST-01 | Phase 3 | Pending |
-| TEST-02 | Phase 3 | Pending |
-| TEST-03 | Phase 3 | Pending |
-| TEST-04 | Phase 3 | Pending |
-| TEST-05 | Phase 3 | Pending |
-| TEST-06 | Phase 2 | Pending |
+| WKFL-01 | Phase 2 | Complete |
+| WKFL-02 | Phase 2 | Complete |
+| WKFL-03 | Phase 3 | Complete |
+| WKFL-04 | Phase 3 | Complete |
+| WKFL-05 | Phase 3 | Complete |
+| WKFL-06 | Phase 3 | Complete |
+| TEST-01 | Phase 3 | Complete |
+| TEST-02 | Phase 3 | Complete |
+| TEST-03 | Phase 3 | Complete |
+| TEST-04 | Phase 3 | Complete |
+| TEST-05 | Phase 3 | Complete |
+| TEST-06 | Phase 2 | Complete |
 | DIAG-01 | Phase 4 | Pending |
 | DIAG-02 | Phase 4 | Pending |
 | DIAG-03 | Phase 4 | Pending |
@@ -149,8 +149,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UIAX-02 | Phase 4 | Pending |
 | UIAX-03 | Phase 4 | Pending |
 | UIAX-04 | Phase 4 | Pending |
-| UIAX-05 | Phase 3 | Pending |
-| UIAX-06 | Phase 3 | Pending |
+| UIAX-05 | Phase 3 | Complete |
+| UIAX-06 | Phase 3 | Complete |
 | RPRT-01 | Phase 5 | Pending |
 | RPRT-02 | Phase 5 | Pending |
 | RPRT-03 | Phase 5 | Pending |
@@ -162,7 +162,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-01 | Phase 6 | Pending |
 | CLI-02 | Phase 6 | Pending |
 | CLI-03 | Phase 1 | Complete |
-| CLI-04 | Phase 3 | Pending |
+| CLI-04 | Phase 3 | Complete |
 | MCP-01 | Phase 6 | Pending |
 | MCP-02 | Phase 6 | Pending |
 | CICD-01 | Phase 6 | Pending |
@@ -171,8 +171,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1 requirements: 34 total
 - Mapped to phases: 34 (100% coverage)
-- Unmapped: 0
+- Complete: 22 (65%)
+- Pending: 12 (35%)
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-07 after roadmap creation*
+*Last updated: 2026-02-09 — traceability table synced with checkbox status*

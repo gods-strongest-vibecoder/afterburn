@@ -3,15 +3,29 @@
 [![npm version](https://img.shields.io/npm/v/afterburn-cli)](https://www.npmjs.com/package/afterburn-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-189%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-193%20passing-brightgreen)]()
 [![Built at BridgeMind Vibeathon 2026](https://img.shields.io/badge/Built%20at-BridgeMind%20Vibeathon%202026-blueviolet)]()
 
 **One command finds every bug on your website.** Zero config. Generates a report your AI coding tool can use to fix them automatically.
 
-<!-- TODO: Add demo GIF here -->
-
 ```bash
 npx afterburn-cli https://your-site.com
+```
+
+```
+Afterburn v1.0.0
+
+✔ Checking browser...
+✔ Crawling site...
+✔ Testing workflows...
+✔ Analyzing results...
+✔ Generating reports...
+
+Health: 62/100 — 31 issues found (0 high, 28 medium, 3 low)
+
+Reports saved:
+  HTML:     afterburn-reports/1770564079516/report.html
+  Markdown: afterburn-reports/1770564079516/report.md
 ```
 
 Afterburn crawls your site, fills out forms, clicks every button, and tells you what's broken -- in plain English for you, in structured Markdown for Claude, Cursor, or ChatGPT to auto-fix.
@@ -32,9 +46,27 @@ AI:  *reads structured report, fixes 12 issues across 4 files*
 
 This is the workflow: Afterburn finds the bugs, your AI fixes them. Zero manual debugging.
 
+### What the AI report looks like
+
+The Markdown report is structured so AI tools can parse and act on it:
+
+```markdown
+## Issues (Prioritized)
+
+| # | Priority | Category | Summary | Location |
+|---|----------|----------|---------|----------|
+| 1 | HIGH | Workflow Error | Form "form#contact-form" submission isn't working | /contact |
+| 2 | MEDIUM | Dead Button | Button "Get Started Free" doesn't do anything when clicked | / |
+| 3 | MEDIUM | Console Error | An image failed to load | /images/icon-deploy.png |
+```
+
+Each issue includes a category, priority, plain-English summary, and location. Paste this into Claude or Cursor and it knows exactly what to fix.
+
 ### Sample reports
 
 See what Afterburn produces when scanning a real app with 20+ intentional defects:
+
+![Afterburn HTML Report](assets/report-preview.png)
 
 - [Sample HTML report](demo-cache/report.html) -- Health score, prioritized issues, fix suggestions
 - [Sample Markdown report](demo-cache/report.md) -- Structured for AI coding tools
@@ -124,6 +156,59 @@ export GEMINI_API_KEY=your-key-here
 | Free and open source | Yes | Yes | Yes | Free (your time) |
 | CI/CD integration | GitHub Action | CI plugin | CI plugin | No |
 
+## Health score
+
+The health score (0-100) is weighted:
+
+| Category | Weight | What it measures |
+|----------|--------|------------------|
+| Workflows | 40% | Did test workflows complete without errors? |
+| Errors | 30% | HTTP errors, console crashes, broken resources |
+| Accessibility | 20% | WCAG 2.1 AA violations |
+| Performance | 10% | Page load times, LCP scores |
+
+## Pre-flight check
+
+```bash
+npx afterburn-cli doctor
+```
+
+Checks Node.js version, browser installation, API key, and network connectivity.
+
+## CLI reference
+
+```
+Usage: afterburn [options] [command] <url>
+
+Automated testing for vibe-coded websites
+
+Arguments:
+  url                    URL to test
+
+Options:
+  -V, --version          output the version number
+  --source <path>        Source code directory for pinpointing bugs
+  --email <email>        Login email (or set AFTERBURN_EMAIL env var)
+  --password <password>  Login password (tip: use AFTERBURN_PASSWORD env var
+                         to avoid shell history exposure)
+  --output-dir <path>    Custom output directory
+                         (default: ./afterburn-reports/{timestamp})
+  --flows <hints>        Comma-separated workflow hints (e.g., "signup, checkout")
+  --max-pages <n>        Max pages to crawl (default: 50, max: 500)
+  --no-headless          Show browser window (useful for debugging)
+  --verbose              Show detailed progress output
+  -h, --help             display help for command
+
+Commands:
+  doctor                 Check if your environment is ready to run Afterburn
+```
+
+## Known limitations
+
+- **Visual analysis requires GEMINI_API_KEY**. Without it, UI analysis relies on axe-core plus pattern matching.
+- **SPA support is experimental**. Complex client-side routing may not be fully exercised.
+- **Desktop viewport only**. Tests run at 1920x1080. Mobile testing planned for v2.
+
 ## Three interfaces
 
 ### CLI
@@ -149,7 +234,7 @@ jobs:
           fail-on: high
 ```
 
-Posts a summary comment on your PR and uploads reports as artifacts.
+Posts a summary comment on your PR and uploads reports as artifacts. Action bundling coming in v1.1 -- for now, use the CLI in your CI workflow with `npx afterburn-cli`.
 
 ### MCP Server (for AI coding assistants)
 
@@ -165,55 +250,6 @@ Posts a summary comment on your PR and uploads reports as artifacts.
 ```
 
 Exposes a `scan_website` tool that returns structured results your AI assistant can act on.
-
-## Health score
-
-The health score (0-100) is weighted:
-
-| Category | Weight | What it measures |
-|----------|--------|------------------|
-| Workflows | 40% | Did test workflows complete without errors? |
-| Errors | 30% | HTTP errors, console crashes, broken resources |
-| Accessibility | 20% | WCAG 2.1 AA violations |
-| Performance | 10% | Page load times, LCP scores |
-
-## Pre-flight check
-
-```bash
-npx afterburn-cli doctor
-```
-
-Checks Node.js version, browser installation, API key, and network connectivity.
-
-## CLI reference
-
-```
-Usage: afterburn [options] <url>
-
-Arguments:
-  url                    URL to test
-
-Options:
-  -V, --version          output the version number
-  --source <path>        Source code directory for pinpointing bugs
-  --email <email>        Login email (or set AFTERBURN_EMAIL env var)
-  --password <password>  Login password (or set AFTERBURN_PASSWORD env var)
-  --output-dir <path>    Custom output directory
-  --flows <hints>        Comma-separated workflow hints (e.g., "signup, checkout")
-  --max-pages <n>        Max pages to crawl (default: 50, max: 500)
-  --no-headless          Show browser window
-  --verbose              Show detailed progress output
-  -h, --help             display help for command
-
-Commands:
-  doctor                 Run pre-flight environment checks
-```
-
-## Known limitations
-
-- **Visual analysis requires GEMINI_API_KEY**. Without it, UI analysis relies on axe-core plus pattern matching.
-- **SPA support is experimental**. Complex client-side routing may not be fully exercised.
-- **Desktop viewport only**. Tests run at 1280x720. Mobile testing planned for v2.
 
 ## Tech stack
 
