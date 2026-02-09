@@ -1,0 +1,4 @@
+// Testing module barrel exports
+export { auditAccessibility } from './accessibility-auditor.js';
+export { capturePerformanceMetrics } from './performance-monitor.js';
+//# sourceMappingURL=index.js.map
