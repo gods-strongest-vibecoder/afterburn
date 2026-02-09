@@ -3,17 +3,20 @@
 [![npm version](https://img.shields.io/npm/v/afterburn-cli)](https://www.npmjs.com/package/afterburn-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-191%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-189%20passing-brightgreen)]()
+[![Built at BridgeMind Vibeathon 2026](https://img.shields.io/badge/Built%20at-BridgeMind%20Vibeathon%202026-blueviolet)]()
 
-**One command. Every bug. Zero config.**
+**One command finds every bug on your website.** Zero config. Generates a report your AI coding tool can use to fix them automatically.
 
-You ship fast with Cursor, Bolt, v0, or Lovable -- but you don't write tests. Afterburn does it for you. Point it at your URL, and it crawls every page, fills out your forms, clicks every button, and tells you what's broken -- in plain English.
+<!-- TODO: Add demo GIF here -->
 
 ```bash
 npx afterburn-cli https://your-site.com
 ```
 
-<!-- TODO: Add demo GIF here showing a full scan in ~30 seconds -->
+Afterburn crawls your site, fills out forms, clicks every button, and tells you what's broken -- in plain English for you, in structured Markdown for Claude, Cursor, or ChatGPT to auto-fix.
+
+> **The AI workflow:** Afterburn finds the bugs. You paste the Markdown report into Claude, Cursor, or ChatGPT. It reads the reproduction steps and fixes them. You re-scan. Done.
 
 ## The AI-readable report (the killer feature)
 
@@ -59,6 +62,16 @@ npm install -g afterburn-cli
 
 Afterburn downloads a browser automatically on first run (~200MB, one-time).
 
+## Try it now
+
+Scan any public website -- no signup, no API key, no config:
+
+```bash
+npx afterburn-cli https://en.wikipedia.org/wiki/Main_Page
+```
+
+Or point it at your own site to see what's broken.
+
 ### Common options
 
 ```bash
@@ -100,15 +113,16 @@ export GEMINI_API_KEY=your-key-here
 
 ## How is this different?
 
-| | Afterburn | Lighthouse | axe-core | Manual testing |
-|---|---|---|---|---|
-| Zero config | Yes | Yes | Needs setup | N/A |
+| Feature | Afterburn | Lighthouse | axe-core | Manual testing |
+|---------|-----------|------------|----------|----------------|
+| Zero config (no test writing) | Yes | Yes | Needs integration | Yes |
 | Crawls entire site | Yes | Single page | No | Tedious |
-| Fills forms and clicks buttons | Yes | No | No | You do it |
-| Dead button detection | Yes | No | No | Good luck |
-| Plain English reports | Yes | Partial | No | You write them |
-| AI-readable output | Yes | No | No | No |
-| Free and open source | Yes | Yes | Yes | Free but slow |
+| Form filling and submission | Yes | No | No | Manual |
+| Dead button detection | Yes | No | No | If you notice |
+| Plain English reports | Yes | Partial | No | N/A |
+| AI-ready report for auto-fix | Yes | No | No | No |
+| Free and open source | Yes | Yes | Yes | Free (your time) |
+| CI/CD integration | GitHub Action | CI plugin | CI plugin | No |
 
 ## Three interfaces
 
