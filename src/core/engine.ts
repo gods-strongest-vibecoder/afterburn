@@ -42,6 +42,31 @@ export interface AfterBurnResult {
   sessionId: string;
 }
 
+// Hard timeout to prevent the pipeline from hanging forever on unresponsive sites
+const PIPELINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Kill all Chromium processes spawned by Playwright.
+ * Called on timeout to prevent zombie browser processes.
+ */
+async function killChromiumProcesses(): Promise<void> {
+  try {
+    const { exec } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const execAsync = promisify(exec);
+    // Platform-aware: taskkill on Windows, pkill on Unix
+    if (process.platform === 'win32') {
+      await execAsync('taskkill /F /IM chromium.exe /T 2>nul').catch(() => {});
+      await execAsync('taskkill /F /IM chrome.exe /T 2>nul').catch(() => {});
+    } else {
+      await execAsync('pkill -f chromium 2>/dev/null').catch(() => {});
+      await execAsync('pkill -f chrome 2>/dev/null').catch(() => {});
+    }
+  } catch {
+    // Best-effort cleanup -- don't crash if kill fails
+  }
+}
+
 export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurnResult> {
   // Defense in depth: validate inputs even if caller already validated
   const validatedTargetUrl = validateUrl(options.targetUrl);
@@ -57,6 +82,36 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     : `./afterburn-reports/${Date.now()}`;
   await fs.ensureDir(outputDir);
 
+  // Wrap the entire pipeline in a timeout to prevent infinite hangs
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(async () => {
+      // Clean up zombie browser processes before rejecting
+      await killChromiumProcesses();
+      reject(new Error(
+        'Scan timed out after 5 minutes. Try with --max-pages 5 for a faster scan.'
+      ));
+    }, PIPELINE_TIMEOUT_MS);
+  });
+
+  try {
+    const result = await Promise.race([runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir), timeoutPromise]);
+    clearTimeout(timeoutId!);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId!);
+    throw error;
+  }
+}
+
+async function runPipeline(
+  options: AfterBurnOptions,
+  validatedTargetUrl: string,
+  validatedSourcePath: string | undefined,
+  validatedMaxPages: number,
+  sessionId: string,
+  outputDir: string,
+): Promise<AfterBurnResult> {
   // Stage: browser check
   options.onProgress?.('browser', 'Checking browser installation...');
 
@@ -79,26 +134,34 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     const discoveryResult = await runDiscovery(discoveryOptions);
 
     // If no workflows (site had no discoverable forms, buttons, or links), return early
+    // Don't report 100/good — a site with nothing testable is suspicious, not healthy
     if (discoveryResult.workflowPlans.length === 0) {
-      options.onProgress?.('complete', 'No testable elements found on site - scan complete');
+      options.onProgress?.('complete', 'No testable elements found on site — may be empty, under maintenance, or blocking automated access');
       return {
         healthScore: {
-          overall: 100,
-          label: 'good',
-          breakdown: { workflows: 100, errors: 100, accessibility: 100, performance: 100 },
+          overall: 0,
+          label: 'poor',
+          breakdown: { workflows: 0, errors: 100, accessibility: 100, performance: 100 },
           checksPassed: 0,
           checksTotal: 0,
         },
-        prioritizedIssues: [],
-        totalIssues: 0,
-        highPriorityCount: 0,
+        prioritizedIssues: [{
+          priority: 'high' as const,
+          category: 'No Testable Content',
+          summary: 'No forms, buttons, or interactive elements found on the site',
+          impact: 'Afterburn could not test anything — the site may be empty, under maintenance, or blocking automated access',
+          fixSuggestion: 'Verify the site loads correctly in a browser. If the site uses anti-bot protection, results may be incomplete.',
+          location: validatedTargetUrl,
+        }],
+        totalIssues: 1,
+        highPriorityCount: 1,
         mediumPriorityCount: 0,
         lowPriorityCount: 0,
         workflowsPassed: 0,
         workflowsTotal: 0,
         htmlReportPath: null,
         markdownReportPath: null,
-        exitCode: 0,
+        exitCode: 1,
         sessionId,
       };
     }

@@ -10,6 +10,29 @@ import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkd
 import { validateUrl, validatePath, validateMaxPages } from './validation.js';
 // Hard timeout to prevent the pipeline from hanging forever on unresponsive sites
 const PIPELINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+/**
+ * Kill all Chromium processes spawned by Playwright.
+ * Called on timeout to prevent zombie browser processes.
+ */
+async function killChromiumProcesses() {
+    try {
+        const { exec } = await import('node:child_process');
+        const { promisify } = await import('node:util');
+        const execAsync = promisify(exec);
+        // Platform-aware: taskkill on Windows, pkill on Unix
+        if (process.platform === 'win32') {
+            await execAsync('taskkill /F /IM chromium.exe /T 2>nul').catch(() => { });
+            await execAsync('taskkill /F /IM chrome.exe /T 2>nul').catch(() => { });
+        }
+        else {
+            await execAsync('pkill -f chromium 2>/dev/null').catch(() => { });
+            await execAsync('pkill -f chrome 2>/dev/null').catch(() => { });
+        }
+    }
+    catch {
+        // Best-effort cleanup -- don't crash if kill fails
+    }
+}
 export async function runAfterburn(options) {
     // Defense in depth: validate inputs even if caller already validated
     const validatedTargetUrl = validateUrl(options.targetUrl);
@@ -23,12 +46,23 @@ export async function runAfterburn(options) {
         : `./afterburn-reports/${Date.now()}`;
     await fs.ensureDir(outputDir);
     // Wrap the entire pipeline in a timeout to prevent infinite hangs
+    let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
+        timeoutId = setTimeout(async () => {
+            // Clean up zombie browser processes before rejecting
+            await killChromiumProcesses();
             reject(new Error('Scan timed out after 5 minutes. Try with --max-pages 5 for a faster scan.'));
         }, PIPELINE_TIMEOUT_MS);
     });
-    return Promise.race([runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir), timeoutPromise]);
+    try {
+        const result = await Promise.race([runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir), timeoutPromise]);
+        clearTimeout(timeoutId);
+        return result;
+    }
+    catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
 }
 async function runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir) {
     // Stage: browser check
