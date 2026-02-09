@@ -69,7 +69,7 @@ Split screen: Pretty website on left, empty terminal on right.
   ```
 - **0:55-1:00**: Result line appears:
   ```
-  Health: 62/100 -- 31 issues found (0 high, 28 medium, 3 low)
+  Health: 62/100 -- 20 issues found (0 high, 17 medium, 3 low)
 
   Reports saved:
     HTML:     afterburn-reports/.../report.html
@@ -78,7 +78,7 @@ Split screen: Pretty website on left, empty terminal on right.
 
 ### Key Moment
 
-Pause for a beat on the health score line. Let it sink in: **62/100 -- 31 issues found.** The site that LOOKED fine has 31 problems.
+Pause for a beat on the health score line. Let it sink in: **62/100 -- 20 issues found.** The site that LOOKED fine has 20 problems.
 
 ### Fallback Plan
 
@@ -177,7 +177,7 @@ Subtle, upbeat background music. Something tech/startup-y. Not too loud -- voice
 
 ### Emphasis Moments
 1. The "Get Started Free" button doing nothing (0:10) -- zoom/highlight
-2. The health score reveal: 62/100 with 31 issues (0:55) -- brief pause
+2. The health score reveal: 62/100 with 20 issues (0:55) -- brief pause
 3. The AI reading the report and generating fixes (1:55) -- this is the climax
 
 ### Do NOT Show
@@ -217,8 +217,8 @@ This site is PERFECT for the demo because:
 The fixed version lives at `test-site/public-fixed/` served by `test-site/server-fixed.js` on port **3848**.
 
 **Verified scan results:**
-- Broken site (port 3847): Health **62/100**, 31 issues, 8 workflows all pass
-- Fixed site (port 3848): Health **92/100**, 8 issues, 5 workflows all pass
+- Broken site (port 3847): Health **62/100**, 20 issues, 8 workflows all pass
+- Fixed site (port 3848): Health **92/100**, 7 issues, 5 workflows all pass
 
 **To run both side by side:**
 ```bash
@@ -226,7 +226,7 @@ cd test-site && node server.js &        # Broken on :3847
 cd test-site && node server-fixed.js &   # Fixed on :3848
 ```
 
-**Note:** The fixed site still has 8 remaining issues (dead button false positives from preventDefault-based form handlers, and 2 contrast issues). These are Afterburn detection limitations, not site defects. A score of 92 is realistic and impressive for the demo.
+**Note:** The fixed site still has 7 remaining issues (dead button false positives from preventDefault-based form handlers, and contrast issues). These are Afterburn detection limitations, not site defects. A score of 92 is realistic and impressive for the demo.
 
 ---
 

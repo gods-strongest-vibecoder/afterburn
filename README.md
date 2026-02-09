@@ -21,7 +21,7 @@ Afterburn v1.0.0
 ✔ Analyzing results...
 ✔ Generating reports...
 
-Health: 62/100 — 31 issues found (0 high, 28 medium, 3 low)
+Health: 62/100 — 20 issues found (0 high, 17 medium, 3 low)
 
 Reports saved:
   HTML:     afterburn-reports/1770564079516/report.html

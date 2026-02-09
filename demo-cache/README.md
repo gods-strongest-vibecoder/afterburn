@@ -7,7 +7,7 @@ Generated: 2026-02-09
 Target: http://localhost:3847 (FlowSync test site via `test-site/server.js`)
 Mode: Heuristic (no GEMINI_API_KEY)
 Health Score: 62/100
-Issues Found: 31 (0 high, 28 medium, 3 low)
+Issues Found: 20 (0 high, 17 medium, 3 low)
 
 ## Files
 
