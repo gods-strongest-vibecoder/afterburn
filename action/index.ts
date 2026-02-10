@@ -70,7 +70,14 @@ async function run(): Promise<void> {
     const email = core.getInput('email') || undefined;
     const password = core.getInput('password') || undefined;
     const githubToken = core.getInput('github-token') || undefined;
-    const failOn = core.getInput('fail-on') || 'high';
+
+    // Normalize failOn input (case-insensitive) and validate
+    const failOnRaw = (core.getInput('fail-on') || 'high').toLowerCase().trim();
+    const validFailOnValues = ['critical', 'high', 'medium', 'low', 'never'];
+    if (!validFailOnValues.includes(failOnRaw)) {
+      core.warning(`Invalid fail-on value: "${failOnRaw}". Defaulting to "critical". Valid values: ${validFailOnValues.join(', ')}`);
+    }
+    const failOn = validFailOnValues.includes(failOnRaw) ? failOnRaw : 'critical';
 
     core.info(`Testing ${url}...`);
 
@@ -122,14 +129,21 @@ async function run(): Promise<void> {
 
     // Determine failure based on fail-on threshold
     let shouldFail = false;
-    if (failOn === 'high' && result.highPriorityCount > 0) {
-      shouldFail = true;
-    } else if (failOn === 'medium' && (result.highPriorityCount + result.mediumPriorityCount) > 0) {
-      shouldFail = true;
-    } else if (failOn === 'low' && result.totalIssues > 0) {
-      shouldFail = true;
+    switch (failOn) {
+      case 'critical':
+      case 'high':
+        shouldFail = result.highPriorityCount > 0;
+        break;
+      case 'medium':
+        shouldFail = (result.highPriorityCount + result.mediumPriorityCount) > 0;
+        break;
+      case 'low':
+        shouldFail = result.totalIssues > 0;
+        break;
+      case 'never':
+        shouldFail = false;
+        break;
     }
-    // failOn === 'never' never fails
 
     if (shouldFail) {
       core.setFailed(`Afterburn found ${result.highPriorityCount} high-priority issues`);

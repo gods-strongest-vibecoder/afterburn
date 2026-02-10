@@ -2,12 +2,14 @@
 import { join } from 'node:path';
 import fs from 'fs-extra';
 import type { ArtifactMetadata } from '../types/artifacts.js';
+import { sanitizeSessionId } from '../core/validation.js';
 
 /**
  * Manages JSON artifact storage with save/load/cleanup operations
  */
 export class ArtifactStorage {
   private readonly baseDir: string;
+  private currentSessionId?: string;
 
   constructor(baseDir: string = '.afterburn/artifacts') {
     this.baseDir = baseDir;
@@ -20,9 +22,15 @@ export class ArtifactStorage {
    * @returns Filepath where artifact was saved
    */
   async save<T extends ArtifactMetadata>(artifact: T): Promise<string> {
-    const filename = `${artifact.stage}-${artifact.sessionId}.json`;
+    // Sanitize session ID for filesystem safety
+    const safeSessionId = sanitizeSessionId(artifact.sessionId);
+    const filename = `${artifact.stage}-${safeSessionId}.json`;
     const filepath = join(this.baseDir, filename);
     await fs.writeJson(filepath, artifact, { spaces: 2 });
+
+    // Track current session for cleanup
+    this.currentSessionId = safeSessionId;
+
     return filepath;
   }
 
@@ -73,8 +81,9 @@ export class ArtifactStorage {
   }
 
   /**
-   * Removes artifacts older than specified days based on file modification time
-   * @param olderThanDays - Age threshold in days (default: 7)
+   * Removes artifacts older than specified days based on file modification time.
+   * Excludes artifacts from the current session.
+   * @param olderThanDays - Age threshold in days (default: 7). Set to 0 to clean all old artifacts.
    * @returns Count of deleted files
    */
   async cleanup(olderThanDays: number = 7): Promise<number> {
@@ -84,6 +93,11 @@ export class ArtifactStorage {
     let deletedCount = 0;
 
     for (const file of files) {
+      // Skip artifacts from current session
+      if (this.currentSessionId && file.includes(this.currentSessionId)) {
+        continue;
+      }
+
       const filepath = join(this.baseDir, file);
       const stats = await fs.stat(filepath);
       const age = now - stats.mtimeMs;

@@ -9,6 +9,53 @@ import { calculateHealthScore } from './health-scorer.js';
 import { prioritizeIssues, deduplicateIssues } from './priority-ranker.js';
 import type { ExecutionArtifact } from '../types/execution.js';
 import type { AnalysisArtifact } from '../analysis/diagnosis-schema.js';
+import { redactSensitiveUrl, redactSensitiveData } from '../utils/sanitizer.js';
+
+/**
+ * Redact sensitive data from text before inserting into HTML reports.
+ * Strips query params with sensitive keys, truncates stack traces, replaces file paths with basename.
+ */
+function redactSensitive(text: string): string {
+  if (!text) return text;
+
+  let result = text;
+
+  // Strip sensitive query params from URLs
+  result = result.replace(/\b(https?:\/\/[^\s]+\?[^\s]*)/g, (url) => {
+    try {
+      const parsed = new URL(url);
+      const sensitiveKeys = ['key', 'token', 'secret', 'password', 'auth', 'api', 'apikey', 'api_key', 'access_token', 'auth_token', 'session', 'jwt'];
+      for (const key of sensitiveKeys) {
+        if (parsed.searchParams.has(key)) {
+          parsed.searchParams.set(key, '[REDACTED]');
+        }
+      }
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  });
+
+  // Truncate stack traces to first 3 lines
+  const lines = result.split('\n');
+  if (lines.length > 3 && lines.some(line => line.match(/^\s*at\s+/))) {
+    const stackStart = lines.findIndex(line => line.match(/^\s*at\s+/));
+    if (stackStart >= 0 && lines.length > stackStart + 3) {
+      result = lines.slice(0, stackStart + 3).join('\n') + '\n... (stack trace truncated)';
+    }
+  }
+
+  // Replace full file paths with basename only (remove directory info)
+  result = result.replace(/([A-Z]:[\/\\]|\/[^\/\s]+\/)[^\s:]+([\/\\][^\s:]+)/g, (match) => {
+    const lastSep = Math.max(match.lastIndexOf('/'), match.lastIndexOf('\\'));
+    return lastSep >= 0 ? match.substring(lastSep + 1) : match;
+  });
+
+  // Apply general sensitive data redaction
+  result = redactSensitiveData(result);
+
+  return result;
+}
 
 /**
  * Resolve template path with fallback for both compiled (dist/) and dev (src/) environments
@@ -81,10 +128,14 @@ export async function generateHtmlReport(
     )
   );
 
-  // Load screenshots for each prioritized issue that has a screenshotRef
+  // Load screenshots for each prioritized issue that has a screenshotRef, and redact sensitive data
   const issuesWithScreenshots = await Promise.all(
     prioritizedIssues.map(async (issue) => ({
       ...issue,
+      summary: redactSensitive(issue.summary),
+      impact: redactSensitive(issue.impact || ''),
+      fixSuggestion: redactSensitive(issue.fixSuggestion || ''),
+      location: redactSensitive(issue.location),
       screenshotDataUri: await loadScreenshotAsBase64(issue.screenshotRef),
     }))
   );
@@ -109,10 +160,10 @@ export async function generateHtmlReport(
   // Compile template
   const template = Handlebars.compile(templateSource);
 
-  // Render with data
+  // Render with data (use ISO format for timestamp)
   const html = template({
-    targetUrl: executionArtifact.targetUrl,
-    scanDate: new Date(executionArtifact.timestamp).toLocaleString(),
+    targetUrl: redactSensitiveUrl(executionArtifact.targetUrl),
+    scanDate: new Date(executionArtifact.timestamp).toISOString(),
     healthScore,
     prioritizedIssues: issuesWithScreenshots,
     workflowResults: executionArtifact.workflowResults,

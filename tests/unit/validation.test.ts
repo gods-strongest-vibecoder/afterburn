@@ -84,7 +84,7 @@ describe('validatePath', () => {
     // A path outside the workspace root should throw
     expect(() =>
       validatePath('C:/other/place', 'source', 'C:/afterburn')
-    ).toThrow('must be within workspace root');
+    ).toThrow('escapes workspace root');
   });
 
   it('allows path within workspace root', () => {
@@ -104,8 +104,8 @@ describe('validateMaxPages', () => {
     expect(validateMaxPages(NaN)).toBe(50);
   });
 
-  it('returns default 50 for zero', () => {
-    expect(validateMaxPages(0)).toBe(50);
+  it('returns 500 (unlimited) for zero', () => {
+    expect(validateMaxPages(0)).toBe(500);
   });
 
   it('returns default 50 for negative', () => {

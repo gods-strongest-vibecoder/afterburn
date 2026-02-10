@@ -64,9 +64,9 @@ program
       : undefined;
 
     // Parse --max-pages flag (Commander passes string, convert to number)
-    // Security: NaN or invalid values fall back to safe default of 50
+    // Validation happens in core/engine.ts via validateMaxPages
     const parsedMaxPages = parseInt(opts.maxPages, 10);
-    const maxPages = isNaN(parsedMaxPages) || parsedMaxPages <= 0 ? 50 : Math.min(parsedMaxPages, 500);
+    const maxPages = isNaN(parsedMaxPages) ? undefined : parsedMaxPages;
 
     try {
       const result = await runAfterburn({
@@ -120,8 +120,8 @@ program
         spinner.succeed();
       }
 
-      // Print one-liner summary
-      console.log(`\nHealth: ${result.healthScore.overall}/100 — ${result.totalIssues} issues found (${result.highPriorityCount} high, ${result.mediumPriorityCount} medium, ${result.lowPriorityCount} low)`);
+      // Print one-liner summary (ASCII-safe for Windows terminals)
+      console.log(`\nHealth: ${result.healthScore.overall}/100 - ${result.totalIssues} issues found (${result.highPriorityCount} high, ${result.mediumPriorityCount} medium, ${result.lowPriorityCount} low)`);
 
       // Print top 3 issues in terminal so the user sees value immediately
       if (result.prioritizedIssues.length > 0) {
@@ -161,7 +161,7 @@ program
         spinner.fail();
       }
 
-      console.error('\n✗ Error:', error instanceof Error ? error.message : String(error));
+      console.error('\n[x] Error:', error instanceof Error ? error.message : String(error));
       if (opts.verbose && error instanceof Error && error.stack) {
         console.error('\nStack trace:');
         console.error(error.stack);

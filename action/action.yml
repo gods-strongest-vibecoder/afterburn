@@ -24,7 +24,7 @@ inputs:
     required: false
     default: '${{ github.token }}'
   fail-on:
-    description: 'When to fail the workflow: "high" (default), "medium", "low", "never"'
+    description: 'When to fail the workflow: "critical"/"high" (default), "medium", "low", "never"'
     required: false
     default: 'high'
 

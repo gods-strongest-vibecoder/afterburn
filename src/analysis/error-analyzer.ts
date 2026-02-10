@@ -9,9 +9,10 @@ import { DiagnosedError, ErrorDiagnosisSchema, ErrorDiagnosis } from './diagnosi
  */
 export async function analyzeErrors(
   artifact: ExecutionArtifact,
-  options?: { apiKey?: string }
+  options?: { apiKey?: string; aiEnabled?: boolean }
 ): Promise<DiagnosedError[]> {
   const apiKey = options?.apiKey || process.env.GEMINI_API_KEY;
+  const aiEnabled = options?.aiEnabled ?? (apiKey ? true : false);
   const diagnosedErrors: DiagnosedError[] = [];
 
   // Collect all errors from the artifact
@@ -19,10 +20,10 @@ export async function analyzeErrors(
     workflow.stepResults.filter((step) => step.status === 'failed')
   );
 
-  // Use LLM diagnosis if API key available, otherwise fallback
+  // Use LLM diagnosis if API key available AND AI is explicitly enabled, otherwise fallback
   // Note: dead buttons and broken forms are handled directly by priority-ranker.ts
   // from the execution artifact — no need to inject them here as DiagnosedErrors.
-  if (apiKey) {
+  if (apiKey && aiEnabled) {
     try {
       const llmDiagnoses = await diagnoseWithLLM(artifact, failedSteps, apiKey);
       diagnosedErrors.push(...llmDiagnoses);
@@ -79,19 +80,23 @@ async function diagnoseWithLLM(
  * Build evidence-based prompt for a single failed step
  */
 function buildEvidencePrompt(step: StepResult, evidence: ErrorEvidence): string {
+  // Redact sensitive data from URLs and error messages
+  const safeUrl = redactSensitiveUrl(evidence.pageUrl);
+  const safeError = redactSensitiveData(step.error || '');
+
   const consoleErrors = evidence.consoleErrors.length > 0
-    ? evidence.consoleErrors.join('\n')
+    ? evidence.consoleErrors.map(e => redactSensitiveData(e)).join('\n')
     : 'None';
 
   const networkFailures = evidence.networkFailures.length > 0
-    ? evidence.networkFailures.map((f) => `${f.status} ${f.url}`).join('\n')
+    ? evidence.networkFailures.map((f) => `${f.status} ${redactSensitiveUrl(f.url)}`).join('\n')
     : 'None';
 
   return `Analyze this browser error and diagnose the root cause:
 
-Page URL: ${evidence.pageUrl}
+Page URL: ${safeUrl}
 Action attempted: ${step.action} on ${step.selector}
-Error message: ${step.error}
+Error message: ${safeError}
 
 Console Errors:
 ${consoleErrors}
@@ -101,6 +106,46 @@ ${networkFailures}
 
 Provide a plain English diagnosis. The audience is non-technical "vibe coders" who build with AI tools.
 Focus on WHAT went wrong and HOW to fix it, not technical jargon.`;
+}
+
+/**
+ * Redact sensitive data from strings (API keys, tokens, session IDs in URLs)
+ */
+function redactSensitiveData(text: string): string {
+  // Redact common secret patterns
+  let redacted = text;
+
+  // Redact API keys (sk-*, pk-*, api_key=*, etc)
+  redacted = redacted.replace(/\b(sk|pk|api_key|apikey)[-_]?[a-zA-Z0-9]{16,}/gi, '[REDACTED_API_KEY]');
+
+  // Redact tokens
+  redacted = redacted.replace(/\b(token|bearer|auth)[:=\s]+[a-zA-Z0-9+/=_-]{20,}/gi, '[REDACTED_TOKEN]');
+
+  // Redact session IDs
+  redacted = redacted.replace(/\b(session|sess|sid)[:=][a-zA-Z0-9_-]{20,}/gi, '[REDACTED_SESSION]');
+
+  return redacted;
+}
+
+/**
+ * Redact sensitive data from URLs (query params)
+ */
+function redactSensitiveUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const sensitiveParams = ['token', 'key', 'apikey', 'api_key', 'session', 'sess', 'auth', 'password', 'secret'];
+
+    for (const param of sensitiveParams) {
+      if (parsed.searchParams.has(param)) {
+        parsed.searchParams.set(param, '[REDACTED]');
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    // If URL parsing fails, return redacted string
+    return redactSensitiveData(url);
+  }
 }
 
 /**

@@ -58,6 +58,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
   let spaFramework: SPAFramework = { framework: 'none' };
   let spaRoutes: string[] = [];
   const allBrokenLinks: BrokenLink[] = [];
+  let totalLinksSkipped = 0;
 
   try {
     // Step 2: Launch browser

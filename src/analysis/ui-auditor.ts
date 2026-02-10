@@ -11,12 +11,13 @@ import fs from 'node:fs';
  */
 export async function auditUI(
   artifact: ExecutionArtifact,
-  options?: { apiKey?: string }
+  options?: { apiKey?: string; aiEnabled?: boolean }
 ): Promise<UIAuditResult[]> {
   const apiKey = options?.apiKey || process.env.GEMINI_API_KEY;
+  const aiEnabled = options?.aiEnabled ?? (apiKey ? true : false);
 
-  if (!apiKey) {
-    console.warn('UI auditing requires GEMINI_API_KEY. Skipping visual analysis.');
+  if (!apiKey || !aiEnabled) {
+    console.warn('UI auditing requires GEMINI_API_KEY and AI to be enabled. Skipping visual analysis.');
     return [];
   }
 
@@ -82,14 +83,16 @@ async function auditScreenshot(
   pageUrl: string,
   gemini: GeminiClient
 ): Promise<UIAuditResult> {
-  const prompt = buildVisionPrompt(pageUrl);
+  // Redact sensitive URL before sending to Gemini
+  const safeUrl = redactSensitiveUrl(pageUrl);
+  const prompt = buildVisionPrompt(safeUrl);
 
   // Call Gemini Vision API with structured output
   const audit = await gemini.generateStructuredWithImage(prompt, UIAuditSchema, pngPath);
 
   return {
     ...audit,
-    pageUrl,
+    pageUrl: safeUrl,
     screenshotRef: pngPath,
   };
 }

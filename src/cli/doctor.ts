@@ -30,10 +30,23 @@ export function checkNodeVersion(): CheckResult {
  * Check if Playwright Chromium browser is installed
  */
 export function checkBrowserInstalled(): CheckResult {
-  const playwrightCache =
-    process.platform === 'win32'
-      ? path.join(process.env.LOCALAPPDATA || os.homedir(), 'ms-playwright')
-      : path.join(os.homedir(), '.cache', 'ms-playwright');
+  // Determine Playwright cache directory based on platform
+  // macOS: ~/Library/Caches/ms-playwright
+  // Windows: %LOCALAPPDATA%/ms-playwright
+  // Linux: ~/.cache/ms-playwright
+  let playwrightCache: string;
+  if (process.platform === 'darwin') {
+    playwrightCache = path.join(os.homedir(), 'Library', 'Caches', 'ms-playwright');
+  } else if (process.platform === 'win32') {
+    playwrightCache = path.join(process.env.LOCALAPPDATA || os.homedir(), 'ms-playwright');
+  } else {
+    playwrightCache = path.join(os.homedir(), '.cache', 'ms-playwright');
+  }
+
+  // Also check PLAYWRIGHT_BROWSERS_PATH env var if set
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+    playwrightCache = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  }
 
   if (fs.existsSync(playwrightCache)) {
     try {

@@ -35,15 +35,26 @@ export async function executeStep(
     switch (step.action) {
       case 'navigate':
         // Security: validate navigation targets; enforce same-origin when baseUrl is known
+        const targetUrl = safeValue || step.selector;
         if (baseUrl) {
-          validateNavigationUrl(safeValue || step.selector, baseUrl);
+          validateNavigationUrl(targetUrl, baseUrl);
         } else {
-          validateUrl(safeValue || step.selector);
+          validateUrl(targetUrl);
         }
-        await page.goto(safeValue || step.selector, {
+
+        // Capture origin before navigation
+        const beforeOrigin = new URL(page.url()).origin;
+
+        await page.goto(targetUrl, {
           waitUntil: 'domcontentloaded',
           timeout: NAV_TIMEOUT,
         });
+
+        // Verify we stayed on the same origin
+        const afterOrigin = new URL(page.url()).origin;
+        if (baseUrl && afterOrigin !== beforeOrigin) {
+          throw new Error(`Navigation blocked: left origin ${beforeOrigin} to ${afterOrigin}`);
+        }
         break;
 
       case 'click':

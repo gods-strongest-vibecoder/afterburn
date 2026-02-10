@@ -14,11 +14,23 @@ export async function ensureBrowserInstalled(): Promise<void> {
   const spinner = ora('Checking browser installation...').start();
 
   try {
-    // Determine playwright cache directory based on platform
-    const playwrightCache =
-      process.platform === 'win32'
-        ? path.join(process.env.LOCALAPPDATA || os.homedir(), 'ms-playwright')
-        : path.join(os.homedir(), '.cache', 'ms-playwright');
+    // Determine Playwright cache directory based on platform
+    // macOS: ~/Library/Caches/ms-playwright
+    // Windows: %LOCALAPPDATA%/ms-playwright
+    // Linux: ~/.cache/ms-playwright
+    let playwrightCache: string;
+    if (process.platform === 'darwin') {
+      playwrightCache = path.join(os.homedir(), 'Library', 'Caches', 'ms-playwright');
+    } else if (process.platform === 'win32') {
+      playwrightCache = path.join(process.env.LOCALAPPDATA || os.homedir(), 'ms-playwright');
+    } else {
+      playwrightCache = path.join(os.homedir(), '.cache', 'ms-playwright');
+    }
+
+    // Also check PLAYWRIGHT_BROWSERS_PATH env var if set
+    if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+      playwrightCache = process.env.PLAYWRIGHT_BROWSERS_PATH;
+    }
 
     // Check if playwright cache exists and has chromium installations
     // Modern Playwright uses chromium_headless_shell, older versions use chromium-

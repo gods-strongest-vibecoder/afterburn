@@ -145,10 +145,20 @@ export async function interceptRouteChanges(page: Page): Promise<string[]> {
     const allLinks = await page.getByRole('link').all();
     const navigationElements = [...new Set([...navLinks, ...allLinks])];
 
-    // Filter for internal navigation (skip buttons like "Delete", "Submit", "Cancel")
+    // Filter for internal navigation (skip destructive actions)
     const skipWords = [
       'delete',
       'remove',
+      'destroy',
+      'reset',
+      'clear',
+      'drop',
+      'purge',
+      'revoke',
+      'terminate',
+      'unsubscribe',
+      'cancel-account',
+      'close-account',
       'cancel',
       'submit',
       'download',
@@ -204,6 +214,27 @@ export async function interceptRouteChanges(page: Page): Promise<string[]> {
             // Timeout is okay - route might have changed without full page load
           }
 
+          // Check if navigation left the original origin
+          const afterUrl = page.url();
+          const afterOrigin = new URL(afterUrl).origin;
+          const startOrigin = new URL(startUrl).origin;
+
+          if (afterOrigin !== startOrigin) {
+            // Off-origin navigation detected - go back
+            try {
+              await page.goBack({ timeout: 3000, waitUntil: 'domcontentloaded' });
+            } catch {
+              // If goBack fails, navigate directly
+              try {
+                await page.goto(beforeUrl, { timeout: 5000, waitUntil: 'domcontentloaded' });
+              } catch {
+                // Can't go back, break loop
+                break;
+              }
+            }
+            continue; // Skip this link
+          }
+
           // Collect discovered routes from window.__afterburn_routes
           const routes = await page.evaluate(() => {
             return (window as any).__afterburn_routes || [];
@@ -219,7 +250,6 @@ export async function interceptRouteChanges(page: Page): Promise<string[]> {
           }
 
           // Add current URL if it changed
-          const afterUrl = page.url();
           if (afterUrl !== beforeUrl) {
             discoveredRoutes.add(afterUrl);
           }
