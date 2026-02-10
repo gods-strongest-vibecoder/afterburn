@@ -22,7 +22,8 @@ export function calculateHealthScore(executionArtifact: ExecutionArtifact): Heal
   const workflowScore = totalWorkflows > 0 ? (passedWorkflows / totalWorkflows) * 100 : 100;
 
   // ERROR SCORE (30% weight)
-  const totalIssues = executionArtifact.totalIssues;
+  // Include broken links in error count — they're discovered post-execution
+  const totalIssues = executionArtifact.totalIssues + executionArtifact.brokenLinks.length;
   const errorScore = Math.max(0, 100 - (totalIssues * 2));
 
   // ACCESSIBILITY SCORE (20% weight)

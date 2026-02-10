@@ -36,47 +36,47 @@ Requirements for hackathon submission (Feb 14, 2026). Each maps to roadmap phase
 
 ### Error Diagnosis
 
-- [ ] **DIAG-01**: Tool analyzes browser evidence for each error (HTTP response, console output, network requests, DOM state)
-- [ ] **DIAG-02**: AI infers likely root cause from browser evidence
-- [ ] **DIAG-03**: Tool accepts `--source ./path` flag for deeper source code diagnosis
-- [ ] **DIAG-04**: Tool pinpoints likely file and line when source code is provided
+- [x] **DIAG-01**: Tool analyzes browser evidence for each error (HTTP response, console output, network requests, DOM state)
+- [x] **DIAG-02**: AI infers likely root cause from browser evidence
+- [x] **DIAG-03**: Tool accepts `--source ./path` flag for deeper source code diagnosis
+- [x] **DIAG-04**: Tool pinpoints likely file and line when source code is provided
 
 ### UI Audit & Accessibility
 
-- [ ] **UIAX-01**: AI analyzes screenshots for layout issues (cramped elements, overlapping content)
-- [ ] **UIAX-02**: AI detects poor contrast and readability problems
-- [ ] **UIAX-03**: AI detects formatting issues (text cut off, misaligned elements)
-- [ ] **UIAX-04**: AI provides UI improvement suggestions in plain English
+- [x] **UIAX-01**: AI analyzes screenshots for layout issues (cramped elements, overlapping content)
+- [x] **UIAX-02**: AI detects poor contrast and readability problems
+- [x] **UIAX-03**: AI detects formatting issues (text cut off, misaligned elements)
+- [x] **UIAX-04**: AI provides UI improvement suggestions in plain English
 - [x] **UIAX-05**: Tool runs WCAG accessibility audit via axe-core on every page
 - [x] **UIAX-06**: Tool reports basic performance metrics (load time, LCP) per page
 
 ### Reporting
 
-- [ ] **RPRT-01**: Tool generates beautiful standalone HTML report (human report)
-- [ ] **RPRT-02**: Human report uses plain English — zero jargon, zero raw error codes
-- [ ] **RPRT-03**: Human report includes embedded screenshots for every issue
-- [ ] **RPRT-04**: Human report has a prioritized to-do list (what to fix first and why)
-- [ ] **RPRT-05**: Human report shows overall health score (X/Y checks passed)
-- [ ] **RPRT-06**: Tool generates structured Markdown report (AI report)
-- [ ] **RPRT-07**: AI report includes technical error details, reproduction steps, suggested fixes
-- [ ] **RPRT-08**: AI report references source code files/lines when `--source` was provided
+- [x] **RPRT-01**: Tool generates beautiful standalone HTML report (human report)
+- [x] **RPRT-02**: Human report uses plain English — zero jargon, zero raw error codes
+- [x] **RPRT-03**: Human report includes embedded screenshots for every issue
+- [x] **RPRT-04**: Human report has a prioritized to-do list (what to fix first and why)
+- [x] **RPRT-05**: Human report shows overall health score (X/Y checks passed)
+- [x] **RPRT-06**: Tool generates structured Markdown report (AI report)
+- [x] **RPRT-07**: AI report includes technical error details, reproduction steps, suggested fixes
+- [x] **RPRT-08**: AI report references source code files/lines when `--source` was provided
 
 ### CLI Interface
 
-- [ ] **CLI-01**: Tool runs via `npx afterburn <url>` with zero install
-- [ ] **CLI-02**: Terminal shows live real-time progress during crawl/test
+- [x] **CLI-01**: Tool runs via `npx afterburn <url>` with zero install
+- [x] **CLI-02**: Terminal shows live real-time progress during crawl/test
 - [x] **CLI-03**: Tool shows progress indicators during first-run browser download
 - [x] **CLI-04**: Exit code 0 = all clear, non-zero = issues found
 
 ### MCP Server
 
-- [ ] **MCP-01**: Tool exposes scan functionality as MCP tool for AI coding assistants
-- [ ] **MCP-02**: MCP returns structured results that AI tools can act on
+- [x] **MCP-01**: Tool exposes scan functionality as MCP tool for AI coding assistants
+- [x] **MCP-02**: MCP returns structured results that AI tools can act on
 
 ### GitHub Action
 
-- [ ] **CICD-01**: Reusable GitHub Action that runs Afterburn on deploy
-- [ ] **CICD-02**: Posts report as PR comment or workflow artifact
+- [x] **CICD-01**: Reusable GitHub Action that runs Afterburn on deploy
+- [x] **CICD-02**: Posts report as PR comment or workflow artifact
 
 ## v2 Requirements
 
@@ -141,39 +141,39 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-04 | Phase 3 | Complete |
 | TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 2 | Complete |
-| DIAG-01 | Phase 4 | Pending |
-| DIAG-02 | Phase 4 | Pending |
-| DIAG-03 | Phase 4 | Pending |
-| DIAG-04 | Phase 4 | Pending |
-| UIAX-01 | Phase 4 | Pending |
-| UIAX-02 | Phase 4 | Pending |
-| UIAX-03 | Phase 4 | Pending |
-| UIAX-04 | Phase 4 | Pending |
+| DIAG-01 | Phase 4 | Complete |
+| DIAG-02 | Phase 4 | Complete |
+| DIAG-03 | Phase 4 | Complete |
+| DIAG-04 | Phase 4 | Complete |
+| UIAX-01 | Phase 4 | Complete |
+| UIAX-02 | Phase 4 | Complete |
+| UIAX-03 | Phase 4 | Complete |
+| UIAX-04 | Phase 4 | Complete |
 | UIAX-05 | Phase 3 | Complete |
 | UIAX-06 | Phase 3 | Complete |
-| RPRT-01 | Phase 5 | Pending |
-| RPRT-02 | Phase 5 | Pending |
-| RPRT-03 | Phase 5 | Pending |
-| RPRT-04 | Phase 5 | Pending |
-| RPRT-05 | Phase 5 | Pending |
-| RPRT-06 | Phase 5 | Pending |
-| RPRT-07 | Phase 5 | Pending |
-| RPRT-08 | Phase 5 | Pending |
-| CLI-01 | Phase 6 | Pending |
-| CLI-02 | Phase 6 | Pending |
+| RPRT-01 | Phase 5 | Complete |
+| RPRT-02 | Phase 5 | Complete |
+| RPRT-03 | Phase 5 | Complete |
+| RPRT-04 | Phase 5 | Complete |
+| RPRT-05 | Phase 5 | Complete |
+| RPRT-06 | Phase 5 | Complete |
+| RPRT-07 | Phase 5 | Complete |
+| RPRT-08 | Phase 5 | Complete |
+| CLI-01 | Phase 6 | Complete |
+| CLI-02 | Phase 6 | Complete |
 | CLI-03 | Phase 1 | Complete |
 | CLI-04 | Phase 3 | Complete |
-| MCP-01 | Phase 6 | Pending |
-| MCP-02 | Phase 6 | Pending |
-| CICD-01 | Phase 6 | Pending |
-| CICD-02 | Phase 6 | Pending |
+| MCP-01 | Phase 6 | Complete |
+| MCP-02 | Phase 6 | Complete |
+| CICD-01 | Phase 6 | Complete |
+| CICD-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 34 total
 - Mapped to phases: 34 (100% coverage)
-- Complete: 22 (65%)
-- Pending: 12 (35%)
+- Complete: 34 (100%)
+- Pending: 0 (0%)
 
 ---
 *Requirements defined: 2026-02-07*
-*Last updated: 2026-02-09 — traceability table synced with checkbox status*
+*Last updated: 2026-02-09 — all 34 requirements marked complete, traceability fully synced*

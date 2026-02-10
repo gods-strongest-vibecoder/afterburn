@@ -16,6 +16,7 @@ function makeArtifact(overrides: Partial<ExecutionArtifact> = {}): ExecutionArti
     pageAudits: [],
     deadButtons: [],
     brokenForms: [],
+    brokenLinks: [],
     totalIssues: 0,
     exitCode: 0,
     ...overrides,
@@ -98,7 +99,7 @@ describe('prioritizeIssues', () => {
     expect(result[0].category).toBe('Console Error');
   });
 
-  it('classifies javascript errors as MEDIUM priority', () => {
+  it('classifies javascript errors as HIGH priority (medium+ confidence)', () => {
     const errors: DiagnosedError[] = [
       {
         summary: 'TypeError',
@@ -112,7 +113,7 @@ describe('prioritizeIssues', () => {
 
     const result = prioritizeIssues(errors, [], makeArtifact());
     expect(result).toHaveLength(1);
-    expect(result[0].priority).toBe('medium');
+    expect(result[0].priority).toBe('high');
   });
 
   it('classifies dom errors as LOW priority', () => {
@@ -173,7 +174,7 @@ describe('prioritizeIssues', () => {
     const result = prioritizeIssues([], [], artifact);
     expect(result).toHaveLength(1);
     expect(result[0].category).toBe('Dead Button');
-    expect(result[0].priority).toBe('medium');
+    expect(result[0].priority).toBe('high');
   });
 
   it('creates issues for broken forms', () => {
@@ -186,7 +187,7 @@ describe('prioritizeIssues', () => {
     const result = prioritizeIssues([], [], artifact);
     expect(result).toHaveLength(1);
     expect(result[0].category).toBe('Broken Form');
-    expect(result[0].priority).toBe('medium');
+    expect(result[0].priority).toBe('high');
   });
 
   it('creates issues for high-severity UI layout issues', () => {
@@ -251,7 +252,11 @@ describe('prioritizeIssues', () => {
     const result = prioritizeIssues([], [], artifact);
     expect(result).toHaveLength(2);
     expect(result.every(i => i.category === 'Accessibility')).toBe(true);
-    expect(result.every(i => i.priority === 'medium')).toBe(true);
+    // Critical accessibility violations are HIGH, serious are MEDIUM
+    const criticalIssue = result.find(i => i.summary === 'Bad contrast');
+    const seriousIssue = result.find(i => i.summary === 'Missing alt');
+    expect(criticalIssue?.priority).toBe('high');
+    expect(seriousIssue?.priority).toBe('medium');
   });
 
   it('creates LOW priority issues for moderate/minor accessibility violations', () => {
@@ -364,6 +369,56 @@ describe('prioritizeIssues', () => {
 
     const result = prioritizeIssues(errors, [], makeArtifact());
     expect(result[0].location).toBe('src/auth.ts:42');
+  });
+
+  // ─── New: Broken Link and SEO/Meta issue categories ──────────────────────
+
+  it('creates MEDIUM priority issues for broken links', () => {
+    const artifact = makeArtifact({
+      brokenLinks: [
+        { url: 'https://example.com/missing', sourceUrl: 'https://example.com/home', statusCode: 404, statusText: 'Not Found' },
+      ],
+    });
+
+    const result = prioritizeIssues([], [], artifact);
+    expect(result).toHaveLength(1);
+    expect(result[0].category).toBe('Broken Link');
+    expect(result[0].priority).toBe('medium');
+    expect(result[0].summary).toContain('broken');
+    expect(result[0].location).toBe('https://example.com/home');
+  });
+
+  it('handles unreachable broken links (statusCode 0)', () => {
+    const artifact = makeArtifact({
+      brokenLinks: [
+        { url: 'https://example.com/dead', sourceUrl: 'https://example.com/page', statusCode: 0, statusText: '' },
+      ],
+    });
+
+    const result = prioritizeIssues([], [], artifact);
+    expect(result).toHaveLength(1);
+    expect(result[0].summary).toContain('unreachable');
+  });
+
+  it('creates issues for SEO/meta problems from page audits', () => {
+    const artifact = makeArtifact({
+      pageAudits: [
+        {
+          url: 'https://example.com',
+          metaIssues: [
+            { id: 'missing-viewport', severity: 'high', description: 'Missing viewport meta tag', suggestion: 'Add viewport tag' },
+            { id: 'missing-meta-description', severity: 'medium', description: 'Missing meta description', suggestion: 'Add meta description' },
+          ],
+        },
+      ],
+    });
+
+    const result = prioritizeIssues([], [], artifact);
+    expect(result.length).toBe(2);
+    const seoIssues = result.filter(i => i.category === 'SEO / Meta');
+    expect(seoIssues).toHaveLength(2);
+    // High severity meta issues get medium priority
+    expect(seoIssues.find(i => i.summary.includes('viewport'))?.priority).toBe('medium');
   });
 
   it('falls back to Unknown when no pageUrl or sourceLocation', () => {

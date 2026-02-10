@@ -130,6 +130,16 @@ async function runPipeline(options, validatedTargetUrl, validatedSourcePath, val
         };
         const executor = new WorkflowExecutor(executionOptions);
         const executionResult = await executor.execute();
+        // Thread broken links from discovery into execution artifact
+        // (Discovery finds them during crawl, but executor doesn't re-check them)
+        if (discoveryResult.crawlResult?.brokenLinks?.length > 0) {
+            executionResult.brokenLinks = discoveryResult.crawlResult.brokenLinks.map(bl => ({
+                url: bl.url,
+                sourceUrl: bl.sourceUrl,
+                statusCode: bl.statusCode,
+                statusText: bl.statusText,
+            }));
+        }
         // Stage: analysis
         options.onProgress?.('analysis', 'Analyzing results...');
         // Error diagnosis

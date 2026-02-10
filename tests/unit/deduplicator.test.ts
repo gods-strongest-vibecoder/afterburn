@@ -244,4 +244,80 @@ describe('deduplicateIssues', () => {
     // Different resource URLs = different issues
     expect(result).toHaveLength(2);
   });
+
+  // ─── New: Broken Link and SEO/Meta deduplication ──────────────────────
+
+  it('deduplicates Broken Link issues with same URL from different pages', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'Broken Link',
+        summary: 'Link to https://example.com/missing is broken (404)',
+        location: 'https://example.com/page1',
+      }),
+      makeIssue({
+        category: 'Broken Link',
+        summary: 'Link to https://example.com/missing is broken (404)',
+        location: 'https://example.com/page2',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(2);
+  });
+
+  it('keeps different broken link URLs as separate issues', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'Broken Link',
+        summary: 'Link to https://example.com/a is broken (404)',
+        location: 'https://example.com/page1',
+      }),
+      makeIssue({
+        category: 'Broken Link',
+        summary: 'Link to https://example.com/b is broken (404)',
+        location: 'https://example.com/page1',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    expect(result).toHaveLength(2);
+  });
+
+  it('deduplicates SEO/Meta issues across pages by summary', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'SEO / Meta',
+        summary: 'Missing viewport meta tag — page won\'t display correctly on mobile devices',
+        location: 'https://example.com/page1',
+      }),
+      makeIssue({
+        category: 'SEO / Meta',
+        summary: 'Missing viewport meta tag — page won\'t display correctly on mobile devices',
+        location: 'https://example.com/page2',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    expect(result).toHaveLength(1);
+    expect(result[0].occurrenceCount).toBe(2);
+  });
+
+  it('keeps different SEO issues as separate', () => {
+    const issues: PrioritizedIssue[] = [
+      makeIssue({
+        category: 'SEO / Meta',
+        summary: 'Missing viewport meta tag',
+        location: 'https://example.com',
+      }),
+      makeIssue({
+        category: 'SEO / Meta',
+        summary: 'Missing meta description',
+        location: 'https://example.com',
+      }),
+    ];
+
+    const result = deduplicateIssues(issues);
+    expect(result).toHaveLength(2);
+  });
 });

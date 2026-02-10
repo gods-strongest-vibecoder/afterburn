@@ -150,11 +150,26 @@ export function getTestValueForField(fieldName: string, fieldType: string): stri
     return 'https://example.com';
   }
 
+  // Textarea fields
+  if (lowerType === 'textarea') {
+    return 'This is a test message for the form.';
+  }
+
+  // Number fields
+  if (lowerType === 'number' || lowerType === 'range') {
+    return '5';
+  }
+
   // Generic text input (fallback)
   if (lowerType === 'text' || lowerType === 'search') {
     return 'Test input';
   }
 
-  // Unrecognized field
-  return null;
+  // Hidden/submit/button/file — skip these intentionally
+  if (['hidden', 'submit', 'button', 'file', 'image', 'reset'].includes(lowerType)) {
+    return null;
+  }
+
+  // Fallback for any other fillable input type
+  return 'Test input';
 }

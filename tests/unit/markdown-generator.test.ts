@@ -16,6 +16,7 @@ function makeExecArtifact(overrides: Partial<ExecutionArtifact> = {}): Execution
     pageAudits: [],
     deadButtons: [],
     brokenForms: [],
+    brokenLinks: [],
     totalIssues: 0,
     exitCode: 0,
     ...overrides,

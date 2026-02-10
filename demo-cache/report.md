@@ -1,12 +1,12 @@
 ---
 tool: afterburn
 version: "1.0"
-session_id: eaaaa9a7-87d9-4c28-b84c-f613ae95c3e7
-timestamp: 2026-02-09T16:47:47.320Z
+session_id: 3f315a9c-6b9d-488f-b863-598a6ba500d3
+timestamp: 2026-02-09T22:54:17.175Z
 target_url: "http://localhost:3847/"
 health_score: 62
 health_label: needs-work
-total_issues: 20
+total_issues: 33
 workflows_tested: 8
 workflows_passed: 8
 workflows_failed: 0
@@ -18,7 +18,7 @@ source_analysis: false
 
 **Target:** http://localhost:3847
 **Health Score:** 62/100 (needs-work)
-**Date:** 09.02.2026, 17:47:47
+**Date:** 09.02.2026, 23:54:17
 **Mode:** Basic
 
 ## Summary
@@ -28,103 +28,117 @@ source_analysis: false
 | Workflows Tested | 8 |
 | Workflows Passed | 8 |
 | Workflows Failed | 0 |
-| Total Issues | 20 |
+| Total Issues | 33 |
 | Dead Buttons | 7 |
 | Broken Forms | 4 |
+| Broken Links | 4 |
 | Accessibility Violations | 7 |
 
 ## Issues (Prioritized)
 
 | # | Priority | Category | Summary | Location |
 |---|----------|----------|---------|----------|
-| 1 | MEDIUM | Console Error | Tried to access something that doesn't exist in the code | http://localhost:3847/ |
-| 2 | MEDIUM | Console Error | An image failed to load (x4) | http://localhost:3847/images/icon-deploy.png (and 3 other pages) |
-| 3 | MEDIUM | Console Error | Server error | http://localhost:3847/api/data |
-| 4 | MEDIUM | Console Error | Page or resource not found | http://localhost:3847/about |
-| 5 | MEDIUM | Console Error | Page or resource not found | http://localhost:3847/blog |
-| 6 | MEDIUM | Dead Button | Submit button doesn't do anything when clicked | http://localhost:3847 |
-| 7 | MEDIUM | Dead Button | Submit button (contact form form) doesn't do anything when clicked | http://localhost:3847 |
-| 8 | MEDIUM | Dead Button | "Get Started Free" button doesn't do anything when clicked | http://localhost:3847 |
-| 9 | MEDIUM | Dead Button | "Subscribe" button doesn't do anything when clicked | http://localhost:3847 |
-| 10 | MEDIUM | Dead Button | "Send Message" button doesn't do anything when clicked | http://localhost:3847 |
-| 11 | MEDIUM | Dead Button | "Get Started" button doesn't do anything when clicked | http://localhost:3847 |
-| 12 | MEDIUM | Dead Button | "Start Free Trial" button doesn't do anything when clicked | http://localhost:3847 |
-| 13 | MEDIUM | Broken Form | A form on your site doesn't work when submitted (x2) | http://localhost:3847 (form.newsletter-form) |
-| 14 | MEDIUM | Broken Form | A form on your site doesn't work when submitted (x2) | http://localhost:3847 (form#contact-form) |
-| 15 | MEDIUM | Accessibility | Ensure the contrast between foreground and background colors meets WCAG 2 AA ... | http://localhost:3847/ (and 1 other page) |
-| 16 | MEDIUM | Accessibility | Ensure every HTML document has a lang attribute (x4) | http://localhost:3847/ (and 3 other pages) |
-| 17 | MEDIUM | Accessibility | Ensure <img> elements have alternative text or a role of none or presentation | http://localhost:3847/ |
-| 18 | LOW | Console Error | JavaScript error: Failed to load resource: the server responded with a status... | http://localhost:3847/ |
-| 19 | LOW | Console Error | JavaScript error: Failed to load resource: the server responded with a status... | http://localhost:3847/pricing |
-| 20 | LOW | Console Error | JavaScript error: Failed to load FAQ: Error: API returned 500     at http://l... | http://localhost:3847/pricing |
+| 1 | HIGH | Console Error | Tried to use .apiUrl on something that is undefined | http://localhost:3847/ |
+| 2 | HIGH | Dead Button | Submit button doesn't do anything when clicked | http://localhost:3847 |
+| 3 | HIGH | Dead Button | Submit button (contact form form) doesn't do anything when clicked | http://localhost:3847 |
+| 4 | HIGH | Dead Button | "Get Started Free" button doesn't do anything when clicked | http://localhost:3847 |
+| 5 | HIGH | Dead Button | "Subscribe" button doesn't do anything when clicked | http://localhost:3847 |
+| 6 | HIGH | Dead Button | "Send Message" button doesn't do anything when clicked | http://localhost:3847 |
+| 7 | HIGH | Dead Button | "Get Started" button doesn't do anything when clicked | http://localhost:3847 |
+| 8 | HIGH | Dead Button | "Start Free Trial" button doesn't do anything when clicked | http://localhost:3847 |
+| 9 | HIGH | Broken Form | The newsletter form doesn't work — submitting it has no effect (x2) | http://localhost:3847 (form.newsletter-form) |
+| 10 | HIGH | Broken Form | The contact form doesn't work — submitting it has no effect (x2) | http://localhost:3847 (form#contact-form) |
+| 11 | HIGH | Accessibility | Ensure <img> elements have alternative text or a role of none or presentation | http://localhost:3847/ |
+| 12 | MEDIUM | Console Error | Image "icon-deploy.png" failed to load (404) | http://localhost:3847/images/icon-deploy.png |
+| 13 | MEDIUM | Console Error | Image "icon-monitor.png" failed to load (404) | http://localhost:3847/images/icon-monitor.png |
+| 14 | MEDIUM | Console Error | Image "icon-team.png" failed to load (404) | http://localhost:3847/images/icon-team.png |
+| 15 | MEDIUM | Console Error | Image "office-map.png" failed to load (404) | http://localhost:3847/images/office-map.png |
+| 16 | MEDIUM | Console Error | Server error | http://localhost:3847/api/data |
+| 17 | MEDIUM | Console Error | "about" not found (404) | http://localhost:3847/about |
+| 18 | MEDIUM | Console Error | "blog" not found (404) | http://localhost:3847/blog |
+| 19 | MEDIUM | Broken Link | Link to /about is broken (404) (x3) | http://localhost:3847/ (and 2 other pages) |
+| 20 | MEDIUM | Broken Link | Link to /blog is broken (404) | http://localhost:3847/ |
+| 21 | MEDIUM | Accessibility | Ensure the contrast between foreground and background colors meets WCAG 2 AA ... | http://localhost:3847/ (and 1 other page) |
+| 22 | MEDIUM | Accessibility | Ensure every HTML document has a lang attribute (x4) | http://localhost:3847/ (and 3 other pages) |
+| 23 | MEDIUM | SEO / Meta | Missing viewport meta tag — page won't display correctly on mobile devices | http://localhost:3847/blog |
+| 24 | LOW | SEO / Meta | Missing meta description — search engines won't have a summary to show (x4) | http://localhost:3847/ (and 3 other pages) |
+| 25 | LOW | SEO / Meta | Missing lang attribute on <html> — screen readers won't know what language to... | http://localhost:3847/ (and 3 other pages) |
+| 26 | LOW | SEO / Meta | Found 2 image(s) without alt text — screen readers can't describe them | http://localhost:3847/ |
+| 27 | LOW | SEO / Meta | No favicon found — browsers show a generic icon in the tab (x4) | http://localhost:3847/ (and 3 other pages) |
+| 28 | LOW | SEO / Meta | No canonical URL set — search engines may index duplicate versions of this pa... | http://localhost:3847/ (and 3 other pages) |
+| 29 | LOW | SEO / Meta | Missing Open Graph tag(s): og:title, og:description, og:image — social media ... | http://localhost:3847/ (and 3 other pages) |
+| 30 | LOW | SEO / Meta | Heading levels are skipped (e.g., H1 followed by H3, missing H2) (x2) | http://localhost:3847/contact (and 1 other page) |
+| 31 | LOW | Console Error | JavaScript error: Failed to load resource: the server responded with a status... | http://localhost:3847/ |
+| 32 | LOW | Console Error | JavaScript error: Failed to load resource: the server responded with a status... | http://localhost:3847/pricing |
+| 33 | LOW | Console Error | JavaScript error: Failed to load FAQ: Error: API returned 500     at http://l... | http://localhost:3847/pricing |
 
 ## Issue Details
 
 ### 1. JavaScript error: Failed to load resource: the server responded with a status of 404 (Not Found)
 
 - **Error Type:** unknown
-- **Confidence:** low
-- **Root Cause:** Unable to determine root cause without AI analysis
-- **Suggested Fix:** Review the error in the browser console and check the surrounding code
+- **Confidence:** medium
+- **Root Cause:** Set GEMINI_API_KEY for AI-powered root cause analysis
+- **Suggested Fix:** A resource returned 404 — check if the file path or API endpoint URL is correct and the resource exists on the server.
 - **Original Error:** `Failed to load resource: the server responded with a status of 404 (Not Found)`
 - **Technical Details:** Failed to load resource: the server responded with a status of 404 (Not Found)
 
-### 2. Tried to access something that doesn't exist in the code
+### 2. Tried to use .apiUrl on something that is undefined
 
 - **Error Type:** javascript
 - **Confidence:** medium
-- **Root Cause:** The code is trying to use a property or method on something that is null or undefined
-- **Suggested Fix:** Check that all variables are properly initialized before use
+- **Root Cause:** The code calls .apiUrl on a value that is undefined. This usually means an element wasn't found or data hasn't loaded yet.
+- **Suggested Fix:** Add a null check before accessing .apiUrl: use "if (variable) { variable.apiUrl }" or optional chaining "variable?.apiUrl"
 - **Original Error:** `Uncaught TypeError: Cannot read properties of undefined (reading 'apiUrl')`
 - **Technical Details:** Uncaught TypeError: Cannot read properties of undefined (reading 'apiUrl')
 
-### 3. An image failed to load
+### 3. Image "icon-deploy.png" failed to load (404)
 
 - **Error Type:** network
-- **Confidence:** medium
-- **Root Cause:** The image at http://localhost:3847/images/icon-deploy.png is missing or inaccessible
-- **Suggested Fix:** Check if the image file exists and the URL is correct
+- **Confidence:** high
+- **Root Cause:** The image at http://localhost:3847/images/icon-deploy.png returned status 404
+- **Suggested Fix:** Check if "icon-deploy.png" exists in your images folder. If the file was renamed or moved, update the <img src> to match.
 - **Original Error:** `Broken image: http://localhost:3847/images/icon-deploy.png (status 404)`
 
-### 4. An image failed to load
+### 4. Image "icon-monitor.png" failed to load (404)
 
 - **Error Type:** network
-- **Confidence:** medium
-- **Root Cause:** The image at http://localhost:3847/images/icon-monitor.png is missing or inaccessible
-- **Suggested Fix:** Check if the image file exists and the URL is correct
+- **Confidence:** high
+- **Root Cause:** The image at http://localhost:3847/images/icon-monitor.png returned status 404
+- **Suggested Fix:** Check if "icon-monitor.png" exists in your images folder. If the file was renamed or moved, update the <img src> to match.
 - **Original Error:** `Broken image: http://localhost:3847/images/icon-monitor.png (status 404)`
 
-### 5. An image failed to load
+### 5. Image "icon-team.png" failed to load (404)
 
 - **Error Type:** network
-- **Confidence:** medium
-- **Root Cause:** The image at http://localhost:3847/images/icon-team.png is missing or inaccessible
-- **Suggested Fix:** Check if the image file exists and the URL is correct
+- **Confidence:** high
+- **Root Cause:** The image at http://localhost:3847/images/icon-team.png returned status 404
+- **Suggested Fix:** Check if "icon-team.png" exists in your images folder. If the file was renamed or moved, update the <img src> to match.
 - **Original Error:** `Broken image: http://localhost:3847/images/icon-team.png (status 404)`
 
-### 6. An image failed to load
+### 6. Image "office-map.png" failed to load (404)
 
 - **Error Type:** network
-- **Confidence:** medium
-- **Root Cause:** The image at http://localhost:3847/images/office-map.png is missing or inaccessible
-- **Suggested Fix:** Check if the image file exists and the URL is correct
+- **Confidence:** high
+- **Root Cause:** The image at http://localhost:3847/images/office-map.png returned status 404
+- **Suggested Fix:** Check if "office-map.png" exists in your images folder. If the file was renamed or moved, update the <img src> to match.
 - **Original Error:** `Broken image: http://localhost:3847/images/office-map.png (status 404)`
 
 ### 7. JavaScript error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
 
 - **Error Type:** unknown
-- **Confidence:** low
-- **Root Cause:** Unable to determine root cause without AI analysis
-- **Suggested Fix:** Review the error in the browser console and check the surrounding code
+- **Confidence:** medium
+- **Root Cause:** Set GEMINI_API_KEY for AI-powered root cause analysis
+- **Suggested Fix:** The server returned a 500 error — check your server logs for the stack trace and fix the backend code.
 - **Original Error:** `Failed to load resource: the server responded with a status of 500 (Internal Server Error)`
 - **Technical Details:** Failed to load resource: the server responded with a status of 500 (Internal Server Error)
 
 ### 8. JavaScript error: Failed to load FAQ: Error: API returned 500     at http://localhost:3847/pricing:95:26
 
 - **Error Type:** unknown
-- **Confidence:** low
-- **Root Cause:** Unable to determine root cause without AI analysis
-- **Suggested Fix:** Review the error in the browser console and check the surrounding code
+- **Confidence:** medium
+- **Root Cause:** Set GEMINI_API_KEY for AI-powered root cause analysis
+- **Suggested Fix:** The server returned a 500 error — check your server logs for the stack trace and fix the backend code.
 - **Original Error:** `Failed to load FAQ: Error: API returned 500
     at http://localhost:3847/pricing:95:26`
 - **Technical Details:** Failed to load FAQ: Error: API returned 500
@@ -139,21 +153,21 @@ source_analysis: false
 - **Original Error:** `500 http://localhost:3847/api/data`
 - **Technical Details:** HTTP 500: http://localhost:3847/api/data
 
-### 10. Page or resource not found
+### 10. "about" not found (404)
 
 - **Error Type:** network
 - **Confidence:** high
 - **Root Cause:** The URL http://localhost:3847/about doesn't exist on the server
-- **Suggested Fix:** Check if the URL is correct or if the resource has been moved
+- **Suggested Fix:** Check if "about" exists at the expected path, or update the URL that references it
 - **Original Error:** `404 http://localhost:3847/about`
 - **Technical Details:** HTTP 404: http://localhost:3847/about
 
-### 11. Page or resource not found
+### 11. "blog" not found (404)
 
 - **Error Type:** network
 - **Confidence:** high
 - **Root Cause:** The URL http://localhost:3847/blog doesn't exist on the server
-- **Suggested Fix:** Check if the URL is correct or if the resource has been moved
+- **Suggested Fix:** Check if "blog" exists at the expected path, or update the URL that references it
 - **Original Error:** `404 http://localhost:3847/blog`
 - **Technical Details:** HTTP 404: http://localhost:3847/blog
 
@@ -187,4 +201,4 @@ No source code references available. Run with `--source ./path` for source-level
 
 > **Tip:** Set `GEMINI_API_KEY` for smarter test planning and AI-powered root cause analysis. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 
-*Generated by Afterburn v1.0 on 09.02.2026, 17:47:47*
+*Generated by Afterburn v1.0 on 09.02.2026, 23:54:17*

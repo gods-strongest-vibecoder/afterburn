@@ -7,6 +7,7 @@ import { executeStep, captureClickState, checkDeadButton, detectBrokenForm } fro
 import { captureErrorEvidence } from './evidence-capture.js';
 import { auditAccessibility } from '../testing/accessibility-auditor.js';
 import { capturePerformanceMetrics } from '../testing/performance-monitor.js';
+import { auditMeta } from '../testing/meta-auditor.js';
 /**
  * Executes all workflow plans with comprehensive error detection and auditing
  */
@@ -58,6 +59,7 @@ export class WorkflowExecutor {
             pageAudits,
             deadButtons: allDeadButtons,
             brokenForms: allBrokenForms,
+            brokenLinks: [], // Populated by engine from discovery phase
             totalIssues,
             exitCode,
         };
@@ -75,6 +77,18 @@ export class WorkflowExecutor {
         const page = await this.browserManager.newPage();
         // Set up error listeners
         const { collector, cleanup } = setupErrorListeners(page);
+        // Set up a single persistent dialog handler to auto-dismiss alert/confirm/prompt.
+        // This MUST be a single handler per page — stacking page.once('dialog') per step
+        // caused crashes when multiple handlers tried to dismiss the same dialog.
+        const dialogHandler = async (dialog) => {
+            try {
+                await dialog.dismiss();
+            }
+            catch {
+                // Dialog may already be handled — safe to ignore
+            }
+        };
+        page.on('dialog', dialogHandler);
         const stepResults = [];
         let firstNavUrl = null;
         let lastUrl = '';
@@ -159,8 +173,9 @@ export class WorkflowExecutor {
             }
         }
         finally {
-            // Clean up error listeners
+            // Clean up error listeners and dialog handler
             cleanup();
+            page.off('dialog', dialogHandler);
             await page.close();
         }
         // Calculate workflow result
@@ -193,9 +208,18 @@ export class WorkflowExecutor {
         this.log(`  Auditing page: ${url}`);
         const accessibility = await auditAccessibility(page);
         const performance = await capturePerformanceMetrics(page);
-        pageAudits.push({ url, accessibility, performance });
+        const metaAudit = await auditMeta(page);
+        pageAudits.push({
+            url,
+            accessibility,
+            performance,
+            metaIssues: metaAudit.issues.length > 0 ? metaAudit.issues : undefined,
+        });
         if (accessibility.violationCount > 0) {
             this.log(`    Accessibility: ${accessibility.violationCount} violations found`);
+        }
+        if (metaAudit.issues.length > 0) {
+            this.log(`    Meta/SEO: ${metaAudit.issues.length} issues found`);
         }
         if (performance.lcp > 0) {
             this.log(`    Performance: LCP ${Math.round(performance.lcp)}ms`);
@@ -281,6 +305,7 @@ export class WorkflowExecutor {
         total += deadButtons.filter(b => b.isDead).length;
         // Broken forms
         total += brokenForms.filter(f => f.isBroken).length;
+        // Note: broken links are added post-execution by engine.ts from discovery data
         // Accessibility violations (only critical and serious)
         total += pageAudits.reduce((sum, audit) => {
             if (!audit.accessibility)

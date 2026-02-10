@@ -3,11 +3,11 @@
 Pre-generated Afterburn reports from scanning the FlowSync test site.
 These serve as emergency fallback if the live scan fails during demo.
 
-Generated: 2026-02-09
+Generated: 2026-02-09 (post-severity-reclassification)
 Target: http://localhost:3847 (FlowSync test site via `test-site/server.js`)
 Mode: Heuristic (no GEMINI_API_KEY)
 Health Score: 62/100
-Issues Found: 20 (0 high, 17 medium, 3 low)
+Issues Found: 33 (11 high, 12 medium, 10 low)
 
 ## Files
 

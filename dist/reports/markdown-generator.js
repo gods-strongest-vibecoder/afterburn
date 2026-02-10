@@ -201,6 +201,7 @@ export function generateMarkdownReport(executionArtifact, analysisArtifact) {
     // Count specific issue types
     const deadButtonCount = executionArtifact.deadButtons.filter(b => b.isDead).length;
     const brokenFormCount = executionArtifact.brokenForms.filter(f => f.isBroken).length;
+    const brokenLinkCount = executionArtifact.brokenLinks.length;
     const accessibilityViolations = executionArtifact.pageAudits.reduce((sum, audit) => sum + (audit.accessibility?.violationCount || 0), 0);
     const workflowsPassed = executionArtifact.workflowResults.filter(w => w.overallStatus === 'passed').length;
     const workflowsFailed = executionArtifact.workflowResults.filter(w => w.overallStatus === 'failed').length;
@@ -223,6 +224,7 @@ export function generateMarkdownReport(executionArtifact, analysisArtifact) {
 | Total Issues | ${prioritizedIssues.length} |
 | Dead Buttons | ${deadButtonCount} |
 | Broken Forms | ${brokenFormCount} |
+| Broken Links | ${brokenLinkCount} |
 | Accessibility Violations | ${accessibilityViolations} |
 
 ## Issues (Prioritized)

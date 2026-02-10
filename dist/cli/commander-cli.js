@@ -96,6 +96,21 @@ program
         }
         // Print one-liner summary
         console.log(`\nHealth: ${result.healthScore.overall}/100 — ${result.totalIssues} issues found (${result.highPriorityCount} high, ${result.mediumPriorityCount} medium, ${result.lowPriorityCount} low)`);
+        // Print top 3 issues in terminal so the user sees value immediately
+        if (result.prioritizedIssues.length > 0) {
+            console.log('\nTop issues:');
+            const topIssues = result.prioritizedIssues.slice(0, 3);
+            for (let i = 0; i < topIssues.length; i++) {
+                const issue = topIssues[i];
+                const priorityTag = issue.priority === 'high' ? '[HIGH]' : issue.priority === 'medium' ? '[MED]' : '[LOW]';
+                // Truncate summary for terminal readability
+                const summary = issue.summary.length > 80 ? issue.summary.slice(0, 77) + '...' : issue.summary;
+                console.log(`  ${i + 1}. ${priorityTag} ${summary}`);
+            }
+            if (result.prioritizedIssues.length > 3) {
+                console.log(`  ... and ${result.prioritizedIssues.length - 3} more (see report)`);
+            }
+        }
         // Print report paths if they exist
         if (result.htmlReportPath || result.markdownReportPath) {
             console.log('\nReports saved:');

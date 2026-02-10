@@ -106,8 +106,28 @@ export interface WorkflowExecutionResult {
 }
 
 /**
+ * A link discovered during crawl that returned non-2xx status
+ */
+export interface BrokenLinkIssue {
+  url: string;
+  sourceUrl: string;     // page where link was found
+  statusCode: number;    // 0 = network error
+  statusText: string;
+}
+
+/**
  * Complete execution artifact containing all test results
  */
+/**
+ * Individual meta/SEO issue found by heuristic auditor
+ */
+export interface MetaIssueResult {
+  id: string;
+  severity: 'high' | 'medium' | 'low';
+  description: string;
+  suggestion: string;
+}
+
 export interface ExecutionArtifact {
   version: string;
   stage: string;
@@ -115,9 +135,10 @@ export interface ExecutionArtifact {
   sessionId: string;
   targetUrl: string;
   workflowResults: WorkflowExecutionResult[];
-  pageAudits: Array<{ url: string; accessibility?: AccessibilityReport; performance?: PerformanceMetrics }>;
+  pageAudits: Array<{ url: string; accessibility?: AccessibilityReport; performance?: PerformanceMetrics; metaIssues?: MetaIssueResult[] }>;
   deadButtons: DeadButtonResult[];
   brokenForms: BrokenFormResult[];
+  brokenLinks: BrokenLinkIssue[];    // broken links found during discovery crawl
   totalIssues: number;
   exitCode: number;
 }

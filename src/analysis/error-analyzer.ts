@@ -296,12 +296,13 @@ function fallbackDiagnosis(
       if (seen.has(key)) continue;
       seen.add(key);
 
+      const imgFilename = brokenImage.url.split('/').pop() || brokenImage.url;
       diagnosedErrors.push({
-        summary: 'An image failed to load',
-        rootCause: `The image at ${brokenImage.url} is missing or inaccessible`,
+        summary: `Image "${imgFilename}" failed to load (${brokenImage.status})`,
+        rootCause: `The image at ${brokenImage.url} returned status ${brokenImage.status}`,
         errorType: 'network',
-        confidence: 'medium',
-        suggestedFix: 'Check if the image file exists and the URL is correct',
+        confidence: 'high',
+        suggestedFix: `Check if "${imgFilename}" exists in your images folder. If the file was renamed or moved, update the <img src> to match.`,
         originalError: `Broken image: ${brokenImage.url} (status ${brokenImage.status})`,
         pageUrl: brokenImage.url || undefined,
       });
@@ -317,26 +318,106 @@ function fallbackDiagnosis(
 function patternMatchError(errorMessage: string): ErrorDiagnosis {
   const msg = errorMessage.toLowerCase();
 
-  // TypeError patterns
-  if (msg.includes('typeerror')) {
+  // Navigation errors -> high priority 'navigation' type
+  if (msg.includes('net::err_') || msg.includes('page crashed') || msg.includes('navigation failed')) {
     return {
-      summary: 'Tried to access something that doesn\'t exist in the code',
-      rootCause: 'The code is trying to use a property or method on something that is null or undefined',
-      errorType: 'javascript',
-      confidence: 'medium',
-      suggestedFix: 'Check that all variables are properly initialized before use',
+      summary: 'Page navigation failed',
+      rootCause: 'The page could not load — it may be down, too slow, or the URL is wrong',
+      errorType: 'navigation',
+      confidence: 'high',
+      suggestedFix: 'Check that the URL is correct and the server is responding',
       technicalDetails: errorMessage,
     };
   }
 
-  // ReferenceError patterns
-  if (msg.includes('referenceerror')) {
+  // Navigation timeouts (page.goto timeout) -> high priority
+  if (msg.includes('timeout') && (msg.includes('navigation') || msg.includes('goto') || msg.includes('waiting for page'))) {
     return {
-      summary: 'Used a variable or function that wasn\'t defined',
-      rootCause: 'The code references something that hasn\'t been declared',
+      summary: 'Page took too long to load',
+      rootCause: 'The page did not finish loading within the timeout — the server may be slow or unresponsive',
+      errorType: 'navigation',
+      confidence: 'high',
+      suggestedFix: 'Check that the server is running and responding. For slow-loading pages, try increasing the timeout.',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // Element wait timeouts (selector not found within timeout) -> medium priority DOM issue
+  if (msg.includes('timeout') && !msg.includes('navigation')) {
+    // Extract selector from "Timeout 10000ms exceeded. Waiting for selector '...'"
+    const selectorMatch = errorMessage.match(/selector ['"]([^'"]+)['"]/i);
+    const selectorName = selectorMatch ? selectorMatch[1] : 'an element';
+    return {
+      summary: `Could not find ${selectorName} on the page`,
+      rootCause: 'The element was not found within the time limit — it may not exist, have a different selector, or be loaded later',
+      errorType: 'dom',
+      confidence: 'medium',
+      suggestedFix: 'Check if the element exists in the HTML and is visible. It may have a different CSS selector or load dynamically.',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // Authentication errors -> high priority 'authentication' type
+  if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('authentication')) {
+    return {
+      summary: 'Access denied — authentication required or forbidden',
+      rootCause: 'The server rejected the request due to missing or invalid credentials',
+      errorType: 'authentication',
+      confidence: 'high',
+      suggestedFix: 'Check if login credentials are required. Use --email and --password flags for authenticated testing.',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // Form submission errors -> high priority 'form' type
+  if (msg.includes('form') && (msg.includes('submit') || msg.includes('validation') || msg.includes('failed'))) {
+    return {
+      summary: 'Form submission failed',
+      rootCause: 'The form could not be submitted — it may have validation errors or a broken action endpoint',
+      errorType: 'form',
+      confidence: 'medium',
+      suggestedFix: 'Check form validation rules and ensure the form action URL is correct',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // TypeError patterns — extract property name for specific fix
+  if (msg.includes('typeerror')) {
+    // Try to extract the specific property: "cannot read properties of null (reading 'X')"
+    const propMatch = errorMessage.match(/reading '(\w+)'/i) || errorMessage.match(/property '(\w+)'/i);
+    const nullMatch = errorMessage.match(/of (null|undefined)/i);
+    const specificProp = propMatch ? `.${propMatch[1]}` : '';
+    const nullType = nullMatch ? nullMatch[1] : 'null or undefined';
+
+    return {
+      summary: `Tried to use ${specificProp || 'a property'} on something that is ${nullType}`,
+      rootCause: `The code calls ${specificProp || 'a property/method'} on a value that is ${nullType}. This usually means an element wasn't found or data hasn't loaded yet.`,
       errorType: 'javascript',
       confidence: 'medium',
-      suggestedFix: 'Make sure all variables and functions are defined before using them',
+      suggestedFix: specificProp
+        ? `Add a null check before accessing ${specificProp}: use "if (variable) { variable${specificProp} }" or optional chaining "variable?${specificProp}"`
+        : 'Add a null check before accessing the property, or make sure the variable is initialized first',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // ReferenceError patterns — extract the undefined name
+  if (msg.includes('referenceerror')) {
+    const nameMatch = errorMessage.match(/(\w+) is not defined/i);
+    const undefinedName = nameMatch ? nameMatch[1] : null;
+
+    return {
+      summary: undefinedName
+        ? `"${undefinedName}" is not defined — the code references something that doesn't exist`
+        : 'Used a variable or function that wasn\'t defined',
+      rootCause: undefinedName
+        ? `The code tries to use "${undefinedName}" but it was never declared. This could be a typo, a missing script tag, or a missing import.`
+        : 'The code references something that hasn\'t been declared',
+      errorType: 'javascript',
+      confidence: 'medium',
+      suggestedFix: undefinedName
+        ? `Make sure "${undefinedName}" is defined before this line runs. Check for typos, missing <script> tags, or missing imports.`
+        : 'Make sure all variables and functions are defined before using them',
       technicalDetails: errorMessage,
     };
   }
@@ -377,6 +458,54 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
     };
   }
 
+  // CORS error patterns
+  if (msg.includes('cors') || msg.includes('cross-origin') || msg.includes('access-control-allow-origin')) {
+    return {
+      summary: 'Cross-origin request blocked (CORS error)',
+      rootCause: 'The browser blocked a request to a different domain because the server doesn\'t allow it',
+      errorType: 'network',
+      confidence: 'high',
+      suggestedFix: 'Add the correct CORS headers on the server (Access-Control-Allow-Origin)',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // SecurityError / mixed content patterns
+  if (msg.includes('securityerror') || msg.includes('mixed content') || msg.includes('blocked:mixed')) {
+    return {
+      summary: 'Security error — blocked insecure content',
+      rootCause: 'The page tried to load insecure (HTTP) content on a secure (HTTPS) page',
+      errorType: 'network',
+      confidence: 'high',
+      suggestedFix: 'Change all resource URLs from http:// to https://',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // Content Security Policy (CSP) patterns
+  if (msg.includes('content security policy') || msg.includes('csp') || msg.includes('refused to')) {
+    return {
+      summary: 'Content blocked by security policy',
+      rootCause: 'The page\'s Content Security Policy is blocking a script, style, or resource from loading',
+      errorType: 'network',
+      confidence: 'medium',
+      suggestedFix: 'Update the Content-Security-Policy header to allow the blocked resource',
+      technicalDetails: errorMessage,
+    };
+  }
+
+  // Deprecation warnings
+  if (msg.includes('deprecated') || msg.includes('deprecation')) {
+    return {
+      summary: 'Code uses a deprecated feature that may stop working',
+      rootCause: 'The code relies on a browser API or pattern that is being phased out',
+      errorType: 'javascript',
+      confidence: 'medium',
+      suggestedFix: 'Update the code to use the recommended modern alternative',
+      technicalDetails: errorMessage,
+    };
+  }
+
   // Default fallback: surface original error message instead of generic text
   const cleanedMessage = errorMessage.trim().replace(/\n/g, ' ');
   const truncatedMessage = cleanedMessage.length > 120
@@ -388,12 +517,24 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
   // Cap total summary at 150 chars
   const cappedSummary = summary.length > 150 ? summary.slice(0, 147) + '...' : summary;
 
+  // Try to extract actionable fix from the error message itself
+  let suggestedFix: string;
+  if (cleanedMessage.includes('404') || cleanedMessage.includes('Not Found')) {
+    suggestedFix = 'A resource returned 404 — check if the file path or API endpoint URL is correct and the resource exists on the server.';
+  } else if (cleanedMessage.includes('500') || cleanedMessage.includes('Internal Server Error')) {
+    suggestedFix = 'The server returned a 500 error — check your server logs for the stack trace and fix the backend code.';
+  } else if (cleanedMessage.includes('Failed to load') || cleanedMessage.includes('failed to fetch')) {
+    suggestedFix = 'A resource or API call failed to load — verify the URL is correct and the server is running.';
+  } else {
+    suggestedFix = 'Open your browser DevTools (F12), go to the Console tab, reproduce the error, and check the stack trace for the source file and line number.';
+  }
+
   return {
     summary: cappedSummary,
-    rootCause: 'Unable to determine root cause without AI analysis',
+    rootCause: 'Set GEMINI_API_KEY for AI-powered root cause analysis',
     errorType: 'unknown',
-    confidence: 'low',
-    suggestedFix: 'Review the error in the browser console and check the surrounding code',
+    confidence: 'medium',
+    suggestedFix,
     technicalDetails: errorMessage,
   };
 }
@@ -402,13 +543,15 @@ function patternMatchError(errorMessage: string): ErrorDiagnosis {
  * Pattern match network failures by status code
  */
 function patternMatchNetworkFailure(status: number, url: string): ErrorDiagnosis {
+  const resourceName = url.split('/').pop()?.split('?')[0] || url;
+
   if (status === 404) {
     return {
-      summary: 'Page or resource not found',
+      summary: `"${resourceName}" not found (404)`,
       rootCause: `The URL ${url} doesn't exist on the server`,
       errorType: 'network',
       confidence: 'high',
-      suggestedFix: 'Check if the URL is correct or if the resource has been moved',
+      suggestedFix: `Check if "${resourceName}" exists at the expected path, or update the URL that references it`,
       technicalDetails: `HTTP 404: ${url}`,
     };
   }
@@ -458,11 +601,11 @@ function patternMatchNetworkFailure(status: number, url: string): ErrorDiagnosis
   }
 
   return {
-    summary: 'Network request failed',
-    rootCause: `Request to ${url} failed with status ${status}`,
+    summary: `Network request to ${resourceName} failed (HTTP ${status})`,
+    rootCause: `The server returned an unexpected status ${status} for ${url}`,
     errorType: 'network',
-    confidence: 'low',
-    suggestedFix: 'Check the network tab in browser developer tools for details',
+    confidence: 'medium',
+    suggestedFix: `Check if "${resourceName}" is working correctly — the server returned HTTP ${status}`,
     technicalDetails: `HTTP ${status}: ${url}`,
   };
 }

@@ -20,6 +20,8 @@ import type { ClickStateSnapshot } from './step-handlers.js';
 import { captureErrorEvidence } from './evidence-capture.js';
 import { auditAccessibility } from '../testing/accessibility-auditor.js';
 import { capturePerformanceMetrics } from '../testing/performance-monitor.js';
+import { auditMeta } from '../testing/meta-auditor.js';
+import type { MetaAuditResult } from '../testing/meta-auditor.js';
 
 export interface ExecutionOptions {
   targetUrl: string;
@@ -91,6 +93,7 @@ export class WorkflowExecutor {
       pageAudits,
       deadButtons: allDeadButtons,
       brokenForms: allBrokenForms,
+      brokenLinks: [],  // Populated by engine from discovery phase
       totalIssues,
       exitCode,
     };
@@ -118,6 +121,18 @@ export class WorkflowExecutor {
 
     // Set up error listeners
     const { collector, cleanup } = setupErrorListeners(page);
+
+    // Set up a single persistent dialog handler to auto-dismiss alert/confirm/prompt.
+    // This MUST be a single handler per page — stacking page.once('dialog') per step
+    // caused crashes when multiple handlers tried to dismiss the same dialog.
+    const dialogHandler = async (dialog: any) => {
+      try {
+        await dialog.dismiss();
+      } catch {
+        // Dialog may already be handled — safe to ignore
+      }
+    };
+    page.on('dialog', dialogHandler);
 
     const stepResults: StepResult[] = [];
     let firstNavUrl: string | null = null;
@@ -219,8 +234,9 @@ export class WorkflowExecutor {
       }
 
     } finally {
-      // Clean up error listeners
+      // Clean up error listeners and dialog handler
       cleanup();
+      page.off('dialog', dialogHandler);
       await page.close();
     }
 
@@ -251,7 +267,7 @@ export class WorkflowExecutor {
   private async auditPage(
     page: Page,
     url: string,
-    pageAudits: Array<{ url: string; accessibility?: AccessibilityReport; performance?: PerformanceMetrics }>
+    pageAudits: Array<{ url: string; accessibility?: AccessibilityReport; performance?: PerformanceMetrics; metaIssues?: MetaAuditResult['issues'] }>
   ): Promise<void> {
     // Check if we already audited this URL
     if (pageAudits.some(a => a.url === url)) {
@@ -262,11 +278,20 @@ export class WorkflowExecutor {
 
     const accessibility = await auditAccessibility(page);
     const performance = await capturePerformanceMetrics(page);
+    const metaAudit = await auditMeta(page);
 
-    pageAudits.push({ url, accessibility, performance });
+    pageAudits.push({
+      url,
+      accessibility,
+      performance,
+      metaIssues: metaAudit.issues.length > 0 ? metaAudit.issues : undefined,
+    });
 
     if (accessibility.violationCount > 0) {
       this.log(`    Accessibility: ${accessibility.violationCount} violations found`);
+    }
+    if (metaAudit.issues.length > 0) {
+      this.log(`    Meta/SEO: ${metaAudit.issues.length} issues found`);
     }
     if (performance.lcp > 0) {
       this.log(`    Performance: LCP ${Math.round(performance.lcp)}ms`);
@@ -370,6 +395,8 @@ export class WorkflowExecutor {
 
     // Broken forms
     total += brokenForms.filter(f => f.isBroken).length;
+
+    // Note: broken links are added post-execution by engine.ts from discovery data
 
     // Accessibility violations (only critical and serious)
     total += pageAudits.reduce((sum, audit) => {

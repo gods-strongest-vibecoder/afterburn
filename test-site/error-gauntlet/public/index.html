@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!-- Intentional: missing lang attribute on <html> (accessibility error) -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- Intentional: NO viewport meta tag (mobile error) -->
+  <title>NimbusAI</title>
+  <!-- Intentional: no meta description (SEO error) -->
+  <!-- Intentional: no OG tags (SEO error) -->
+  <!-- Intentional: no canonical link (SEO error) -->
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- Intentional: render-blocking script in head (performance error) -->
+  <script src="/js/app.js"></script>
+  <!-- Intentional: inline script (security concern) -->
+  <script>
+    var config = { apiKey: "sk-fake-12345", debug: true };
+  </script>
+</head>
+<body>
+  <!-- Intentional: no skip navigation link (accessibility error) -->
+
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="logo">NimbusAI</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/blog">Blog</a>
+        <a href="/contact">Contact</a>
+        <a href="/dashboard">Dashboard</a>
+        <!-- Intentional: link to page that doesn't exist (404 link) -->
+        <a href="/careers">Careers</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Intentional: fixed-width element that breaks mobile layout -->
+  <div class="fixed-width-banner">
+    Limited time: Get 50% off your first 3 months with code LAUNCH50
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <!-- Intentional: duplicate H1 (SEO error — there's another H1 in the metrics section) -->
+      <h1>Write 10x faster with AI</h1>
+      <p class="hero-subtitle">NimbusAI helps you draft emails, blog posts, and marketing copy in seconds. Powered by cutting-edge language models.</p>
+      <!-- Intentional: button with onclick referencing undefined function -->
+      <button class="btn btn-primary btn-large" onclick="handleGetStarted()">Start Writing Free</button>
+      <!-- Intentional: empty href link (broken) -->
+      <a href="" class="btn btn-secondary btn-large" style="margin-left: 12px;">Watch Demo</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <!-- Intentional: skipped heading level — goes from h1 to h3 (accessibility error) -->
+      <h3>Why writers love NimbusAI</h3>
+      <div class="features-grid">
+        <div class="feature-card">
+          <!-- Intentional: image missing alt text (accessibility error) -->
+          <img src="/images/icon-write.svg" class="feature-icon">
+          <h3>Smart Drafting</h3>
+          <p>Give NimbusAI a topic and tone, get a polished draft in seconds. Edit inline or regenerate.</p>
+        </div>
+        <div class="feature-card">
+          <!-- Intentional: broken image source (404 image) -->
+          <img src="/images/icon-analytics.png" alt="Analytics" class="feature-icon">
+          <h3>Content Analytics</h3>
+          <p>Track readability scores, SEO strength, and engagement predictions before you publish.</p>
+        </div>
+        <div class="feature-card">
+          <!-- Intentional: BMP image (wrong format — should be WebP/PNG/SVG) -->
+          <img src="/images/hero-bg.bmp" alt="Team collaboration" class="feature-icon">
+          <!-- Intentional: missing width and height attributes on images above -->
+          <h3>Team Workspace</h3>
+          <p>Collaborate on drafts in real time. Leave comments, suggest edits, and approve content together.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metrics — intentional second H1 (duplicate H1 error) -->
+  <section class="metrics" style="padding: 60px 0; background: #f9fafb;">
+    <div class="container">
+      <h1>Trusted by thousands</h1>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; text-align: center; margin-top: 32px;">
+        <div>
+          <div style="font-size: 2.5rem; font-weight: 700; color: #4f46e5;">50,000+</div>
+          <div style="color: #6b7280;">Active writers</div>
+        </div>
+        <div>
+          <div style="font-size: 2.5rem; font-weight: 700; color: #4f46e5;">2M+</div>
+          <div style="color: #6b7280;">Documents created</div>
+        </div>
+        <div>
+          <div style="font-size: 2.5rem; font-weight: 700; color: #4f46e5;">4.9/5</div>
+          <div style="color: #6b7280;">Average rating</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial with low contrast text -->
+  <section class="testimonials">
+    <div class="container">
+      <h2>What people are saying</h2>
+      <div class="testimonial-card">
+        <!-- Intentional: low contrast text (accessibility error) -->
+        <p class="low-contrast">"NimbusAI completely transformed how our marketing team works. We produce 3x more content with half the effort."</p>
+        <cite>— Sarah Chen, VP Marketing at TechCo</cite>
+      </div>
+      <div class="testimonial-card">
+        <p class="low-contrast">"I was skeptical about AI writing tools, but NimbusAI actually sounds like me. It learned my voice."</p>
+        <cite>— Marcus Johnson, Freelance Writer</cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter signup — intentional form errors -->
+  <section style="padding: 60px 0; background: #eef2ff;">
+    <div class="container" style="text-align: center;">
+      <h2>Get writing tips in your inbox</h2>
+      <p>Join 15,000+ writers. No spam, unsubscribe anytime.</p>
+      <!-- Intentional: form with broken action endpoint -->
+      <form action="/api/subscribe" method="POST" style="margin-top: 24px; display: flex; justify-content: center; gap: 12px;">
+        <!-- Intentional: input without label (accessibility error) -->
+        <!-- Intentional: no autocomplete attribute (form best practice error) -->
+        <input type="email" placeholder="Enter your email" class="subscribe-input" style="padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; width: 300px; font-size: 1rem;">
+        <!-- Intentional: submit button with no accessible text context -->
+        <button type="submit" class="btn btn-primary" onclick="handleSubscribe(event)">Go</button>
+      </form>
+      <!-- Intentional: tiny text that's too small to read (mobile/accessibility) -->
+      <p class="tiny-text" style="margin-top: 8px;">By subscribing you agree to our terms and conditions and privacy policy which can be found on our legal page.</p>
+    </div>
+  </section>
+
+  <!-- Intentional: deeply nested DOM structure (performance/DOM depth error) -->
+  <div class="deep-nest-1">
+    <div class="deep-nest-2">
+      <div class="deep-nest-3">
+        <div class="deep-nest-4">
+          <div class="deep-nest-5">
+            <div class="deep-nest-6">
+              <div class="deep-nest-7">
+                <div class="deep-nest-8">
+                  <div class="deep-nest-9">
+                    <div class="deep-nest-10">
+                      <p style="display:none;">This content is buried deep in unnecessary nesting.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; 2026 NimbusAI Inc.</p>
+      <div class="footer-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <!-- Intentional: external link without rel="noopener" (security error) -->
+        <a href="https://twitter.com/nimbusai" target="_blank">Twitter</a>
+        <!-- Intentional: link to non-existent page (404) -->
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Intentional: large inline base64 image (performance error — bloats page size) -->
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjIwMDAiIHZpZXdCb3g9IjAgMCAyMDAwIDIwMDAiPjxyZWN0IHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjIwMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSIxMDAwIiB5PSIxMDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjQ4IiBmaWxsPSIjY2NjIj5MYXJnZSBoaWRkZW4gaW1hZ2U8L3RleHQ+PC9zdmc+" style="display:none;" width="2000" height="2000">
+</body>
+</html>

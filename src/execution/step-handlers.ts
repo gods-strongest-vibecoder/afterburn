@@ -128,7 +128,22 @@ async function fillField(
     if (field.type === 'checkbox' || field.type === 'radio') {
       await page.check(selector, { timeout });
     } else if (field.type === 'select' || field.type === 'select-one') {
-      await page.selectOption(selector, testValue, { timeout });
+      // Try the test value first; if no matching option exists, pick the first non-empty option
+      try {
+        await page.selectOption(selector, testValue, { timeout });
+      } catch {
+        const firstOption = await page.evaluate((sel: string) => {
+          const select = document.querySelector(sel) as HTMLSelectElement;
+          if (!select) return null;
+          const option = Array.from(select.options).find(o => o.value && o.value !== '');
+          return option?.value ?? null;
+        }, selector);
+        if (firstOption) {
+          await page.selectOption(selector, firstOption, { timeout });
+        }
+      }
+    } else if (field.type === 'textarea') {
+      await page.fill(selector, testValue, { timeout });
     } else {
       // text, email, password, tel, date, etc.
       await page.fill(selector, testValue, { timeout });
@@ -333,10 +348,9 @@ export async function detectBrokenForm(
  */
 export async function dismissModalIfPresent(page: Page): Promise<void> {
   try {
-    // Handle native dialogs (alert, confirm, prompt)
-    page.once('dialog', async (dialog) => {
-      await dialog.dismiss();
-    });
+    // Note: Native dialog handling (alert/confirm/prompt) is done by a single persistent
+    // handler registered in workflow-executor.ts — NOT here. Registering per-step handlers
+    // caused stacked handlers to crash when multiple tried to dismiss the same dialog.
 
     // Try to find and click common modal close buttons
     const closeSelectors = [

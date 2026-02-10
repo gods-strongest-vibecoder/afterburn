@@ -256,6 +256,7 @@ export function generateMarkdownReport(executionArtifact: ExecutionArtifact, ana
   // Count specific issue types
   const deadButtonCount = executionArtifact.deadButtons.filter(b => b.isDead).length;
   const brokenFormCount = executionArtifact.brokenForms.filter(f => f.isBroken).length;
+  const brokenLinkCount = executionArtifact.brokenLinks.length;
   const accessibilityViolations = executionArtifact.pageAudits.reduce((sum, audit) =>
     sum + (audit.accessibility?.violationCount || 0), 0);
 
@@ -281,6 +282,7 @@ export function generateMarkdownReport(executionArtifact: ExecutionArtifact, ana
 | Total Issues | ${prioritizedIssues.length} |
 | Dead Buttons | ${deadButtonCount} |
 | Broken Forms | ${brokenFormCount} |
+| Broken Links | ${brokenLinkCount} |
 | Accessibility Violations | ${accessibilityViolations} |
 
 ## Issues (Prioritized)
