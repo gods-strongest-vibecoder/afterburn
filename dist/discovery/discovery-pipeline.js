@@ -32,9 +32,10 @@ export async function runDiscovery(options) {
         onProgress('Launching browser...');
         await browserManager.launch();
         // Block heavy resources during discovery (images, fonts, video, analytics)
+        // Keep SVG — icon-only buttons need them for element discovery
         const ctx = browserManager.getContext();
         if (ctx) {
-            await ctx.route('**/*.{png,jpg,jpeg,gif,webp,svg,woff,woff2,ttf,mp4,mp3}', r => r.abort());
+            await ctx.route('**/*.{png,jpg,jpeg,gif,webp,woff,woff2,ttf,mp4,mp3}', r => r.abort());
             await ctx.route('**/analytics**', r => r.abort());
             await ctx.route('**/gtag**', r => r.abort());
         }
