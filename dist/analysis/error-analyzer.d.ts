@@ -5,4 +5,5 @@ import { DiagnosedError } from './diagnosis-schema.js';
  */
 export declare function analyzeErrors(artifact: ExecutionArtifact, options?: {
     apiKey?: string;
+    aiEnabled?: boolean;
 }): Promise<DiagnosedError[]>;

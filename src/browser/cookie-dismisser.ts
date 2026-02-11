@@ -50,7 +50,7 @@ export async function dismissCookieBanner(
     try {
       // Wait for accept button with short timeout (banner may not exist)
       const button = page.locator(selector.acceptButton).first();
-      const isVisible = await button.isVisible({ timeout: 2000 });
+      const isVisible = await button.isVisible({ timeout: 800 });
 
       if (!isVisible) {
         continue;

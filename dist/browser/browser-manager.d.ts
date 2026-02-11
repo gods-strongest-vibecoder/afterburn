@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 import type { BrowserConfig } from '../types/artifacts.js';
 import type { ChallengeDetectionResult } from './challenge-detector.js';
 /**
@@ -26,12 +26,18 @@ export declare class BrowserManager {
      * @param url - Optional URL to navigate to
      * @returns Playwright page instance
      */
-    newPage(url?: string): Promise<Page>;
+    newPage(url?: string, options?: {
+        networkIdleTimeout?: number;
+    }): Promise<Page>;
     /**
      * Closes browser and cleans up resources.
      * Safe to call multiple times.
      */
     close(): Promise<void>;
+    /**
+     * Returns the browser context for route interception (e.g., blocking resources).
+     */
+    getContext(): BrowserContext | null;
     /**
      * Checks if browser is currently launched
      */

@@ -8,8 +8,9 @@ import fs from 'node:fs';
  */
 export async function auditUI(artifact, options) {
     const apiKey = options?.apiKey || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        console.warn('UI auditing requires GEMINI_API_KEY. Skipping visual analysis.');
+    const aiEnabled = options?.aiEnabled ?? (apiKey ? true : false);
+    if (!apiKey || !aiEnabled) {
+        console.warn('UI auditing requires GEMINI_API_KEY and AI to be enabled. Skipping visual analysis.');
         return [];
     }
     // Extract screenshots from execution artifact
@@ -61,12 +62,14 @@ function extractScreenshots(artifact) {
  * Audit a single screenshot using Gemini Vision LLM
  */
 async function auditScreenshot(pngPath, pageUrl, gemini) {
-    const prompt = buildVisionPrompt(pageUrl);
+    // Redact sensitive URL before sending to Gemini
+    const safeUrl = redactSensitiveUrl(pageUrl);
+    const prompt = buildVisionPrompt(safeUrl);
     // Call Gemini Vision API with structured output
     const audit = await gemini.generateStructuredWithImage(prompt, UIAuditSchema, pngPath);
     return {
         ...audit,
-        pageUrl,
+        pageUrl: safeUrl,
         screenshotRef: pngPath,
     };
 }

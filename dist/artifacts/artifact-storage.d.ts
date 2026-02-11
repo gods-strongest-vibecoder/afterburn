@@ -4,6 +4,7 @@ import type { ArtifactMetadata } from '../types/artifacts.js';
  */
 export declare class ArtifactStorage {
     private readonly baseDir;
+    private currentSessionId?;
     constructor(baseDir?: string);
     /**
      * Saves an artifact as a versioned JSON file
@@ -33,8 +34,9 @@ export declare class ArtifactStorage {
      */
     list(stage?: string): Promise<string[]>;
     /**
-     * Removes artifacts older than specified days based on file modification time
-     * @param olderThanDays - Age threshold in days (default: 7)
+     * Removes artifacts older than specified days based on file modification time.
+     * Excludes artifacts from the current session.
+     * @param olderThanDays - Age threshold in days (default: 7). Set to 0 to clean all old artifacts.
      * @returns Count of deleted files
      */
     cleanup(olderThanDays?: number): Promise<number>;

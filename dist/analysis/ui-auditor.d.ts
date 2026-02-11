@@ -5,4 +5,5 @@ import { UIAuditResult } from './diagnosis-schema.js';
  */
 export declare function auditUI(artifact: ExecutionArtifact, options?: {
     apiKey?: string;
+    aiEnabled?: boolean;
 }): Promise<UIAuditResult[]>;

@@ -24,5 +24,6 @@ export interface AfterBurnResult {
     markdownReportPath: string | null;
     exitCode: number;
     sessionId: string;
+    warnings?: string[];
 }
 export declare function runAfterburn(options: AfterBurnOptions): Promise<AfterBurnResult>;

@@ -102,8 +102,6 @@ export class SiteCrawler {
         try {
             // Open page via BrowserManager (handles stealth + cookie dismissal)
             page = await this.browserManager.newPage(url);
-            // Wait briefly for content to render
-            await page.waitForTimeout(500);
             // Extract title
             const title = await page.title();
             // Extract links

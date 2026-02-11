@@ -38,8 +38,8 @@ export class ScreenshotManager {
       return existing;
     }
 
-    // New screenshot - capture dual format and store in dedup map
-    const ref = await captureDualFormat(page, name, this.outputDir);
+    // New screenshot - capture dual format, reuse buffer and hash from above
+    const ref = await captureDualFormat(page, name, this.outputDir, pngBuffer, hash);
     this.dedupMap.set(hash, ref);
 
     // Track current session files

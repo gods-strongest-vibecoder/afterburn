@@ -25,16 +25,18 @@ export async function convertToWebP(pngBuffer: Buffer): Promise<Buffer> {
 export async function captureDualFormat(
   page: Page,
   name: string,
-  outputDir: string
+  outputDir: string,
+  existingPngBuffer?: Buffer,
+  existingHash?: string
 ): Promise<ScreenshotRef> {
   // Ensure output directory exists
   fs.ensureDirSync(outputDir);
 
-  // Capture full-page PNG screenshot
-  const pngBuffer = await page.screenshot({ type: 'png', fullPage: true });
+  // Reuse provided PNG buffer or capture a new one
+  const pngBuffer = existingPngBuffer || await page.screenshot({ type: 'png', fullPage: true });
 
-  // Generate content hash (first 12 chars of SHA-256)
-  const hash = createHash('sha256').update(pngBuffer).digest('hex').substring(0, 12);
+  // Reuse provided hash or compute from buffer
+  const hash = existingHash || createHash('sha256').update(pngBuffer).digest('hex').substring(0, 12);
 
   // Convert to WebP
   const webpBuffer = await convertToWebP(pngBuffer);

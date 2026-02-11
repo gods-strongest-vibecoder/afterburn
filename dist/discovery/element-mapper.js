@@ -1,4 +1,29 @@
 // Interactive element discovery including hidden elements (modals, dropdowns, mobile nav)
+// Destructive action denylist - skip elements with these keywords
+const DESTRUCTIVE_KEYWORDS = [
+    'delete',
+    'remove',
+    'destroy',
+    'reset',
+    'clear',
+    'drop',
+    'purge',
+    'revoke',
+    'terminate',
+    'unsubscribe',
+    'cancel-account',
+    'close-account',
+    'logout',
+    'log out',
+    'sign out',
+];
+/**
+ * Check if text matches destructive action patterns
+ */
+function isDestructiveAction(text) {
+    const lowerText = text.toLowerCase().trim();
+    return DESTRUCTIVE_KEYWORDS.some(keyword => lowerText.includes(keyword));
+}
 /**
  * Discover all visible interactive elements on a page
  */
@@ -243,13 +268,20 @@ export async function discoverHiddenElements(page, pageUrl) {
             // Skip
         }
     }
-    // Click each trigger button and check for new elements
-    for (const trigger of triggerButtons) {
+    // Click each trigger button and check for new elements (cap at 10 to avoid perf explosion)
+    for (const trigger of triggerButtons.slice(0, 10)) {
         try {
             // Check if button is visible and enabled
             const isVisible = await trigger.isVisible();
             if (!isVisible)
                 continue;
+            // Check for destructive actions
+            const buttonText = (await trigger.textContent()) || '';
+            const ariaLabel = (await trigger.getAttribute('aria-label')) || '';
+            const combinedText = `${buttonText} ${ariaLabel}`;
+            if (isDestructiveAction(combinedText)) {
+                continue; // Skip destructive buttons
+            }
             // Click the trigger
             await trigger.click({ timeout: 2000 });
             // Wait for animations

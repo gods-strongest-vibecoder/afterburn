@@ -205,10 +205,15 @@ async function runPipeline(
       // Stage: analysis
       options.onProgress?.('analysis', 'Analyzing results...');
 
-      // Error diagnosis
-      diagnosedErrors = await analyzeErrors(executionResult);
+      // Run error diagnosis and UI auditing in parallel (they share no mutable state)
+      const [rawDiagnosedErrors, uiAuditsResult] = await Promise.all([
+        analyzeErrors(executionResult),
+        auditUI(executionResult),
+      ]);
+      diagnosedErrors = rawDiagnosedErrors;
+      uiAudits = uiAuditsResult;
 
-      // Source code mapping (if --source provided)
+      // Source code mapping runs after both complete (only depends on diagnosedErrors)
       if (validatedSourcePath) {
         for (const diagnosed of diagnosedErrors) {
           const sourceLocation = await mapErrorToSource(diagnosed.originalError, validatedSourcePath);
@@ -217,9 +222,6 @@ async function runPipeline(
           }
         }
       }
-
-      // UI auditing (vision analysis of screenshots from execution)
-      uiAudits = await auditUI(executionResult);
     }
 
     // Save analysis artifact
@@ -262,25 +264,29 @@ async function runPipeline(
     let markdownReportPath: string | null = null;
     const warnings: string[] = [];
 
-    try {
-      // Generate HTML report (human-readable)
-      const htmlReport = await generateHtmlReport(executionResult, analysisArtifact);
-      htmlReportPath = path.join(outputDir, `report-${sessionId}.html`);
-      await writeHtmlReport(htmlReport, htmlReportPath);
-    } catch (reportError) {
-      // Issue 11: Track report generation failures as warnings
-      warnings.push(`HTML report generation failed: ${reportError instanceof Error ? reportError.message : String(reportError)}`);
-    }
-
-    try {
-      // Generate Markdown report (AI-readable)
-      const markdownReport = generateMarkdownReport(executionResult, analysisArtifact);
-      markdownReportPath = path.join(outputDir, `report-${sessionId}.md`);
-      await writeMarkdownReport(markdownReport, markdownReportPath);
-    } catch (reportError) {
-      // Issue 11: Track report generation failures as warnings
-      warnings.push(`Markdown report generation failed: ${reportError instanceof Error ? reportError.message : String(reportError)}`);
-    }
+    // Generate HTML and Markdown reports in parallel (independent outputs)
+    await Promise.all([
+      (async () => {
+        try {
+          const htmlReport = await generateHtmlReport(executionResult, analysisArtifact);
+          htmlReportPath = path.join(outputDir, `report-${sessionId}.html`);
+          await writeHtmlReport(htmlReport, htmlReportPath);
+        } catch (reportError) {
+          // Issue 11: Track report generation failures as warnings
+          warnings.push(`HTML report generation failed: ${reportError instanceof Error ? reportError.message : String(reportError)}`);
+        }
+      })(),
+      (async () => {
+        try {
+          const markdownReport = generateMarkdownReport(executionResult, analysisArtifact);
+          markdownReportPath = path.join(outputDir, `report-${sessionId}.md`);
+          await writeMarkdownReport(markdownReport, markdownReportPath);
+        } catch (reportError) {
+          // Issue 11: Track report generation failures as warnings
+          warnings.push(`Markdown report generation failed: ${reportError instanceof Error ? reportError.message : String(reportError)}`);
+        }
+      })(),
+    ]);
 
     // Stage: complete
     const statusMessage = warnings.length > 0

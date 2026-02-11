@@ -18,13 +18,13 @@ export async function convertToWebP(pngBuffer) {
  * @param outputDir - Directory to save screenshots
  * @returns ScreenshotRef with paths and metadata
  */
-export async function captureDualFormat(page, name, outputDir) {
+export async function captureDualFormat(page, name, outputDir, existingPngBuffer, existingHash) {
     // Ensure output directory exists
     fs.ensureDirSync(outputDir);
-    // Capture full-page PNG screenshot
-    const pngBuffer = await page.screenshot({ type: 'png', fullPage: true });
-    // Generate content hash (first 12 chars of SHA-256)
-    const hash = createHash('sha256').update(pngBuffer).digest('hex').substring(0, 12);
+    // Reuse provided PNG buffer or capture a new one
+    const pngBuffer = existingPngBuffer || await page.screenshot({ type: 'png', fullPage: true });
+    // Reuse provided hash or compute from buffer
+    const hash = existingHash || createHash('sha256').update(pngBuffer).digest('hex').substring(0, 12);
     // Convert to WebP
     const webpBuffer = await convertToWebP(pngBuffer);
     // Build cross-platform file paths

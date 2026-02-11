@@ -2,7 +2,7 @@
 
 import { GeminiClient } from '../ai/gemini-client.js';
 import { ExecutionArtifact, StepResult, ErrorEvidence } from '../types/execution.js';
-import { DiagnosedError, ErrorDiagnosisSchema, ErrorDiagnosis } from './diagnosis-schema.js';
+import { DiagnosedError, ErrorDiagnosisSchema, ErrorDiagnosisBatchSchema, ErrorDiagnosis } from './diagnosis-schema.js';
 
 /**
  * Main export: Analyze all errors from ExecutionArtifact and produce plain English diagnoses
@@ -236,15 +236,41 @@ Focus on WHAT went wrong and HOW to fix it, not technical jargon.`;
 }
 
 /**
- * Diagnose batch of aggregate errors
+ * Diagnose batch of aggregate errors in a single LLM call.
+ * Falls back to per-error calls if the batch response is invalid.
  */
 async function diagnoseBatch(
   gemini: GeminiClient,
   prompt: string,
   errors: Array<{ type: string; message: string }>
 ): Promise<DiagnosedError[]> {
-  // For simplicity, diagnose aggregate errors individually
-  // (batching multiple in one LLM call would require array schema)
+  // Try batch diagnosis first — one LLM call for all errors
+  try {
+    const batchResult = await gemini.generateStructured(prompt, ErrorDiagnosisBatchSchema);
+
+    if (batchResult.diagnoses && batchResult.diagnoses.length === errors.length) {
+      return errors.map((error, i) => {
+        const d = batchResult.diagnoses[i];
+        return {
+          summary: d.plainEnglish,
+          rootCause: d.rootCause,
+          errorType: classifyErrorType(error.type),
+          confidence: severityToConfidence(d.severity),
+          suggestedFix: d.suggestedFix,
+          originalError: error.message,
+        } as DiagnosedError;
+      });
+    }
+
+    // Wrong count — fall through to per-error fallback
+    console.warn(
+      `Batch diagnosis returned ${batchResult.diagnoses?.length ?? 0} results for ${errors.length} errors, falling back to individual calls`
+    );
+  } catch (batchError) {
+    console.warn('Batch diagnosis failed, falling back to individual calls:', batchError);
+  }
+
+  // Fallback: diagnose each error individually
   const diagnosedErrors: DiagnosedError[] = [];
 
   for (const error of errors) {
@@ -261,13 +287,27 @@ Focus on WHAT went wrong and HOW to fix it, not technical jargon.`;
         ...diagnosis,
         originalError: error.message,
       });
-    } catch (error) {
-      console.warn('Failed to diagnose aggregate error:', error);
-      // Skip this error, continue with others
+    } catch (err) {
+      console.warn('Failed to diagnose aggregate error:', err);
     }
   }
 
   return diagnosedErrors;
+}
+
+/** Map aggregate error type to ErrorDiagnosis errorType */
+function classifyErrorType(type: string): ErrorDiagnosis['errorType'] {
+  switch (type) {
+    case 'console': return 'javascript';
+    case 'network': return 'network';
+    case 'image': return 'network';
+    default: return 'unknown';
+  }
+}
+
+/** Map LLM severity to confidence level */
+function severityToConfidence(severity: 'high' | 'medium' | 'low'): 'high' | 'medium' | 'low' {
+  return severity;
 }
 
 /**

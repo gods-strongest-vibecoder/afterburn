@@ -9,7 +9,7 @@ import { validateUrl, validateNavigationUrl, validateSelector, sanitizeValue } f
 // Step execution timeouts
 const STEP_TIMEOUT = 10_000;
 const NAV_TIMEOUT = 30_000;
-const DEAD_BUTTON_WAIT = 1000;
+export const DEAD_BUTTON_WAIT = 500;
 
 /**
  * Main dispatcher - executes a workflow step and returns structured result

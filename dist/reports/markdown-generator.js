@@ -3,7 +3,69 @@ import fs from 'fs-extra';
 import { dirname } from 'node:path';
 import { calculateHealthScore } from './health-scorer.js';
 import { prioritizeIssues, deduplicateIssues } from './priority-ranker.js';
-import { redactSensitiveUrl, sanitizeForYaml } from '../utils/sanitizer.js';
+import { redactSensitiveUrl, sanitizeForYaml, redactSensitiveData } from '../utils/sanitizer.js';
+const REPORT_SCHEMA_VERSION = '1.1.0';
+/**
+ * Redact sensitive data from text before inserting into reports.
+ * Strips query params with sensitive keys, truncates stack traces, replaces file paths with basename.
+ */
+function redactSensitive(text) {
+    if (!text)
+        return text;
+    let result = text;
+    // Strip sensitive query params from URLs
+    result = result.replace(/\b(https?:\/\/[^\s]+\?[^\s]*)/g, (url) => {
+        try {
+            const parsed = new URL(url);
+            const sensitiveKeys = ['key', 'token', 'secret', 'password', 'auth', 'api', 'apikey', 'api_key', 'access_token', 'auth_token', 'session', 'jwt'];
+            for (const key of sensitiveKeys) {
+                if (parsed.searchParams.has(key)) {
+                    parsed.searchParams.set(key, '[REDACTED]');
+                }
+            }
+            return parsed.toString();
+        }
+        catch {
+            return url;
+        }
+    });
+    // Truncate stack traces to first 3 lines
+    const lines = result.split('\n');
+    if (lines.length > 3 && lines.some(line => line.match(/^\s*at\s+/))) {
+        const stackStart = lines.findIndex(line => line.match(/^\s*at\s+/));
+        if (stackStart >= 0 && lines.length > stackStart + 3) {
+            result = lines.slice(0, stackStart + 3).join('\n') + '\n... (stack trace truncated)';
+        }
+    }
+    // Replace full file paths with basename only (remove directory info)
+    result = result.replace(/([A-Z]:[\/\\]|\/[^\/\s]+\/)[^\s:]+([\/\\][^\s:]+)/g, (match) => {
+        const lastSep = Math.max(match.lastIndexOf('/'), match.lastIndexOf('\\'));
+        return lastSep >= 0 ? match.substring(lastSep + 1) : match;
+    });
+    // Apply general sensitive data redaction
+    result = redactSensitiveData(result);
+    return result;
+}
+/**
+ * Sanitize text for safe inclusion in Markdown tables.
+ * Escapes pipes, replaces newlines, escapes backticks in inline contexts, truncates long fields.
+ */
+function sanitizeForMarkdownTable(text) {
+    if (!text)
+        return '';
+    let result = text;
+    // Escape pipe characters
+    result = result.replace(/\|/g, '\\|');
+    // Replace newlines with spaces
+    result = result.replace(/\n/g, ' ');
+    // Escape backticks in inline contexts (prevent code block injection)
+    result = result.replace(/`/g, '\\`');
+    // Truncate overly long fields
+    if (result.length > 200) {
+        result = result.slice(0, 197) + '...';
+    }
+    return result;
+}
 /**
  * Generate YAML frontmatter with machine-readable metadata
  */
@@ -12,8 +74,9 @@ function generateFrontmatter(exec, analysis, healthScore, dedupedIssueCount) {
     const workflowsFailed = exec.workflowResults.filter(w => w.overallStatus === 'failed').length;
     return `---
 tool: afterburn
-version: "1.0"
+schema_version: ${REPORT_SCHEMA_VERSION}
 session_id: ${sanitizeForYaml(exec.sessionId)}
+generated_at_utc: ${new Date().toISOString()}
 timestamp: ${exec.timestamp}
 target_url: ${sanitizeForYaml(redactSensitiveUrl(exec.targetUrl))}
 health_score: ${healthScore.overall}
@@ -40,7 +103,7 @@ function generateIssueTable(issues) {
             summaryText += ` (x${issue.occurrenceCount})`;
         }
         const summaryTruncated = summaryText.length > 80 ? summaryText.slice(0, 77) + '...' : summaryText;
-        return `| ${i + 1} | ${priorityLabel} | ${issue.category} | ${summaryTruncated} | ${issue.location} |`;
+        return `| ${i + 1} | ${priorityLabel} | ${sanitizeForMarkdownTable(issue.category)} | ${sanitizeForMarkdownTable(summaryTruncated)} | ${sanitizeForMarkdownTable(issue.location)} |`;
     });
     return `| # | Priority | Category | Summary | Location |
 |---|----------|----------|---------|----------|
@@ -54,21 +117,22 @@ function generateTechnicalDetails(diagnosedErrors) {
         return 'No errors diagnosed.';
     }
     return diagnosedErrors.map((error, i) => {
-        let details = `### ${i + 1}. ${error.summary}
+        let details = `### ${i + 1}. ${sanitizeForMarkdownTable(error.summary)}
 
-- **Error Type:** ${error.errorType}
+- **Error Type:** ${sanitizeForMarkdownTable(error.errorType)}
 - **Confidence:** ${error.confidence}
-- **Root Cause:** ${error.rootCause}
-- **Suggested Fix:** ${error.suggestedFix}
-- **Original Error:** \`${error.originalError}\``;
+- **Root Cause:** ${sanitizeForMarkdownTable(error.rootCause)}
+- **Suggested Fix:** ${sanitizeForMarkdownTable(error.suggestedFix)}
+- **Original Error:** \`${redactSensitive(error.originalError)}\``;
         if (error.technicalDetails) {
-            details += `\n- **Technical Details:** ${error.technicalDetails}`;
+            details += `\n- **Technical Details:** ${sanitizeForMarkdownTable(error.technicalDetails)}`;
         }
         if (error.sourceLocation) {
+            const redactedContext = redactSensitive(error.sourceLocation.context || '');
             details += `\n- **Source:** \`${error.sourceLocation.file}:${error.sourceLocation.line}\`
 - **Code Context:**
 \`\`\`typescript
-${error.sourceLocation.context}
+${redactedContext}
 \`\`\``;
         }
         return details;
@@ -84,15 +148,15 @@ function generateReproductionSteps(workflowResults) {
     }
     return failedWorkflows.map(workflow => {
         const steps = workflow.stepResults.map((step, i) => {
-            let stepLine = `${i + 1}. ${step.action} on \`${step.selector}\` - ${step.status}`;
+            let stepLine = `${i + 1}. ${sanitizeForMarkdownTable(step.action)} on \`${sanitizeForMarkdownTable(step.selector || '')}\` - ${step.status}`;
             if (step.error) {
-                stepLine += `\n   Error: ${step.error}`;
+                stepLine += `\n   Error: ${redactSensitive(step.error)}`;
             }
             return stepLine;
         }).join('\n');
-        return `### ${workflow.workflowName}
+        return `### ${sanitizeForMarkdownTable(workflow.workflowName)}
 
-**Description:** ${workflow.description}
+**Description:** ${sanitizeForMarkdownTable(workflow.description)}
 **Status:** Failed (${workflow.failedSteps}/${workflow.totalSteps} steps failed)
 **Duration:** ${workflow.duration}ms
 
@@ -108,20 +172,20 @@ function generateUIAuditSection(uiAudits) {
         return 'No UI audits performed.';
     }
     return uiAudits.map(audit => {
-        let section = `### ${audit.pageUrl}
+        let section = `### ${redactSensitiveUrl(audit.pageUrl)}
 
 **Overall Score:** ${audit.overallScore}`;
         if (audit.layoutIssues.length > 0) {
-            section += '\n\n**Layout Issues:**\n' + audit.layoutIssues.map(issue => `- [${issue.severity}] ${issue.description} at ${issue.location}`).join('\n');
+            section += '\n\n**Layout Issues:**\n' + audit.layoutIssues.map(issue => `- [${issue.severity}] ${sanitizeForMarkdownTable(issue.description)} at ${sanitizeForMarkdownTable(issue.location)}`).join('\n');
         }
         if (audit.contrastIssues.length > 0) {
-            section += '\n\n**Contrast Issues:**\n' + audit.contrastIssues.map(issue => `- ${issue.element}: ${issue.issue} - Fix: ${issue.suggestion}`).join('\n');
+            section += '\n\n**Contrast Issues:**\n' + audit.contrastIssues.map(issue => `- ${sanitizeForMarkdownTable(issue.element)}: ${sanitizeForMarkdownTable(issue.issue)} - Fix: ${sanitizeForMarkdownTable(issue.suggestion)}`).join('\n');
         }
         if (audit.formattingIssues.length > 0) {
-            section += '\n\n**Formatting Issues:**\n' + audit.formattingIssues.map(issue => `- ${issue.problem} - Fix: ${issue.suggestion}`).join('\n');
+            section += '\n\n**Formatting Issues:**\n' + audit.formattingIssues.map(issue => `- ${sanitizeForMarkdownTable(issue.problem)} - Fix: ${sanitizeForMarkdownTable(issue.suggestion)}`).join('\n');
         }
         if (audit.improvements.length > 0) {
-            section += '\n\n**Improvements:**\n' + audit.improvements.map(improvement => `- ${improvement}`).join('\n');
+            section += '\n\n**Improvements:**\n' + audit.improvements.map(improvement => `- ${sanitizeForMarkdownTable(improvement)}`).join('\n');
         }
         return section;
     }).join('\n\n');
@@ -134,7 +198,7 @@ function generateSourceReferences(diagnosedErrors) {
     if (errorsWithSource.length === 0) {
         return 'No source code references available. Run with `--source ./path` for source-level diagnosis.';
     }
-    return errorsWithSource.map(error => `- \`${error.sourceLocation.file}:${error.sourceLocation.line}\` - ${error.summary}`).join('\n');
+    return errorsWithSource.map(error => `- \`${error.sourceLocation.file}:${error.sourceLocation.line}\` - ${sanitizeForMarkdownTable(error.summary)}`).join('\n');
 }
 /**
  * Generate accessibility summary with aggregated violations
@@ -195,8 +259,8 @@ export function generateMarkdownReport(executionArtifact, analysisArtifact) {
     const uiAuditSection = generateUIAuditSection(analysisArtifact.uiAudits);
     const accessibilitySummary = generateAccessibilitySummary(executionArtifact);
     const sourceReferences = generateSourceReferences(analysisArtifact.diagnosedErrors);
-    // Format timestamp for display
-    const readableTimestamp = new Date(executionArtifact.timestamp).toLocaleString();
+    // Format timestamp for display (ISO format for machine readability)
+    const readableTimestamp = new Date(executionArtifact.timestamp).toISOString();
     const mode = analysisArtifact.aiPowered ? 'AI-powered' : 'Basic';
     // Count specific issue types
     const deadButtonCount = executionArtifact.deadButtons.filter(b => b.isDead).length;
@@ -209,7 +273,7 @@ export function generateMarkdownReport(executionArtifact, analysisArtifact) {
 
 # Afterburn Test Report
 
-**Target:** ${executionArtifact.targetUrl}
+**Target:** ${redactSensitiveUrl(executionArtifact.targetUrl)}
 **Health Score:** ${healthScore.overall}/100 (${healthScore.label})
 **Date:** ${readableTimestamp}
 **Mode:** ${mode}

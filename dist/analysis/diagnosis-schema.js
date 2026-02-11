@@ -12,6 +12,17 @@ export const ErrorDiagnosisSchema = z.object({
     technicalDetails: z.string().optional().describe('Technical details for developers'),
 });
 /**
+ * Batch response schema for diagnosing multiple errors in a single LLM call
+ */
+export const ErrorDiagnosisBatchSchema = z.object({
+    diagnoses: z.array(z.object({
+        rootCause: z.string().describe('Plain English explanation of the root cause'),
+        plainEnglish: z.string().describe('One-sentence plain English summary of what went wrong'),
+        suggestedFix: z.string().describe('Actionable next step in plain English'),
+        severity: z.enum(['high', 'medium', 'low']).describe('Severity of the error'),
+    })).describe('One diagnosis per error, in the same order as the input errors'),
+});
+/**
  * UI audit findings from vision LLM analysis
  */
 export const UIAuditSchema = z.object({

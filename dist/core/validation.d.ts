@@ -1,6 +1,12 @@
 /**
+ * Check if an IP address is private or reserved (loopback, link-local, private ranges)
+ * Blocks: 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, ::1, fc00::/7
+ */
+export declare function isPrivateOrReservedIP(ip: string): boolean;
+/**
  * Validate that a URL uses http:// or https:// scheme.
  * Rejects file://, javascript:, data:, and other dangerous schemes.
+ * Also rejects URLs resolving to private/loopback IPs (SSRF protection).
  */
 export declare function validateUrl(url: string): string;
 /**
@@ -16,6 +22,7 @@ export declare function validateNavigationUrl(navigationUrl: string, baseUrl: st
 /**
  * Validate and clamp maxPages to a safe range.
  * Returns a safe integer between 1 and 500, defaulting to 50.
+ * Special case: 0 means "unlimited" but still capped at 500.
  */
 export declare function validateMaxPages(value: number | undefined): number;
 /**
@@ -28,3 +35,8 @@ export declare function validateSelector(selector: string): string;
  * Removes <script> tags and javascript: URIs from step values.
  */
 export declare function sanitizeValue(value: string): string;
+/**
+ * Sanitize session ID for filesystem usage
+ * Replaces invalid filename characters with underscores
+ */
+export declare function sanitizeSessionId(sessionId: string): string;

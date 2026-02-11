@@ -40,7 +40,7 @@ export async function capturePerformanceMetrics(page) {
                         domContentLoaded: navigation?.domContentLoadedEventEnd || 0,
                         totalLoadTime: navigation?.loadEventEnd || 0,
                     });
-                }, 3000);
+                }, 500);
             });
         });
         return {

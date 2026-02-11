@@ -315,8 +315,8 @@ export async function discoverHiddenElements(
     }
   }
 
-  // Click each trigger button and check for new elements
-  for (const trigger of triggerButtons) {
+  // Click each trigger button and check for new elements (cap at 10 to avoid perf explosion)
+  for (const trigger of triggerButtons.slice(0, 10)) {
     try {
       // Check if button is visible and enabled
       const isVisible = await trigger.isVisible();

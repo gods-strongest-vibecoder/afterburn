@@ -1,6 +1,7 @@
 import type { Page } from 'playwright-core';
 import type { StepResult, DeadButtonResult, BrokenFormResult } from '../types/execution.js';
 import type { WorkflowStep, FormInfo } from '../types/discovery.js';
+export declare const DEAD_BUTTON_WAIT = 500;
 /**
  * Main dispatcher - executes a workflow step and returns structured result
  */

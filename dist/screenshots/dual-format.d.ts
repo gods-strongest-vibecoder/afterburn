@@ -11,4 +11,4 @@ export declare function convertToWebP(pngBuffer: Buffer): Promise<Buffer>;
  * @param outputDir - Directory to save screenshots
  * @returns ScreenshotRef with paths and metadata
  */
-export declare function captureDualFormat(page: Page, name: string, outputDir: string): Promise<ScreenshotRef>;
+export declare function captureDualFormat(page: Page, name: string, outputDir: string, existingPngBuffer?: Buffer, existingHash?: string): Promise<ScreenshotRef>;

@@ -60,7 +60,7 @@ export async function capturePerformanceMetrics(page: Page): Promise<Performance
             domContentLoaded: navigation?.domContentLoadedEventEnd || 0,
             totalLoadTime: navigation?.loadEventEnd || 0,
           });
-        }, 3000);
+        }, 500);
       });
     });
 

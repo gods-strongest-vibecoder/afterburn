@@ -3,7 +3,7 @@ import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
 import { setupErrorListeners } from './error-detector.js';
-import { executeStep, captureClickState, checkDeadButton, detectBrokenForm } from './step-handlers.js';
+import { executeStep, captureClickState, checkDeadButton, detectBrokenForm, DEAD_BUTTON_WAIT } from './step-handlers.js';
 import { captureErrorEvidence } from './evidence-capture.js';
 import { auditAccessibility } from '../testing/accessibility-auditor.js';
 import { capturePerformanceMetrics } from '../testing/performance-monitor.js';
@@ -113,7 +113,7 @@ export class WorkflowExecutor {
                 const result = await executeStep(page, stepWithCreds, i, this.options.targetUrl);
                 // After step, check for dead button using pre/post state comparison (no re-click)
                 if (step.action === 'click' && result.status === 'passed' && preClickState) {
-                    await page.waitForTimeout(1000);
+                    await page.waitForTimeout(DEAD_BUTTON_WAIT);
                     const postState = await captureClickState(page);
                     postState.hadNetworkActivity = networkActivity;
                     if (networkListener)
@@ -206,9 +206,11 @@ export class WorkflowExecutor {
             return;
         }
         this.log(`  Auditing page: ${url}`);
-        const accessibility = await auditAccessibility(page);
-        const performance = await capturePerformanceMetrics(page);
-        const metaAudit = await auditMeta(page);
+        const [accessibility, performance, metaAudit] = await Promise.all([
+            auditAccessibility(page),
+            capturePerformanceMetrics(page),
+            auditMeta(page),
+        ]);
         pageAudits.push({
             url,
             accessibility,

@@ -46,7 +46,7 @@ export class BrowserManager {
    * @param url - Optional URL to navigate to
    * @returns Playwright page instance
    */
-  async newPage(url?: string): Promise<Page> {
+  async newPage(url?: string, options?: { networkIdleTimeout?: number }): Promise<Page> {
     if (!this.context) {
       throw new Error('Browser not launched. Call launch() first.');
     }
@@ -68,7 +68,7 @@ export class BrowserManager {
 
       // Wait for network idle with timeout (some SPAs never reach idle)
       try {
-        await page.waitForLoadState('networkidle', { timeout: 5000 });
+        await page.waitForLoadState('networkidle', { timeout: options?.networkIdleTimeout ?? 2000 });
       } catch {
         // Timeout is acceptable - page may never reach networkidle
       }
@@ -87,6 +87,13 @@ export class BrowserManager {
       this.browser = null;
       this.context = null;
     }
+  }
+
+  /**
+   * Returns the browser context for route interception (e.g., blocking resources).
+   */
+  getContext(): BrowserContext | null {
+    return this.context;
   }
 
   /**

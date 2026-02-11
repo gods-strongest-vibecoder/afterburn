@@ -18,7 +18,7 @@ import { ArtifactStorage } from '../artifacts/index.js';
  * @returns Complete discovery artifact with sitemap and workflow plans
  */
 export async function runDiscovery(options) {
-    const { targetUrl, sessionId, userHints = [], maxPages = 50, headless = true, onProgress = (msg) => console.log(msg) } = options;
+    const { targetUrl, sessionId, userHints = [], maxPages = 10, headless = true, onProgress = (msg) => console.log(msg) } = options;
     // Step 1: Initialize managers
     const browserManager = new BrowserManager({ headless });
     const screenshotManager = new ScreenshotManager();
@@ -26,13 +26,21 @@ export async function runDiscovery(options) {
     let spaFramework = { framework: 'none' };
     let spaRoutes = [];
     const allBrokenLinks = [];
+    let totalLinksSkipped = 0;
     try {
         // Step 2: Launch browser
         onProgress('Launching browser...');
         await browserManager.launch();
+        // Block heavy resources during discovery (images, fonts, video, analytics)
+        const ctx = browserManager.getContext();
+        if (ctx) {
+            await ctx.route('**/*.{png,jpg,jpeg,gif,webp,svg,woff,woff2,ttf,mp4,mp3}', r => r.abort());
+            await ctx.route('**/analytics**', r => r.abort());
+            await ctx.route('**/gtag**', r => r.abort());
+        }
         // Step 3: SPA Detection (first page only)
         onProgress(`Detecting SPA framework on ${targetUrl}...`);
-        const spaDetectionPage = await browserManager.newPage(targetUrl);
+        const spaDetectionPage = await browserManager.newPage(targetUrl, { networkIdleTimeout: 5000 });
         try {
             // Detect framework
             spaFramework = await detectSPAFramework(spaDetectionPage);
@@ -151,16 +159,25 @@ export async function runDiscovery(options) {
         const sitemap = buildSitemap(crawlResult.pages, targetUrl);
         console.log('\nSite Map:');
         console.log(printSitemapTree(sitemap));
-        // Step 8: Generate workflow plans
+        // Step 8: Generate workflow plans (overlapped with browser cleanup)
         let workflowPlans = [];
         // Check if GEMINI_API_KEY is set
         const geminiApiKey = process.env.GEMINI_API_KEY;
+        // Fire off planning as a non-blocking promise (doesn't need browser)
+        let planPromise = null;
         if (geminiApiKey) {
+            onProgress('Generating workflow plans with AI...');
+            const geminiClient = new GeminiClient(geminiApiKey);
+            const workflowPlanner = new WorkflowPlanner(geminiClient);
+            planPromise = workflowPlanner.generatePlans(sitemap, userHints);
+        }
+        // Meanwhile, close browser (planning doesn't need it)
+        onProgress('Closing browser...');
+        await browserManager.close();
+        // Now await planning result (or generate heuristic plans)
+        if (planPromise) {
             try {
-                onProgress('Generating workflow plans with AI...');
-                const geminiClient = new GeminiClient(geminiApiKey);
-                const workflowPlanner = new WorkflowPlanner(geminiClient);
-                workflowPlans = await workflowPlanner.generatePlans(sitemap, userHints);
+                workflowPlans = await planPromise;
                 if (workflowPlans.length > 0) {
                     console.log('\nDiscovered Workflows:');
                     workflowPlans.forEach((plan, index) => {
@@ -186,7 +203,7 @@ export async function runDiscovery(options) {
                 });
             }
         }
-        // Step 9: Save discovery artifact
+        // Step 9: Save discovery artifact (after plans are ready)
         const artifact = {
             version: '1.0',
             stage: 'discovery',
@@ -200,10 +217,7 @@ export async function runDiscovery(options) {
         };
         onProgress('Saving discovery artifact...');
         await artifactStorage.save(artifact);
-        // Step 10: Cleanup
-        onProgress('Closing browser...');
-        await browserManager.close();
-        // Step 11: Return artifact
+        // Step 10: Return artifact
         return artifact;
     }
     catch (error) {

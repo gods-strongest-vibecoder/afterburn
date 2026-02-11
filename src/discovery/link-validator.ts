@@ -72,7 +72,7 @@ export async function validateLinks(
   globalLinkCount += linksToCheck.length;
 
   // Check links with concurrency limit (max 5 concurrent)
-  const batchSize = 5;
+  const batchSize = 10;
   for (let i = 0; i < linksToCheck.length; i += batchSize) {
     const batch = linksToCheck.slice(i, i + batchSize);
 

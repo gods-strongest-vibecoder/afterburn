@@ -1,5 +1,7 @@
 // Screenshot capture coordination with content-hash deduplication
 import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import fs from 'fs-extra';
 import { captureDualFormat } from './dual-format.js';
 /**
  * Manages screenshot capture with automatic deduplication by content hash
@@ -7,9 +9,12 @@ import { captureDualFormat } from './dual-format.js';
 export class ScreenshotManager {
     outputDir;
     dedupMap;
+    currentSessionFiles;
     constructor(outputDir = '.afterburn/screenshots') {
         this.outputDir = outputDir;
         this.dedupMap = new Map();
+        this.currentSessionFiles = new Set();
+        fs.ensureDirSync(this.outputDir);
     }
     /**
      * Captures a screenshot in dual format (PNG + WebP) with deduplication
@@ -26,9 +31,12 @@ export class ScreenshotManager {
         if (existing) {
             return existing;
         }
-        // New screenshot - capture dual format and store in dedup map
-        const ref = await captureDualFormat(page, name, this.outputDir);
+        // New screenshot - capture dual format, reuse buffer and hash from above
+        const ref = await captureDualFormat(page, name, this.outputDir, pngBuffer, hash);
         this.dedupMap.set(hash, ref);
+        // Track current session files
+        this.currentSessionFiles.add(ref.pngPath);
+        this.currentSessionFiles.add(ref.webpPath);
         return ref;
     }
     /**
@@ -42,6 +50,37 @@ export class ScreenshotManager {
      */
     getByName(name) {
         return this.getAll().find((ref) => ref.name === name);
+    }
+    /**
+     * Removes screenshots older than specified days based on file modification time.
+     * Excludes screenshots from the current session.
+     * @param olderThanDays - Age threshold in days (default: 7). Set to 0 to clean all old screenshots.
+     * @returns Count of deleted files
+     */
+    async cleanup(olderThanDays = 7) {
+        const files = await fs.readdir(this.outputDir);
+        const now = Date.now();
+        const threshold = olderThanDays * 24 * 60 * 60 * 1000; // Convert days to milliseconds
+        let deletedCount = 0;
+        for (const file of files) {
+            const filepath = join(this.outputDir, file);
+            // Skip files from current session
+            if (this.currentSessionFiles.has(filepath)) {
+                continue;
+            }
+            try {
+                const stats = await fs.stat(filepath);
+                const age = now - stats.mtimeMs;
+                if (age > threshold) {
+                    await fs.unlink(filepath);
+                    deletedCount++;
+                }
+            }
+            catch {
+                // File might have been deleted already, continue
+            }
+        }
+        return deletedCount;
     }
 }
 //# sourceMappingURL=screenshot-manager.js.map

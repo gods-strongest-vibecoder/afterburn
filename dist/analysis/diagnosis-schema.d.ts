@@ -25,6 +25,22 @@ export declare const ErrorDiagnosisSchema: z.ZodObject<{
 }, z.core.$strip>;
 export type ErrorDiagnosis = z.infer<typeof ErrorDiagnosisSchema>;
 /**
+ * Batch response schema for diagnosing multiple errors in a single LLM call
+ */
+export declare const ErrorDiagnosisBatchSchema: z.ZodObject<{
+    diagnoses: z.ZodArray<z.ZodObject<{
+        rootCause: z.ZodString;
+        plainEnglish: z.ZodString;
+        suggestedFix: z.ZodString;
+        severity: z.ZodEnum<{
+            high: "high";
+            low: "low";
+            medium: "medium";
+        }>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export type ErrorDiagnosisBatch = z.infer<typeof ErrorDiagnosisBatchSchema>;
+/**
  * UI audit findings from vision LLM analysis
  */
 export declare const UIAuditSchema: z.ZodObject<{

@@ -28,7 +28,7 @@ export interface DiscoveryOptions {
   targetUrl: string;
   sessionId: string;
   userHints?: string[];      // from --flows flag
-  maxPages?: number;         // default 50, max 500
+  maxPages?: number;         // default 10, max 500
   headless?: boolean;        // defaults to true
   onProgress?: (message: string) => void;
 }
@@ -45,7 +45,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     targetUrl,
     sessionId,
     userHints = [],
-    maxPages = 50,
+    maxPages = 10,
     headless = true,
     onProgress = (msg: string) => console.log(msg)
   } = options;
@@ -65,9 +65,17 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     onProgress('Launching browser...');
     await browserManager.launch();
 
+    // Block heavy resources during discovery (images, fonts, video, analytics)
+    const ctx = browserManager.getContext();
+    if (ctx) {
+      await ctx.route('**/*.{png,jpg,jpeg,gif,webp,svg,woff,woff2,ttf,mp4,mp3}', r => r.abort());
+      await ctx.route('**/analytics**', r => r.abort());
+      await ctx.route('**/gtag**', r => r.abort());
+    }
+
     // Step 3: SPA Detection (first page only)
     onProgress(`Detecting SPA framework on ${targetUrl}...`);
-    const spaDetectionPage = await browserManager.newPage(targetUrl);
+    const spaDetectionPage = await browserManager.newPage(targetUrl, { networkIdleTimeout: 5000 });
 
     try {
       // Detect framework
@@ -208,19 +216,30 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     console.log('\nSite Map:');
     console.log(printSitemapTree(sitemap));
 
-    // Step 8: Generate workflow plans
+    // Step 8: Generate workflow plans (overlapped with browser cleanup)
     let workflowPlans: WorkflowPlan[] = [];
 
     // Check if GEMINI_API_KEY is set
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    if (geminiApiKey) {
-      try {
-        onProgress('Generating workflow plans with AI...');
-        const geminiClient = new GeminiClient(geminiApiKey);
-        const workflowPlanner = new WorkflowPlanner(geminiClient);
+    // Fire off planning as a non-blocking promise (doesn't need browser)
+    let planPromise: Promise<WorkflowPlan[]> | null = null;
 
-        workflowPlans = await workflowPlanner.generatePlans(sitemap, userHints);
+    if (geminiApiKey) {
+      onProgress('Generating workflow plans with AI...');
+      const geminiClient = new GeminiClient(geminiApiKey);
+      const workflowPlanner = new WorkflowPlanner(geminiClient);
+      planPromise = workflowPlanner.generatePlans(sitemap, userHints);
+    }
+
+    // Meanwhile, close browser (planning doesn't need it)
+    onProgress('Closing browser...');
+    await browserManager.close();
+
+    // Now await planning result (or generate heuristic plans)
+    if (planPromise) {
+      try {
+        workflowPlans = await planPromise;
 
         if (workflowPlans.length > 0) {
           console.log('\nDiscovered Workflows:');
@@ -246,7 +265,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
       }
     }
 
-    // Step 9: Save discovery artifact
+    // Step 9: Save discovery artifact (after plans are ready)
     const artifact: DiscoveryArtifact = {
       version: '1.0',
       stage: 'discovery',
@@ -262,11 +281,7 @@ export async function runDiscovery(options: DiscoveryOptions): Promise<Discovery
     onProgress('Saving discovery artifact...');
     await artifactStorage.save(artifact);
 
-    // Step 10: Cleanup
-    onProgress('Closing browser...');
-    await browserManager.close();
-
-    // Step 11: Return artifact
+    // Step 10: Return artifact
     return artifact;
 
   } catch (error) {
