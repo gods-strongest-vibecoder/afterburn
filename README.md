@@ -175,6 +175,22 @@ npx afterburn-cli doctor
 
 Checks Node.js version, browser installation, API key, and network connectivity.
 
+## Testing
+
+```bash
+# Fast default lane (unit tests)
+npm test
+
+# Deterministic end-to-end lane (local fixture server)
+npm run test:e2e
+
+# Unit coverage gate with thresholds
+npm run test:coverage
+
+# Optional real-internet smoke test (only runs when URL is provided)
+AFTERBURN_EXTERNAL_SMOKE_URL=https://example.com npm run test:smoke:external
+```
+
 ## CLI reference
 
 ```

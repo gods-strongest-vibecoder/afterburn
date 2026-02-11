@@ -1,7 +1,6 @@
 // Workflow execution orchestrator: runs workflow plans with error capture, evidence collection, and page auditing
 import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
-import { ArtifactStorage } from '../artifacts/index.js';
 import { setupErrorListeners } from './error-detector.js';
 import { executeStep, captureClickState, checkDeadButton, detectBrokenForm, DEAD_BUTTON_WAIT } from './step-handlers.js';
 import { captureErrorEvidence } from './evidence-capture.js';
@@ -14,19 +13,16 @@ import { auditMeta } from '../testing/meta-auditor.js';
 export class WorkflowExecutor {
     browserManager;
     screenshotManager;
-    artifactStorage;
     options;
     constructor(options) {
         this.options = options;
         this.browserManager = new BrowserManager({ headless: options.headless ?? true });
         this.screenshotManager = new ScreenshotManager();
-        this.artifactStorage = new ArtifactStorage();
     }
     /**
      * Main execution flow: runs all workflows and produces execution artifact
      */
     async execute() {
-        const startTime = Date.now();
         this.log('Launching browser...');
         await this.browserManager.launch();
         const workflowResults = [];
@@ -63,9 +59,6 @@ export class WorkflowExecutor {
             totalIssues,
             exitCode,
         };
-        // Save artifact
-        await this.artifactStorage.save(artifact);
-        this.log(`\n✓ Execution artifact saved`);
         return artifact;
     }
     /**

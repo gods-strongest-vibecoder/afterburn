@@ -8,7 +8,7 @@ import type { HealthScore } from './health-scorer.js';
 import type { PrioritizedIssue } from './priority-ranker.js';
 import type { ExecutionArtifact, WorkflowExecutionResult } from '../types/execution.js';
 import type { AnalysisArtifact, DiagnosedError, UIAuditResult } from '../analysis/diagnosis-schema.js';
-import { redactSensitiveUrl, sanitizeForYaml, redactSensitiveData } from '../utils/sanitizer.js';
+import { redactSensitiveUrl, sanitizeForYaml, redactSensitiveData, sanitizeForMarkdownInline } from '../utils/sanitizer.js';
 
 const REPORT_SCHEMA_VERSION = '1.1.0';
 
@@ -124,7 +124,8 @@ function generateIssueTable(issues: PrioritizedIssue[]): string {
       summaryText += ` (x${issue.occurrenceCount})`;
     }
     const summaryTruncated = summaryText.length > 80 ? summaryText.slice(0, 77) + '...' : summaryText;
-    return `| ${i + 1} | ${priorityLabel} | ${sanitizeForMarkdownTable(issue.category)} | ${sanitizeForMarkdownTable(summaryTruncated)} | ${sanitizeForMarkdownTable(issue.location)} |`;
+    const safeLocation = redactSensitiveUrl(issue.location);
+    return `| ${i + 1} | ${priorityLabel} | ${sanitizeForMarkdownTable(issue.category)} | ${sanitizeForMarkdownTable(summaryTruncated)} | ${sanitizeForMarkdownTable(safeLocation)} |`;
   });
 
   return `| # | Priority | Category | Summary | Location |
@@ -271,7 +272,7 @@ function generateAccessibilitySummary(executionArtifact: ExecutionArtifact): str
     const minor = report.violations.filter(v => v.impact === 'minor').length;
     const total = report.violationCount;
 
-    return `| ${audit.url} | ${critical} | ${serious} | ${moderate} | ${minor} | ${total} |`;
+    return `| ${sanitizeForMarkdownTable(redactSensitiveUrl(audit.url))} | ${critical} | ${serious} | ${moderate} | ${minor} | ${total} |`;
   });
 
   let summary = `| Page | Critical | Serious | Moderate | Minor | Total |
@@ -301,7 +302,7 @@ ${rows.join('\n')}`;
       .slice(0, 5);
 
     summary += '\n\n**Top Violations:**\n' + topViolations.map(([id, data]) =>
-      `- **${data.description}** (${data.count} elements) - [Learn more](${data.helpUrl})`
+      `- **${sanitizeForMarkdownInline(data.description)}** (${data.count} elements) - [Learn more](${redactSensitiveUrl(data.helpUrl)})`
     ).join('\n');
   }
 

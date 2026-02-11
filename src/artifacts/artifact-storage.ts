@@ -16,20 +16,24 @@ export class ArtifactStorage {
     fs.ensureDirSync(this.baseDir);
   }
 
+  private buildFilename(stage: string, sessionId: string): string {
+    const safeStage = stage.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeSessionId = sanitizeSessionId(sessionId);
+    return `${safeStage}-${safeSessionId}.json`;
+  }
+
   /**
    * Saves an artifact as a versioned JSON file
    * @param artifact - Artifact with metadata
    * @returns Filepath where artifact was saved
    */
   async save<T extends ArtifactMetadata>(artifact: T): Promise<string> {
-    // Sanitize session ID for filesystem safety
-    const safeSessionId = sanitizeSessionId(artifact.sessionId);
-    const filename = `${artifact.stage}-${safeSessionId}.json`;
+    const filename = this.buildFilename(artifact.stage, artifact.sessionId);
     const filepath = join(this.baseDir, filename);
     await fs.writeJson(filepath, artifact, { spaces: 2 });
 
     // Track current session for cleanup
-    this.currentSessionId = safeSessionId;
+    this.currentSessionId = sanitizeSessionId(artifact.sessionId);
 
     return filepath;
   }
@@ -42,7 +46,7 @@ export class ArtifactStorage {
    * @throws Error if artifact not found
    */
   async load<T extends ArtifactMetadata>(stage: string, sessionId: string): Promise<T> {
-    const filename = `${stage}-${sessionId}.json`;
+    const filename = this.buildFilename(stage, sessionId);
     const filepath = join(this.baseDir, filename);
 
     if (!(await fs.pathExists(filepath))) {
@@ -59,7 +63,7 @@ export class ArtifactStorage {
    * @returns True if artifact file exists
    */
   async exists(stage: string, sessionId: string): Promise<boolean> {
-    const filename = `${stage}-${sessionId}.json`;
+    const filename = this.buildFilename(stage, sessionId);
     const filepath = join(this.baseDir, filename);
     return fs.pathExists(filepath);
   }

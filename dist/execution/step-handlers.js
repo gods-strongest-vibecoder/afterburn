@@ -6,56 +6,80 @@ const STEP_TIMEOUT = 10_000;
 const NAV_TIMEOUT = 30_000;
 export const DEAD_BUTTON_WAIT = 500;
 /**
+ * Convert legacy LLM selector strings into Playwright selector engines.
+ * Supports getByRole/getByLabel/getByText compatibility for older plans.
+ */
+export function normalizeStepSelector(selector) {
+    const trimmed = selector.trim();
+    const roleMatch = trimmed.match(/^(?:page\.)?getByRole\(\s*['"]([^'"]+)['"]\s*(?:,\s*\{\s*name\s*:\s*['"]([^'"]+)['"]\s*\})?\s*\)$/);
+    if (roleMatch) {
+        const role = roleMatch[1];
+        const name = roleMatch[2]?.replace(/"/g, '\\"');
+        return name ? `role=${role}[name="${name}"]` : `role=${role}`;
+    }
+    const labelMatch = trimmed.match(/^(?:page\.)?getByLabel\(\s*['"]([^'"]+)['"]\s*\)$/);
+    if (labelMatch) {
+        const label = labelMatch[1].replace(/"/g, '\\"');
+        return `label=${label}`;
+    }
+    const textMatch = trimmed.match(/^(?:page\.)?getByText\(\s*['"]([^'"]+)['"]\s*\)$/);
+    if (textMatch) {
+        const text = textMatch[1].replace(/"/g, '\\"');
+        return `text=${text}`;
+    }
+    return selector;
+}
+/**
  * Main dispatcher - executes a workflow step and returns structured result
  */
 export async function executeStep(page, step, stepIndex, baseUrl) {
     const startTime = Date.now();
+    const normalizedSelector = normalizeStepSelector(step.selector);
     try {
         // Dismiss any modals that might interfere
         await dismissModalIfPresent(page);
         // Security: validate selector length to prevent injection via oversized strings
-        validateSelector(step.selector);
+        validateSelector(normalizedSelector);
         // Security: sanitize value to strip script injections from AI-generated content
         const safeValue = step.value ? sanitizeValue(step.value) : undefined;
         switch (step.action) {
             case 'navigate':
                 // Security: validate navigation targets; enforce same-origin when baseUrl is known
-                const targetUrl = safeValue || step.selector;
+                const targetUrl = safeValue || normalizedSelector;
                 if (baseUrl) {
                     validateNavigationUrl(targetUrl, baseUrl);
                 }
                 else {
                     validateUrl(targetUrl);
                 }
-                // Capture origin before navigation
-                const beforeOrigin = new URL(page.url()).origin;
+                const baseOrigin = baseUrl ? new URL(baseUrl).origin : null;
                 await page.goto(targetUrl, {
                     waitUntil: 'domcontentloaded',
                     timeout: NAV_TIMEOUT,
                 });
                 // Verify we stayed on the same origin
                 const afterOrigin = new URL(page.url()).origin;
-                if (baseUrl && afterOrigin !== beforeOrigin) {
-                    throw new Error(`Navigation blocked: left origin ${beforeOrigin} to ${afterOrigin}`);
+                if (baseOrigin && afterOrigin !== baseOrigin) {
+                    throw new Error(`Navigation blocked: left origin ${baseOrigin} to ${afterOrigin}`);
                 }
                 break;
             case 'click':
-                await page.click(step.selector, { timeout: STEP_TIMEOUT });
+                await page.click(normalizedSelector, { timeout: STEP_TIMEOUT });
                 break;
             case 'fill':
-                await page.fill(step.selector, safeValue || '', { timeout: STEP_TIMEOUT });
+                await page.fill(normalizedSelector, safeValue || '', { timeout: STEP_TIMEOUT });
                 break;
             case 'select':
-                await page.selectOption(step.selector, safeValue || '', { timeout: STEP_TIMEOUT });
+                await page.selectOption(normalizedSelector, safeValue || '', { timeout: STEP_TIMEOUT });
                 break;
             case 'wait':
-                await page.waitForSelector(step.selector, { timeout: STEP_TIMEOUT });
+                await page.waitForSelector(normalizedSelector, { timeout: STEP_TIMEOUT });
                 break;
             case 'expect':
                 // Verify element is visible
-                const isVisible = await page.isVisible(step.selector);
+                const isVisible = await page.isVisible(normalizedSelector);
                 if (!isVisible) {
-                    throw new Error(`Expected element not found: ${step.selector}`);
+                    throw new Error(`Expected element not found: ${normalizedSelector}`);
                 }
                 break;
             default:

@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import { dirname } from 'node:path';
 import { calculateHealthScore } from './health-scorer.js';
 import { prioritizeIssues, deduplicateIssues } from './priority-ranker.js';
-import { redactSensitiveUrl, sanitizeForYaml, redactSensitiveData } from '../utils/sanitizer.js';
+import { redactSensitiveUrl, sanitizeForYaml, redactSensitiveData, sanitizeForMarkdownInline } from '../utils/sanitizer.js';
 const REPORT_SCHEMA_VERSION = '1.1.0';
 /**
  * Redact sensitive data from text before inserting into reports.
@@ -103,7 +103,8 @@ function generateIssueTable(issues) {
             summaryText += ` (x${issue.occurrenceCount})`;
         }
         const summaryTruncated = summaryText.length > 80 ? summaryText.slice(0, 77) + '...' : summaryText;
-        return `| ${i + 1} | ${priorityLabel} | ${sanitizeForMarkdownTable(issue.category)} | ${sanitizeForMarkdownTable(summaryTruncated)} | ${sanitizeForMarkdownTable(issue.location)} |`;
+        const safeLocation = redactSensitiveUrl(issue.location);
+        return `| ${i + 1} | ${priorityLabel} | ${sanitizeForMarkdownTable(issue.category)} | ${sanitizeForMarkdownTable(summaryTruncated)} | ${sanitizeForMarkdownTable(safeLocation)} |`;
     });
     return `| # | Priority | Category | Summary | Location |
 |---|----------|----------|---------|----------|
@@ -216,7 +217,7 @@ function generateAccessibilitySummary(executionArtifact) {
         const moderate = report.violations.filter(v => v.impact === 'moderate').length;
         const minor = report.violations.filter(v => v.impact === 'minor').length;
         const total = report.violationCount;
-        return `| ${audit.url} | ${critical} | ${serious} | ${moderate} | ${minor} | ${total} |`;
+        return `| ${sanitizeForMarkdownTable(redactSensitiveUrl(audit.url))} | ${critical} | ${serious} | ${moderate} | ${minor} | ${total} |`;
     });
     let summary = `| Page | Critical | Serious | Moderate | Minor | Total |
 |------|----------|---------|----------|-------|-------|
@@ -242,7 +243,7 @@ ${rows.join('\n')}`;
         const topViolations = Array.from(violationCounts.entries())
             .sort((a, b) => b[1].count - a[1].count)
             .slice(0, 5);
-        summary += '\n\n**Top Violations:**\n' + topViolations.map(([id, data]) => `- **${data.description}** (${data.count} elements) - [Learn more](${data.helpUrl})`).join('\n');
+        summary += '\n\n**Top Violations:**\n' + topViolations.map(([id, data]) => `- **${sanitizeForMarkdownInline(data.description)}** (${data.count} elements) - [Learn more](${redactSensitiveUrl(data.helpUrl)})`).join('\n');
     }
     return summary;
 }

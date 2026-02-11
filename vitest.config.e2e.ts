@@ -2,8 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['tests/unit/**/*.test.ts'],
-    timeout: 10000,
+    include: ['tests/e2e/**/*.test.ts'],
+    timeout: 180000,
     environment: 'node',
+    sequence: {
+      concurrent: false,
+    },
   },
 });

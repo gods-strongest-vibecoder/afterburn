@@ -1,20 +1,46 @@
 // Input validation helpers for security hardening (URL, path, and numeric inputs)
 import path from 'node:path';
+import dns from 'node:dns/promises';
+const LOCALHOST_HOSTNAMES = new Set([
+    'localhost',
+    'localhost.localdomain',
+]);
+function allowPrivateUrls() {
+    return process.env.AFTERBURN_ALLOW_PRIVATE_URLS === '1';
+}
+function isIPv4Literal(value) {
+    return /^\d+\.\d+\.\d+\.\d+$/.test(value);
+}
+function isIPv6Literal(value) {
+    return value.includes(':');
+}
+function normalizeIpLiteral(ip) {
+    const lower = ip.trim().toLowerCase();
+    if (lower.startsWith('::ffff:')) {
+        return lower.slice('::ffff:'.length);
+    }
+    return lower;
+}
 /**
  * Check if an IP address is private or reserved (loopback, link-local, private ranges)
  * Blocks: 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, ::1, fc00::/7
  */
 export function isPrivateOrReservedIP(ip) {
-    // IPv6 loopback
-    if (ip === '::1' || ip === '0000:0000:0000:0000:0000:0000:0000:0001') {
+    const normalized = normalizeIpLiteral(ip);
+    // Unspecified / loopback / link-local IPv6
+    if (normalized === '::' || normalized === '::1' || normalized === '0000:0000:0000:0000:0000:0000:0000:0001') {
+        return true;
+    }
+    if (normalized.startsWith('fe80:')) {
         return true;
     }
     // IPv6 private (fc00::/7)
-    if (ip.startsWith('fc') || ip.startsWith('fd')) {
+    if (normalized.startsWith('fc') || normalized.startsWith('fd')) {
         return true;
     }
+    // IPv6 loopback
     // IPv4 patterns
-    const parts = ip.split('.');
+    const parts = normalized.split('.');
     if (parts.length === 4) {
         const first = parseInt(parts[0], 10);
         const second = parseInt(parts[1], 10);
@@ -58,12 +84,59 @@ export function validateUrl(url) {
     // Note: This is a synchronous check for IP literals. DNS resolution is async and happens in link-validator.
     const hostname = parsed.hostname;
     // Check if hostname is already an IP literal
-    if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/) || hostname.includes(':')) {
+    if (!allowPrivateUrls() && (isIPv4Literal(hostname) || isIPv6Literal(hostname))) {
         if (isPrivateOrReservedIP(hostname)) {
             throw new Error(`SSRF protection: URL "${trimmed}" resolves to private/loopback address "${hostname}". Only public URLs are allowed.`);
         }
     }
     return trimmed;
+}
+const defaultHostLookup = async (hostname) => {
+    const records = await dns.lookup(hostname, { all: true, verbatim: true });
+    return records.map(record => record.address);
+};
+/**
+ * Enforce that a hostname resolves only to public IP addresses.
+ * Rejects localhost names, private ranges, and DNS failures.
+ */
+export async function ensurePublicHostname(hostname, lookup = defaultHostLookup) {
+    if (allowPrivateUrls()) {
+        return;
+    }
+    const normalizedHost = hostname.trim().toLowerCase();
+    if (LOCALHOST_HOSTNAMES.has(normalizedHost) || normalizedHost.endsWith('.localhost')) {
+        throw new Error(`SSRF protection: Hostname "${hostname}" resolves to localhost.`);
+    }
+    if (isIPv4Literal(normalizedHost) || isIPv6Literal(normalizedHost)) {
+        if (isPrivateOrReservedIP(normalizedHost)) {
+            throw new Error(`SSRF protection: Hostname "${hostname}" resolves to private/loopback address.`);
+        }
+        return;
+    }
+    let resolvedAddresses;
+    try {
+        resolvedAddresses = await lookup(normalizedHost);
+    }
+    catch (error) {
+        throw new Error(`DNS resolution failed for "${hostname}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (resolvedAddresses.length === 0) {
+        throw new Error(`DNS resolution failed for "${hostname}": no addresses returned`);
+    }
+    for (const address of resolvedAddresses) {
+        if (isPrivateOrReservedIP(address)) {
+            throw new Error(`SSRF protection: Hostname "${hostname}" resolves to private IP "${address}".`);
+        }
+    }
+}
+/**
+ * Validate URL format and ensure hostname resolves to public IP space.
+ */
+export async function validatePublicUrl(url, lookup = defaultHostLookup) {
+    const validatedUrl = validateUrl(url);
+    const hostname = new URL(validatedUrl).hostname;
+    await ensurePublicHostname(hostname, lookup);
+    return validatedUrl;
 }
 /**
  * Validate a filesystem path has no path traversal sequences.

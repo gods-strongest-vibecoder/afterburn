@@ -3,6 +3,11 @@ import type { StepResult, DeadButtonResult, BrokenFormResult } from '../types/ex
 import type { WorkflowStep, FormInfo } from '../types/discovery.js';
 export declare const DEAD_BUTTON_WAIT = 500;
 /**
+ * Convert legacy LLM selector strings into Playwright selector engines.
+ * Supports getByRole/getByLabel/getByText compatibility for older plans.
+ */
+export declare function normalizeStepSelector(selector: string): string;
+/**
  * Main dispatcher - executes a workflow step and returns structured result
  */
 export declare function executeStep(page: Page, step: WorkflowStep, stepIndex: number, baseUrl?: string): Promise<StepResult>;

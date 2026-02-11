@@ -18,3 +18,8 @@ export declare function sanitizeForYaml(value: string): string;
  * Escapes pipe characters and removes newlines.
  */
 export declare function sanitizeForMarkdown(text: string): string;
+/**
+ * Sanitize a string for safe inclusion in markdown inline content.
+ * Escapes pipes/backticks and replaces newlines.
+ */
+export declare function sanitizeForMarkdownInline(text: string): string;

@@ -3,6 +3,7 @@
 import { GeminiClient } from '../ai/gemini-client.js';
 import { ExecutionArtifact, StepResult, ErrorEvidence } from '../types/execution.js';
 import { DiagnosedError, ErrorDiagnosisSchema, ErrorDiagnosisBatchSchema, ErrorDiagnosis } from './diagnosis-schema.js';
+import { redactSensitiveData, redactSensitiveUrl } from '../utils/sanitizer.js';
 
 /**
  * Main export: Analyze all errors from ExecutionArtifact and produce plain English diagnoses
@@ -106,46 +107,6 @@ ${networkFailures}
 
 Provide a plain English diagnosis. The audience is non-technical "vibe coders" who build with AI tools.
 Focus on WHAT went wrong and HOW to fix it, not technical jargon.`;
-}
-
-/**
- * Redact sensitive data from strings (API keys, tokens, session IDs in URLs)
- */
-function redactSensitiveData(text: string): string {
-  // Redact common secret patterns
-  let redacted = text;
-
-  // Redact API keys (sk-*, pk-*, api_key=*, etc)
-  redacted = redacted.replace(/\b(sk|pk|api_key|apikey)[-_]?[a-zA-Z0-9]{16,}/gi, '[REDACTED_API_KEY]');
-
-  // Redact tokens
-  redacted = redacted.replace(/\b(token|bearer|auth)[:=\s]+[a-zA-Z0-9+/=_-]{20,}/gi, '[REDACTED_TOKEN]');
-
-  // Redact session IDs
-  redacted = redacted.replace(/\b(session|sess|sid)[:=][a-zA-Z0-9_-]{20,}/gi, '[REDACTED_SESSION]');
-
-  return redacted;
-}
-
-/**
- * Redact sensitive data from URLs (query params)
- */
-function redactSensitiveUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const sensitiveParams = ['token', 'key', 'apikey', 'api_key', 'session', 'sess', 'auth', 'password', 'secret'];
-
-    for (const param of sensitiveParams) {
-      if (parsed.searchParams.has(param)) {
-        parsed.searchParams.set(param, '[REDACTED]');
-      }
-    }
-
-    return parsed.toString();
-  } catch {
-    // If URL parsing fails, return redacted string
-    return redactSensitiveData(url);
-  }
 }
 
 /**

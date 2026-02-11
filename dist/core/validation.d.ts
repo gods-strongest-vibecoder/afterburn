@@ -9,6 +9,16 @@ export declare function isPrivateOrReservedIP(ip: string): boolean;
  * Also rejects URLs resolving to private/loopback IPs (SSRF protection).
  */
 export declare function validateUrl(url: string): string;
+export type HostLookupFn = (hostname: string) => Promise<string[]>;
+/**
+ * Enforce that a hostname resolves only to public IP addresses.
+ * Rejects localhost names, private ranges, and DNS failures.
+ */
+export declare function ensurePublicHostname(hostname: string, lookup?: HostLookupFn): Promise<void>;
+/**
+ * Validate URL format and ensure hostname resolves to public IP space.
+ */
+export declare function validatePublicUrl(url: string, lookup?: HostLookupFn): Promise<string>;
 /**
  * Validate a filesystem path has no path traversal sequences.
  * Resolves to absolute path and rejects ../ sequences.

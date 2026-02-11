@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { runAfterburn } from '../core/engine.js';
-import { validateUrl, validatePath, validateMaxPages } from '../core/validation.js';
-import { sanitizeForMarkdown } from '../utils/sanitizer.js';
+import { validatePublicUrl, validatePath, validateMaxPages } from '../core/validation.js';
+import { sanitizeForMarkdownInline, redactSensitiveData, redactSensitiveUrl } from '../utils/sanitizer.js';
 export function registerTools(server) {
     // Register scan_website tool
     server.registerTool('scan_website', {
@@ -33,28 +33,8 @@ export function registerTools(server) {
         })
     }, async (args, extra) => {
         try {
-            // Security: SSRF protection - validate URL and check for private IPs
-            // Inline SSRF check before passing to core validation
-            const urlObj = new URL(args.url);
-            const hostname = urlObj.hostname;
-            // Check for private/loopback addresses
-            const privateRanges = [
-                /^127\./, // 127.0.0.0/8
-                /^10\./, // 10.0.0.0/8
-                /^172\.(1[6-9]|2[0-9]|3[01])\./, // 172.16.0.0/12
-                /^192\.168\./, // 192.168.0.0/16
-                /^169\.254\./, // 169.254.0.0/16 (link-local)
-            ];
-            if (hostname === 'localhost' || hostname === '::1') {
-                throw new Error(`SSRF protection: Cannot scan localhost or loopback addresses. Only public URLs are allowed.`);
-            }
-            for (const range of privateRanges) {
-                if (range.test(hostname)) {
-                    throw new Error(`SSRF protection: Cannot scan private IP address ${hostname}. Only public URLs are allowed.`);
-                }
-            }
             // Security: validate all string inputs at the MCP boundary
-            const validatedUrl = validateUrl(args.url);
+            const validatedUrl = await validatePublicUrl(args.url);
             const validatedSource = args.source ? validatePath(args.source, 'source', process.cwd()) : undefined;
             const validatedOutputDir = args.outputDir ? validatePath(args.outputDir, 'outputDir', process.cwd()) : undefined;
             const validatedMaxPages = validateMaxPages(args.maxPages);
@@ -104,9 +84,9 @@ export function registerTools(server) {
                 issues: result.prioritizedIssues.slice(0, 20).map(issue => ({
                     priority: issue.priority,
                     category: issue.category,
-                    summary: issue.summary,
-                    fix: issue.fixSuggestion,
-                    location: issue.location
+                    summary: redactSensitiveData(issue.summary),
+                    fix: redactSensitiveData(issue.fixSuggestion),
+                    location: redactSensitiveUrl(issue.location)
                 })),
                 reportPaths: {
                     html: result.htmlReportPath,
@@ -160,9 +140,9 @@ function buildMarkdownSummary(result) {
         const topIssues = result.prioritizedIssues.slice(0, 5);
         topIssues.forEach((issue, idx) => {
             lines.push(`### ${idx + 1}. [${issue.priority.toUpperCase()}] ${issue.category}`);
-            lines.push(`**Problem:** ${sanitizeForMarkdown(issue.summary)}`);
-            lines.push(`**Fix:** ${sanitizeForMarkdown(issue.fixSuggestion)}`);
-            lines.push(`**Location:** ${issue.location}\n`);
+            lines.push(`**Problem:** ${redactSensitiveData(sanitizeForMarkdownInline(issue.summary))}`);
+            lines.push(`**Fix:** ${redactSensitiveData(sanitizeForMarkdownInline(issue.fixSuggestion))}`);
+            lines.push(`**Location:** ${sanitizeForMarkdownInline(redactSensitiveUrl(issue.location))}\n`);
         });
     }
     else {

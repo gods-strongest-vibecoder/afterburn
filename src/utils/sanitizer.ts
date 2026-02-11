@@ -89,7 +89,17 @@ export function sanitizeForYaml(value: string): string {
  * Escapes pipe characters and removes newlines.
  */
 export function sanitizeForMarkdown(text: string): string {
+  return sanitizeForMarkdownInline(text);
+}
+
+/**
+ * Sanitize a string for safe inclusion in markdown inline content.
+ * Escapes pipes/backticks and replaces newlines.
+ */
+export function sanitizeForMarkdownInline(text: string): string {
   if (!text) return '';
-  // Escape pipe chars (for tables) and newlines
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  return text
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, '\\`')
+    .replace(/\r?\n/g, ' ');
 }

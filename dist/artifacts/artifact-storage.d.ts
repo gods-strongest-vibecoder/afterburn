@@ -6,6 +6,7 @@ export declare class ArtifactStorage {
     private readonly baseDir;
     private currentSessionId?;
     constructor(baseDir?: string);
+    private buildFilename;
     /**
      * Saves an artifact as a versioned JSON file
      * @param artifact - Artifact with metadata

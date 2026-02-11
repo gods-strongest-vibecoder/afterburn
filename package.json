@@ -13,8 +13,13 @@
     "build:action": "tsc -p action/tsconfig.json",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --config vitest.config.unit.ts",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:smoke:external": "vitest run --config vitest.config.e2e.ts tests/e2e/external-smoke.test.ts",
+    "test:coverage": "vitest run --config vitest.config.unit.ts --coverage",
+    "test:watch": "vitest --config vitest.config.unit.ts"
   },
   "bin": {
     "afterburn": "dist/index.js",
@@ -25,7 +30,21 @@
     "dist",
     "templates"
   ],
-  "keywords": ["testing", "automation", "playwright", "website-testing", "accessibility", "vibe-coding", "cli-tool", "developer-tools", "bug-detection", "qa-automation", "mcp", "ai-tools", "web-development"],
+  "keywords": [
+    "testing",
+    "automation",
+    "playwright",
+    "website-testing",
+    "accessibility",
+    "vibe-coding",
+    "cli-tool",
+    "developer-tools",
+    "bug-detection",
+    "qa-automation",
+    "mcp",
+    "ai-tools",
+    "web-development"
+  ],
   "author": "Afterburn",
   "repository": {
     "type": "git",
@@ -56,6 +75,7 @@
     "@actions/github": "^9.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.2.1",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

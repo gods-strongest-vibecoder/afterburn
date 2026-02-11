@@ -15,7 +15,6 @@ export interface ExecutionOptions {
 export declare class WorkflowExecutor {
     private browserManager;
     private screenshotManager;
-    private artifactStorage;
     private options;
     constructor(options: ExecutionOptions);
     /**

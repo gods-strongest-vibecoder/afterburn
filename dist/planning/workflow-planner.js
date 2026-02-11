@@ -36,7 +36,10 @@ Generate workflow test plans for this website. For each workflow:
 
 1. Identify a realistic user journey (signup, login, checkout, search, contact form, navigation, etc.)
 2. Create step-by-step plan using Playwright selectors
-3. Prefer role-based selectors: getByRole('button', { name: 'Sign Up' }), getByLabel('Email')
+3. Use selector syntax that works directly with page.click/fill/select/isVisible:
+   - Preferred: role=button[name="Sign Up"], role=textbox[name="Email"]
+   - Also valid: label=Email, text=Sign Up, CSS selectors
+   - Do NOT use JS helper strings like getByRole(...) or getByLabel(...)
 4. Include expected result for each step (what the user should see after the action)
 5. Assign confidence 0-1 for each step (1.0 = selector definitely exists, 0.5 = guessing)
 6. Assign priority: critical (auth, core features), important (secondary features), nice-to-have (edge cases)

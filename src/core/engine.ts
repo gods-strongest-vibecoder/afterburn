@@ -12,7 +12,9 @@ import type { AnalysisArtifact } from '../analysis/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
 import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport, calculateHealthScore, prioritizeIssues, deduplicateIssues } from '../reports/index.js';
 import type { HealthScore, PrioritizedIssue } from '../reports/index.js';
-import { validateUrl, validatePath, validateMaxPages } from './validation.js';
+import { validatePublicUrl, validatePath, validateMaxPages } from './validation.js';
+import type { ExecutionArtifact } from '../types/execution.js';
+import type { BrokenLink } from '../types/discovery.js';
 
 export interface AfterBurnOptions {
   targetUrl: string;
@@ -46,9 +48,56 @@ export interface AfterBurnResult {
 // Hard timeout to prevent the pipeline from hanging forever on unresponsive sites
 const PIPELINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
+function toBrokenLinkIssue(link: BrokenLink): ExecutionArtifact['brokenLinks'][number] {
+  return {
+    url: link.url,
+    sourceUrl: link.sourceUrl,
+    statusCode: link.statusCode,
+    statusText: link.statusText,
+  };
+}
+
+export function mergeDiscoveryBrokenLinks(
+  executionArtifact: ExecutionArtifact,
+  discoveryBrokenLinks: BrokenLink[]
+): void {
+  const existingKeys = new Set(
+    executionArtifact.brokenLinks.map(link => `${link.url}|${link.sourceUrl}|${link.statusCode}`)
+  );
+
+  for (const link of discoveryBrokenLinks) {
+    const key = `${link.url}|${link.sourceUrl}|${link.statusCode}`;
+    if (!existingKeys.has(key)) {
+      executionArtifact.brokenLinks.push(toBrokenLinkIssue(link));
+      existingKeys.add(key);
+    }
+  }
+}
+
+export function recalculateExecutionSummary(executionArtifact: ExecutionArtifact): void {
+  let totalIssues = 0;
+
+  totalIssues += executionArtifact.workflowResults.reduce((sum, result) => sum + result.failedSteps, 0);
+  totalIssues += executionArtifact.workflowResults.reduce((sum, result) => sum + result.errors.consoleErrors.length, 0);
+  totalIssues += executionArtifact.workflowResults.reduce((sum, result) => sum + result.errors.networkFailures.length, 0);
+  totalIssues += executionArtifact.workflowResults.reduce((sum, result) => sum + result.errors.brokenImages.length, 0);
+  totalIssues += executionArtifact.deadButtons.filter(button => button.isDead).length;
+  totalIssues += executionArtifact.brokenForms.filter(form => form.isBroken).length;
+  totalIssues += executionArtifact.brokenLinks.length;
+  totalIssues += executionArtifact.pageAudits.reduce((sum, audit) => {
+    if (!audit.accessibility) return sum;
+    return sum + audit.accessibility.violations.filter(
+      violation => violation.impact === 'critical' || violation.impact === 'serious'
+    ).length;
+  }, 0);
+
+  executionArtifact.totalIssues = totalIssues;
+  executionArtifact.exitCode = (executionArtifact.workflowResults.some(result => result.overallStatus === 'failed') || totalIssues > 0) ? 1 : 0;
+}
+
 export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurnResult> {
   // Defense in depth: validate inputs even if caller already validated
-  const validatedTargetUrl = validateUrl(options.targetUrl);
+  const validatedTargetUrl = await validatePublicUrl(options.targetUrl);
   const validatedSourcePath = options.sourcePath ? validatePath(options.sourcePath, 'sourcePath') : undefined;
   const validatedMaxPages = validateMaxPages(options.maxPages);
 
@@ -148,12 +197,7 @@ async function runPipeline(
         pageAudits: [],
         deadButtons: [],
         brokenForms: [],
-        brokenLinks: discoveryResult.crawlResult?.brokenLinks?.map(bl => ({
-          url: bl.url,
-          sourceUrl: bl.sourceUrl,
-          statusCode: bl.statusCode,
-          statusText: bl.statusText,
-        })) || [],
+        brokenLinks: discoveryResult.crawlResult?.brokenLinks?.map(toBrokenLinkIssue) || [],
         totalIssues: 0,
         exitCode: 1,
       };
@@ -181,21 +225,8 @@ async function runPipeline(
 
       const executor = new WorkflowExecutor(executionOptions);
       executionResult = await executor.execute();
-
-      // Issue 8: Merge broken links from discovery with execution results (don't overwrite)
-      if (discoveryResult.crawlResult?.brokenLinks?.length > 0) {
-        const existingUrls = new Set(executionResult.brokenLinks.map(bl => bl.url));
-        for (const bl of discoveryResult.crawlResult.brokenLinks) {
-          if (!existingUrls.has(bl.url)) {
-            executionResult.brokenLinks.push({
-              url: bl.url,
-              sourceUrl: bl.sourceUrl,
-              statusCode: bl.statusCode,
-              statusText: bl.statusText,
-            });
-          }
-        }
-      }
+      mergeDiscoveryBrokenLinks(executionResult, discoveryResult.crawlResult?.brokenLinks || []);
+      recalculateExecutionSummary(executionResult);
 
       // Issue 1: Check cancellation before analysis
       if (cancellation.cancelled) {
@@ -224,6 +255,10 @@ async function runPipeline(
       }
     }
 
+    // Persist final execution artifact after post-processing merges/recalculations.
+    const artifactStorage = new ArtifactStorage();
+    await artifactStorage.save(executionResult);
+
     // Save analysis artifact
     const analysisArtifact: AnalysisArtifact = {
       version: '1.0.0',
@@ -236,7 +271,6 @@ async function runPipeline(
       aiPowered: !!process.env.GEMINI_API_KEY,
     };
 
-    const artifactStorage = new ArtifactStorage();
     await artifactStorage.save(analysisArtifact);
 
     // Stage: reporting

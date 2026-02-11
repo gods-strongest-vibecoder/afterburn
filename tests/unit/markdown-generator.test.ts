@@ -186,4 +186,56 @@ describe('generateMarkdownReport', () => {
     expect(report).toContain('Low contrast text');
     expect(report).toContain('Missing alt text');
   });
+
+  it('redacts sensitive query params in issue locations and accessibility URLs', () => {
+    const exec = makeExecArtifact({
+      pageAudits: [
+        {
+          url: 'https://example.com/page?token=secret123',
+          accessibility: {
+            url: 'https://example.com/page?token=secret123',
+            violationCount: 1,
+            violations: [
+              {
+                id: 'color-contrast',
+                impact: 'critical',
+                description: 'Low contrast',
+                nodes: 1,
+                helpUrl: 'https://docs.example.com/help?api_key=abc123',
+              },
+            ],
+            passes: 0,
+            incomplete: 0,
+          },
+        },
+      ],
+    });
+
+    const analysis = makeAnalysisArtifact({
+      diagnosedErrors: [
+        {
+          summary: 'Broken API call',
+          rootCause: 'Token in URL',
+          errorType: 'network',
+          confidence: 'high',
+          suggestedFix: 'Use auth headers',
+          originalError: 'Request failed',
+          sourceLocation: {
+            file: 'src/app.ts',
+            line: 12,
+            column: 1,
+            context: 'fetch("/api?token=secret123")',
+            confidence: 0.9,
+          },
+        },
+      ],
+    });
+
+    const report = generateMarkdownReport(exec, analysis);
+
+    expect(report).toContain('token=%5BREDACTED%5D');
+    expect(report).toContain('api_key=%5BREDACTED%5D');
+    expect(report).not.toContain('secret123');
+    expect(report).not.toContain('abc123');
+  });
 });

@@ -2,6 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   validateUrl,
+  validatePublicUrl,
+  ensurePublicHostname,
   validatePath,
   validateMaxPages,
   validateSelector,
@@ -54,6 +56,29 @@ describe('validateUrl', () => {
   it('accepts URL with path and query', () => {
     const url = 'https://example.com/path?q=search&page=1';
     expect(validateUrl(url)).toBe(url);
+  });
+});
+
+describe('validatePublicUrl / ensurePublicHostname', () => {
+  it('rejects localhost hostnames', async () => {
+    await expect(validatePublicUrl('http://localhost:3000')).rejects.toThrow('localhost');
+  });
+
+  it('rejects hostnames that resolve to private IPs', async () => {
+    await expect(
+      validatePublicUrl('https://example.com', async () => ['10.0.0.1'])
+    ).rejects.toThrow('private IP');
+  });
+
+  it('accepts hostnames that resolve to public IPs', async () => {
+    await expect(
+      validatePublicUrl('https://example.com', async () => ['93.184.216.34'])
+    ).resolves.toBe('https://example.com');
+  });
+
+  it('ensurePublicHostname rejects IPv6 loopback and link-local addresses', async () => {
+    await expect(ensurePublicHostname('::1')).rejects.toThrow('private/loopback');
+    await expect(ensurePublicHostname('fe80::1')).rejects.toThrow('private/loopback');
   });
 });
 

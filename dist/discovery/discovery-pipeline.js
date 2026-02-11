@@ -2,7 +2,7 @@
 import { SiteCrawler } from './crawler.js';
 import { detectSPAFramework, interceptRouteChanges } from './spa-detector.js';
 import { discoverElements, discoverHiddenElements } from './element-mapper.js';
-import { validateLinks } from './link-validator.js';
+import { validateLinks, createLinkValidationState } from './link-validator.js';
 import { buildSitemap, printSitemapTree } from './sitemap-builder.js';
 import { WorkflowPlanner } from '../planning/index.js';
 import { generateHeuristicPlans } from '../planning/heuristic-planner.js';
@@ -10,6 +10,27 @@ import { GeminiClient } from '../ai/index.js';
 import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
+export async function resolveWorkflowPlans(planPromise, sitemap) {
+    if (!planPromise) {
+        return {
+            workflowPlans: generateHeuristicPlans(sitemap),
+            usedHeuristicFallback: true,
+        };
+    }
+    try {
+        const workflowPlans = await planPromise;
+        return {
+            workflowPlans,
+            usedHeuristicFallback: false,
+        };
+    }
+    catch {
+        return {
+            workflowPlans: generateHeuristicPlans(sitemap),
+            usedHeuristicFallback: true,
+        };
+    }
+}
 /**
  * Runs complete Phase 2 discovery pipeline: crawl, discover elements, detect SPA,
  * validate links, build sitemap, generate workflow plans.
@@ -26,7 +47,7 @@ export async function runDiscovery(options) {
     let spaFramework = { framework: 'none' };
     let spaRoutes = [];
     const allBrokenLinks = [];
-    let totalLinksSkipped = 0;
+    const linkValidationState = createLinkValidationState();
     try {
         // Step 2: Launch browser
         onProgress('Launching browser...');
@@ -112,7 +133,7 @@ export async function runDiscovery(options) {
                 // Capture screenshot
                 const screenshotRef = await screenshotManager.capture(page, `page-${pageIndex}`);
                 // Validate links
-                const brokenLinksOnPage = await validateLinks(mergedElements.links, page);
+                const brokenLinksOnPage = await validateLinks(mergedElements.links, page, linkValidationState);
                 allBrokenLinks.push(...brokenLinksOnPage);
                 // Report progress
                 onProgress(`  Crawled: ${url} (${pageIndex} pages found)`);
@@ -152,7 +173,7 @@ export async function runDiscovery(options) {
         const crawlResult = await crawler.crawl(targetUrl, spaRoutes);
         // Update crawl result with our collected data
         crawlResult.brokenLinks = allBrokenLinks;
-        crawlResult.totalLinksChecked = allBrokenLinks.length;
+        crawlResult.totalLinksChecked = linkValidationState.checkedCount;
         crawlResult.spaDetected = spaFramework;
         onProgress(`Crawl complete: ${crawlResult.totalPagesDiscovered} pages discovered`);
         // Step 7: Build sitemap
@@ -176,33 +197,30 @@ export async function runDiscovery(options) {
         onProgress('Closing browser...');
         await browserManager.close();
         // Now await planning result (or generate heuristic plans)
-        if (planPromise) {
-            try {
-                workflowPlans = await planPromise;
-                if (workflowPlans.length > 0) {
-                    console.log('\nDiscovered Workflows:');
-                    workflowPlans.forEach((plan, index) => {
-                        console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority}) - ${plan.steps.length} steps`);
-                    });
-                }
-                else {
-                    console.log('\nNo workflows generated');
-                }
+        const { workflowPlans: resolvedPlans, usedHeuristicFallback } = await resolveWorkflowPlans(planPromise, sitemap);
+        workflowPlans = resolvedPlans;
+        if (usedHeuristicFallback) {
+            if (planPromise) {
+                console.warn('\nAI planning failed - using heuristic test plans');
             }
-            catch (error) {
-                console.warn('Warning: Failed to generate workflow plans:', error instanceof Error ? error.message : String(error));
-                console.warn('Continuing without workflow plans...');
+            else {
+                console.warn('\nUsing heuristic test plans (set GEMINI_API_KEY for smarter AI-driven testing)');
             }
-        }
-        else {
-            console.warn('\nUsing heuristic test plans (set GEMINI_API_KEY for smarter AI-driven testing)');
-            workflowPlans = generateHeuristicPlans(sitemap);
             if (workflowPlans.length > 0) {
                 console.log('\nDiscovered Workflows (heuristic):');
                 workflowPlans.forEach((plan, index) => {
                     console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority}) - ${plan.steps.length} steps`);
                 });
             }
+        }
+        else if (workflowPlans.length > 0) {
+            console.log('\nDiscovered Workflows:');
+            workflowPlans.forEach((plan, index) => {
+                console.log(`  ${index + 1}. ${plan.workflowName} (${plan.priority}) - ${plan.steps.length} steps`);
+            });
+        }
+        else {
+            console.log('\nNo workflows generated');
         }
         // Step 9: Save discovery artifact (after plans are ready)
         const artifact = {

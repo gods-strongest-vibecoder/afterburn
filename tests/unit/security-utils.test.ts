@@ -1,7 +1,7 @@
 // Unit tests for untested security/utility functions: validation, sanitization, and dead-button detection
 import { describe, it, expect, vi } from 'vitest';
 import { validateNavigationUrl } from '../../src/core/validation.js';
-import { redactSensitiveUrl, sanitizeForYaml, sanitizeForMarkdown } from '../../src/utils/sanitizer.js';
+import { redactSensitiveUrl, sanitizeForYaml, sanitizeForMarkdown, sanitizeForMarkdownInline } from '../../src/utils/sanitizer.js';
 import { checkDeadButton, captureClickState } from '../../src/execution/step-handlers.js';
 import type { ClickStateSnapshot } from '../../src/execution/step-handlers.js';
 
@@ -206,6 +206,16 @@ describe('sanitizeForMarkdown', () => {
 
   it('handles multiple consecutive newlines', () => {
     expect(sanitizeForMarkdown('a\n\nb')).toBe('a  b');
+  });
+});
+
+describe('sanitizeForMarkdownInline', () => {
+  it('escapes inline backticks', () => {
+    expect(sanitizeForMarkdownInline('run `rm -rf` now')).toBe('run \\`rm -rf\\` now');
+  });
+
+  it('matches markdown sanitizer baseline behavior for pipes and newlines', () => {
+    expect(sanitizeForMarkdownInline('a|b\nc')).toBe('a\\|b c');
   });
 });
 

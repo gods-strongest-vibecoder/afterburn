@@ -4,26 +4,7 @@ import * as github from '@actions/github';
 import { DefaultArtifactClient } from '@actions/artifact';
 import { runAfterburn } from '../dist/core/index.js';
 import type { AfterBurnResult } from '../dist/core/index.js';
-
-/**
- * Redact sensitive data from PR comments as defense-in-depth.
- * Duplicated from src/utils/sanitizer.ts because action/ has its own tsconfig
- * and imports from dist/, not src/.
- */
-function redactSensitiveData(text: string): string {
-  if (!text) return text;
-  let r = text;
-  r = r.replace(/\b(sk-[a-zA-Z0-9]{20,})/g, '[REDACTED_API_KEY]');
-  r = r.replace(/\b(ghp_|ghu_|gho_|ghs_)[a-zA-Z0-9]{36,}/g, '[REDACTED_GITHUB_TOKEN]');
-  r = r.replace(/\b(github_pat_[a-zA-Z0-9_]{22,})/g, '[REDACTED_GITHUB_TOKEN]');
-  r = r.replace(/\b(AKIA[0-9A-Z]{16})/g, '[REDACTED_AWS_KEY]');
-  r = r.replace(/\b(sk-ant-[a-zA-Z0-9-]{20,})/g, '[REDACTED_API_KEY]');
-  r = r.replace(/\b(sk_live_|sk_test_|rk_live_|rk_test_)[a-zA-Z0-9]{20,}/g, '[REDACTED_STRIPE_KEY]');
-  r = r.replace(/(Bearer\s+)[a-zA-Z0-9._\-]{20,}/gi, '$1[REDACTED_TOKEN]');
-  r = r.replace(/((?:password|passwd|secret|token|apikey|api_key|access_token|auth_token)\s*[=:]\s*)("[^"]*"|'[^']*'|\S{8,})/gi, '$1[REDACTED]');
-  r = r.replace(/\b[0-9a-f]{40,}\b/gi, '[REDACTED_HEX_TOKEN]');
-  return r;
-}
+import { redactSensitiveData, sanitizeForMarkdownInline } from '../dist/utils/sanitizer.js';
 
 /**
  * Build PR comment with health score and top issues
@@ -45,8 +26,8 @@ function buildPRComment(result: AfterBurnResult): string {
     const topIssues = result.prioritizedIssues.slice(0, 5);
     for (const issue of topIssues) {
       const priority = issue.priority.toUpperCase();
-      const summary = issue.summary.replace(/\|/g, '\\|'); // Escape pipes
-      const fix = issue.fixSuggestion.replace(/\|/g, '\\|');
+      const summary = sanitizeForMarkdownInline(issue.summary);
+      const fix = sanitizeForMarkdownInline(issue.fixSuggestion);
       comment += `| ${priority} | ${summary} | ${fix} |\n`;
     }
     comment += `\n`;

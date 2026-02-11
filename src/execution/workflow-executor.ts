@@ -13,7 +13,6 @@ import type {
 } from '../types/execution.js';
 import { BrowserManager } from '../browser/index.js';
 import { ScreenshotManager } from '../screenshots/index.js';
-import { ArtifactStorage } from '../artifacts/index.js';
 import { setupErrorListeners } from './error-detector.js';
 import { executeStep, captureClickState, checkDeadButton, detectBrokenForm, DEAD_BUTTON_WAIT } from './step-handlers.js';
 import type { ClickStateSnapshot } from './step-handlers.js';
@@ -39,22 +38,18 @@ export interface ExecutionOptions {
 export class WorkflowExecutor {
   private browserManager: BrowserManager;
   private screenshotManager: ScreenshotManager;
-  private artifactStorage: ArtifactStorage;
   private options: ExecutionOptions;
 
   constructor(options: ExecutionOptions) {
     this.options = options;
     this.browserManager = new BrowserManager({ headless: options.headless ?? true });
     this.screenshotManager = new ScreenshotManager();
-    this.artifactStorage = new ArtifactStorage();
   }
 
   /**
    * Main execution flow: runs all workflows and produces execution artifact
    */
   async execute(): Promise<ExecutionArtifact> {
-    const startTime = Date.now();
-
     this.log('Launching browser...');
     await this.browserManager.launch();
 
@@ -98,9 +93,6 @@ export class WorkflowExecutor {
       exitCode,
     };
 
-    // Save artifact
-    await this.artifactStorage.save(artifact);
-    this.log(`\n✓ Execution artifact saved`);
 
     return artifact;
   }
@@ -420,3 +412,4 @@ export class WorkflowExecutor {
     }
   }
 }
+

@@ -9,7 +9,7 @@ export const WorkflowStepSchema = z.object({
   action: z.enum(['navigate', 'click', 'fill', 'select', 'wait', 'expect'])
     .describe('Action to perform'),
   selector: z.string()
-    .describe('Playwright selector for the target element (prefer role-based)'),
+    .describe('Playwright selector for the target element (role=, label=, text=, or CSS)'),
   value: z.string().optional()
     .describe('Value to fill or select'),
   expectedResult: z.string()
