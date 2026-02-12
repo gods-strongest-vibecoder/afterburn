@@ -45,7 +45,8 @@ export async function executeStep(page, step, stepIndex, baseUrl) {
         switch (step.action) {
             case 'navigate':
                 // Security: validate navigation targets; enforce same-origin when baseUrl is known
-                const targetUrl = safeValue || normalizedSelector;
+                const targetInput = safeValue || normalizedSelector;
+                const targetUrl = baseUrl ? new URL(targetInput, baseUrl).href : targetInput;
                 if (baseUrl) {
                     validateNavigationUrl(targetUrl, baseUrl);
                 }

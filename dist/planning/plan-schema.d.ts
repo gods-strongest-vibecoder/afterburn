@@ -4,12 +4,12 @@ import { z } from 'zod';
  */
 export declare const WorkflowStepSchema: z.ZodObject<{
     action: z.ZodEnum<{
-        fill: "fill";
-        navigate: "navigate";
         select: "select";
+        navigate: "navigate";
         click: "click";
-        expect: "expect";
+        fill: "fill";
         wait: "wait";
+        expect: "expect";
     }>;
     selector: z.ZodString;
     value: z.ZodOptional<z.ZodString>;
@@ -24,12 +24,12 @@ export declare const WorkflowPlanSchema: z.ZodObject<{
     description: z.ZodString;
     steps: z.ZodArray<z.ZodObject<{
         action: z.ZodEnum<{
-            fill: "fill";
-            navigate: "navigate";
             select: "select";
+            navigate: "navigate";
             click: "click";
-            expect: "expect";
+            fill: "fill";
             wait: "wait";
+            expect: "expect";
         }>;
         selector: z.ZodString;
         value: z.ZodOptional<z.ZodString>;
@@ -52,12 +52,12 @@ export declare const WorkflowPlansResponseSchema: z.ZodObject<{
         description: z.ZodString;
         steps: z.ZodArray<z.ZodObject<{
             action: z.ZodEnum<{
-                fill: "fill";
-                navigate: "navigate";
                 select: "select";
+                navigate: "navigate";
                 click: "click";
-                expect: "expect";
+                fill: "fill";
                 wait: "wait";
+                expect: "expect";
             }>;
             selector: z.ZodString;
             value: z.ZodOptional<z.ZodString>;

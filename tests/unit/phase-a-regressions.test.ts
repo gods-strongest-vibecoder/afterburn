@@ -88,6 +88,24 @@ describe('Phase A regressions', () => {
     );
   });
 
+  it('resolves relative navigate steps against base URL before validation', async () => {
+    const page = createMockPage('about:blank');
+    const step: WorkflowStep = {
+      action: 'navigate',
+      selector: '/pricing',
+      expectedResult: 'Pricing page loads',
+      confidence: 1,
+    };
+
+    const result = await executeStep(page, step, 0, 'https://example.com');
+
+    expect(result.status).toBe('passed');
+    expect(page.goto).toHaveBeenCalledWith(
+      'https://example.com/pricing',
+      expect.objectContaining({ waitUntil: 'domcontentloaded' })
+    );
+  });
+
   it('executes fill steps using normalized selector output', async () => {
     const page = createMockPage('https://example.com');
     const step: WorkflowStep = {

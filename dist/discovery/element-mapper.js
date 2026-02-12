@@ -24,6 +24,9 @@ function isDestructiveAction(text) {
     const lowerText = text.toLowerCase().trim();
     return DESTRUCTIVE_KEYWORDS.some(keyword => lowerText.includes(keyword));
 }
+function escapeSelectorText(value) {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
 /**
  * Discover all visible interactive elements on a page
  */
@@ -120,10 +123,10 @@ export async function discoverElements(page, pageUrl) {
             // Build selector - prefer has-text when text is unique
             let selector = 'button';
             if (text.trim()) {
-                selector = `button:has-text("${text.trim()}")`;
+                selector = `button:has-text("${escapeSelectorText(text.trim())}")`;
             }
             else if (ariaLabel) {
-                selector = `button[aria-label="${ariaLabel}"]`;
+                selector = `button[aria-label="${escapeSelectorText(ariaLabel)}"]`;
             }
             else {
                 // Fallback to nth-of-type

@@ -199,6 +199,16 @@ export class WorkflowExecutor {
             return;
         }
         this.log(`  Auditing page: ${url}`);
+        // Ensure audit data is captured from the URL being recorded.
+        if (page.url() !== url) {
+            try {
+                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+            }
+            catch (error) {
+                this.log(`    Skipping audit: unable to load ${url} (${error instanceof Error ? error.message : String(error)})`);
+                return;
+            }
+        }
         const [accessibility, performance, metaAudit] = await Promise.all([
             auditAccessibility(page),
             capturePerformanceMetrics(page),

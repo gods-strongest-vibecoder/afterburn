@@ -30,6 +30,10 @@ function isDestructiveAction(text: string): boolean {
   return DESTRUCTIVE_KEYWORDS.some(keyword => lowerText.includes(keyword));
 }
 
+function escapeSelectorText(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
 /**
  * Container for all discovered interactive elements on a page
  */
@@ -147,9 +151,9 @@ export async function discoverElements(page: Page, pageUrl: string): Promise<Dis
       // Build selector - prefer has-text when text is unique
       let selector = 'button';
       if (text.trim()) {
-        selector = `button:has-text("${text.trim()}")`;
+        selector = `button:has-text("${escapeSelectorText(text.trim())}")`;
       } else if (ariaLabel) {
-        selector = `button[aria-label="${ariaLabel}"]`;
+        selector = `button[aria-label="${escapeSelectorText(ariaLabel)}"]`;
       } else {
         // Fallback to nth-of-type
         selector = `button:nth-of-type(${i + 1})`;

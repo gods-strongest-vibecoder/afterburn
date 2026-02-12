@@ -6,6 +6,7 @@
     "outDir": ".",
     "rootDir": ".",
     "strict": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "declaration": false,
     "sourceMap": false

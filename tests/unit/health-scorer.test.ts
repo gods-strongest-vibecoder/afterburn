@@ -100,6 +100,20 @@ describe('calculateHealthScore', () => {
     expect(score.breakdown.errors).toBe(40);
   });
 
+  it('does not double-count broken links when totalIssues already includes them', () => {
+    const artifact = makeArtifact({
+      totalIssues: 3,
+      brokenLinks: [
+        { url: 'https://example.com/missing-1', sourceUrl: 'https://example.com', statusCode: 404, statusText: 'Not Found' },
+        { url: 'https://example.com/missing-2', sourceUrl: 'https://example.com', statusCode: 404, statusText: 'Not Found' },
+      ],
+    });
+
+    const score = calculateHealthScore(artifact);
+    // 3 issues * 2 = 6 subtracted from 100
+    expect(score.breakdown.errors).toBe(94);
+  });
+
   it('floors error score at 0 when totalIssues is very large', () => {
     const artifact = makeArtifact({ totalIssues: 100 });
     const score = calculateHealthScore(artifact);

@@ -113,30 +113,36 @@ export async function interceptRouteChanges(page: Page): Promise<string[]> {
   const startTime = Date.now();
 
   try {
-    // Inject History API interceptor
-    await page.addInitScript(() => {
-      (window as any).__afterburn_routes = [];
+    // Inject History API interceptor into the current document.
+    await page.evaluate(() => {
+      const windowWithAfterburn = window as any;
+
+      if (windowWithAfterburn.__afterburn_history_hook_installed) {
+        return;
+      }
+
+      windowWithAfterburn.__afterburn_history_hook_installed = true;
+      windowWithAfterburn.__afterburn_routes = windowWithAfterburn.__afterburn_routes || [];
 
       const originalPushState = history.pushState;
       const originalReplaceState = history.replaceState;
 
       history.pushState = function (data: any, unused: string, url?: string | URL | null) {
         if (url) {
-          (window as any).__afterburn_routes.push(url);
+          windowWithAfterburn.__afterburn_routes.push(url);
         }
         return originalPushState.apply(history, arguments as any);
       };
 
       history.replaceState = function (data: any, unused: string, url?: string | URL | null) {
         if (url) {
-          (window as any).__afterburn_routes.push(url);
+          windowWithAfterburn.__afterburn_routes.push(url);
         }
         return originalReplaceState.apply(history, arguments as any);
       };
 
-      // Listen for popstate events
       window.addEventListener('popstate', () => {
-        (window as any).__afterburn_routes.push(location.pathname + location.search);
+        windowWithAfterburn.__afterburn_routes.push(location.pathname + location.search);
       });
     });
 

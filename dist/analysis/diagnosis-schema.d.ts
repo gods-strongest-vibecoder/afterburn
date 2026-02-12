@@ -7,18 +7,18 @@ export declare const ErrorDiagnosisSchema: z.ZodObject<{
     summary: z.ZodString;
     rootCause: z.ZodString;
     errorType: z.ZodEnum<{
-        unknown: "unknown";
-        network: "network";
         form: "form";
-        javascript: "javascript";
         navigation: "navigation";
+        unknown: "unknown";
         authentication: "authentication";
+        network: "network";
+        javascript: "javascript";
         dom: "dom";
     }>;
     confidence: z.ZodEnum<{
         high: "high";
-        low: "low";
         medium: "medium";
+        low: "low";
     }>;
     suggestedFix: z.ZodString;
     technicalDetails: z.ZodOptional<z.ZodString>;
@@ -34,8 +34,8 @@ export declare const ErrorDiagnosisBatchSchema: z.ZodObject<{
         suggestedFix: z.ZodString;
         severity: z.ZodEnum<{
             high: "high";
-            low: "low";
             medium: "medium";
+            low: "low";
         }>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
@@ -48,8 +48,8 @@ export declare const UIAuditSchema: z.ZodObject<{
         description: z.ZodString;
         severity: z.ZodEnum<{
             high: "high";
-            low: "low";
             medium: "medium";
+            low: "low";
         }>;
         location: z.ZodString;
     }, z.core.$strip>>;
