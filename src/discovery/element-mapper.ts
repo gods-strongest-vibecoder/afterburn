@@ -34,6 +34,10 @@ function escapeSelectorText(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+function normalizeFieldLabel(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Container for all discovered interactive elements on a page
  */
@@ -89,20 +93,32 @@ export async function discoverElements(page: Page, pageUrl: string): Promise<Dis
 
       for (const field of fields) {
         try {
-          const type = (await field.getAttribute('type')) || 'text';
-          const name = (await field.getAttribute('name')) || '';
+          const tagName = await field.evaluate((el) => el.tagName.toLowerCase());
+          const rawType = ((await field.getAttribute('type')) || '').toLowerCase();
+          const type = tagName === 'select'
+            ? 'select'
+            : tagName === 'textarea'
+              ? 'textarea'
+              : (rawType || 'text');
+          const name = ((await field.getAttribute('name')) || (await field.getAttribute('id')) || '').trim();
           const required = (await field.getAttribute('required')) !== null;
-          const placeholder = (await field.getAttribute('placeholder')) || '';
+          const placeholder = normalizeFieldLabel((await field.getAttribute('placeholder')) || '');
+          const disabled = (await field.getAttribute('disabled')) !== null;
+          const readOnly = (await field.getAttribute('readonly')) !== null;
+          const hiddenAttr = (await field.getAttribute('hidden')) !== null;
+          const ariaHidden = ((await field.getAttribute('aria-hidden')) || '').toLowerCase() === 'true';
+          const isVisible = await field.isVisible().catch(() => true);
+          const hidden = type === 'hidden' || hiddenAttr || ariaHidden || !isVisible;
 
           // Try to find associated label
-          let label = (await field.getAttribute('aria-label')) || '';
+          let label = normalizeFieldLabel((await field.getAttribute('aria-label')) || '');
           if (!label) {
             const fieldId = await field.getAttribute('id');
             if (fieldId) {
               // Look for label with matching "for" attribute
               const labelElement = await page.locator(`label[for="${fieldId}"]`).first();
               const labelText = await labelElement.textContent().catch(() => '');
-              label = labelText?.trim() || '';
+              label = normalizeFieldLabel(labelText || '');
             }
           }
 
@@ -110,7 +126,7 @@ export async function discoverElements(page: Page, pageUrl: string): Promise<Dis
           if (!label) {
             const parentLabel = await field.locator('xpath=ancestor::label[1]').first();
             const labelText = await parentLabel.textContent().catch(() => '');
-            label = labelText?.trim() || '';
+            label = normalizeFieldLabel(labelText || '');
           }
 
           formFields.push({
@@ -119,6 +135,9 @@ export async function discoverElements(page: Page, pageUrl: string): Promise<Dis
             label,
             required,
             placeholder,
+            disabled,
+            readOnly,
+            hidden,
           });
         } catch {
           // Failed to extract field info, skip
@@ -482,3 +501,4 @@ export async function discoverHiddenElements(
 
   return newElements;
 }
+

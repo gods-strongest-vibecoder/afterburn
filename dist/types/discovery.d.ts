@@ -8,6 +8,9 @@ export interface FormField {
     label: string;
     required: boolean;
     placeholder: string;
+    disabled?: boolean;
+    readOnly?: boolean;
+    hidden?: boolean;
 }
 /**
  * Complete form with all its fields

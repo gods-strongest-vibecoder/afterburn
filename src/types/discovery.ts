@@ -11,6 +11,9 @@ export interface FormField {
   label: string;         // associated label text or aria-label
   required: boolean;
   placeholder: string;
+  disabled?: boolean;    // true when field cannot be edited
+  readOnly?: boolean;    // true when field is readonly
+  hidden?: boolean;      // true for hidden/non-visible fields
 }
 
 /**
@@ -136,3 +139,4 @@ export interface DiscoveryArtifact extends ArtifactMetadata {
   workflowPlans: WorkflowPlan[];
   userHints: string[];         // from --flows flag
 }
+

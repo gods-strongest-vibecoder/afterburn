@@ -1,6 +1,6 @@
 {
   "name": "afterburn-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automated testing for vibe-coded websites. One command finds broken forms, dead buttons, JS crashes, and more.",
   "main": "dist/index.js",
   "type": "module",
@@ -50,7 +50,7 @@
   "author": "Afterburn",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gods-strongest-vibecoder/afterburn"
+    "url": "git+https://github.com/gods-strongest-vibecoder/afterburn.git"
   },
   "license": "MIT",
   "dependencies": {
@@ -75,10 +75,12 @@
     "@actions/artifact": "^6.1.0",
     "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0",
+    "@napi-rs/canvas": "^0.1.92",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.2.1",
     "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-v8": "^4.0.18",
+    "gif-encoder-2": "^1.0.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

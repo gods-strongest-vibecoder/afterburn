@@ -3,8 +3,12 @@
 [![npm version](https://img.shields.io/npm/v/afterburn-cli)](https://www.npmjs.com/package/afterburn-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-193%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-289%20passing-brightgreen)]()
 [![Built at BridgeMind Vibeathon 2026](https://img.shields.io/badge/Built%20at-BridgeMind%20Vibeathon%202026-blueviolet)]()
+
+<p align="center">
+  <img src="demo/afterburn-demo.gif" alt="Afterburn scanning a website and finding 52 issues in seconds" width="720">
+</p>
 
 **One command finds every bug on your website.** Zero config. Generates a report your AI coding tool can use to fix them automatically.
 

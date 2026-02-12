@@ -1,6 +1,16 @@
 // Generates basic workflow plans from discovered page elements without AI (fallback when GEMINI_API_KEY is not set)
 /** Maximum number of workflows to generate (keeps runtime manageable) */
 const MAX_WORKFLOWS = 8;
+const NON_ACTIONABLE_FILL_TYPES = new Set([
+    'hidden',
+    'submit',
+    'button',
+    'reset',
+    'file',
+    'color',
+    'range',
+    'image',
+]);
 /**
  * Generates workflow plans from sitemap data using heuristics instead of AI.
  * Produces the same WorkflowPlan[] format that Gemini returns, so downstream
@@ -9,7 +19,7 @@ const MAX_WORKFLOWS = 8;
 export function generateHeuristicPlans(sitemap) {
     const pages = collectAllPages(sitemap);
     const plans = [];
-    // 1. Form workflows — highest value (signup, login, contact, search)
+    // 1. Form workflows - highest value (signup, login, contact, search)
     for (const page of pages) {
         for (const form of page.pageData.forms) {
             if (plans.length >= MAX_WORKFLOWS)
@@ -36,7 +46,7 @@ export function generateHeuristicPlans(sitemap) {
         if (plans.length >= MAX_WORKFLOWS)
             break;
     }
-    // 3. Navigation workflows — verify key internal links load without errors
+    // 3. Navigation workflows - verify key internal links load without errors
     const navPlan = buildNavigationWorkflow(pages);
     if (navPlan && plans.length < MAX_WORKFLOWS) {
         plans.push(navPlan);
@@ -46,7 +56,7 @@ export function generateHeuristicPlans(sitemap) {
     plans.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
     return plans;
 }
-// ─── Workflow builders ───────────────────────────────────────────────
+// ---------------- Workflow builders -------------------------------
 function buildFormWorkflow(page, form) {
     if (form.fields.length === 0)
         return null;
@@ -59,10 +69,11 @@ function buildFormWorkflow(page, form) {
         expectedResult: `Page "${page.pageData.title}" loads successfully`,
         confidence: 1.0,
     });
+    const fillableFields = form.fields.filter(isFillActionableField);
     // Step 2-N: Fill each field with synthetic test data
-    for (const field of form.fields) {
+    for (const field of fillableFields) {
         const testValue = syntheticValue(field.type, field.name, field.label);
-        const label = field.label || field.name || field.type;
+        const label = normalizeWhitespace(field.label || field.name || field.type || 'field');
         steps.push({
             action: 'fill',
             selector: fieldSelector(form, field),
@@ -71,10 +82,10 @@ function buildFormWorkflow(page, form) {
             confidence: 0.7,
         });
     }
-    // Final step: Submit (click submit button or the form's submit element)
+    // Final step: Submit (robustly match common submit controls)
     steps.push({
         action: 'click',
-        selector: `${form.selector} [type="submit"], ${form.selector} button:last-of-type`,
+        selector: `${form.selector} button[type="submit"], ${form.selector} input[type="submit"], ${form.selector} button:not([type])`,
         value: undefined,
         expectedResult: 'Form submits without errors',
         confidence: 0.6,
@@ -96,7 +107,7 @@ function buildFormWorkflow(page, form) {
         description: `Fill and submit the ${formName} form on ${page.pageData.title} to verify it works without errors`,
         steps,
         priority,
-        estimatedDuration: 10 + form.fields.length * 2,
+        estimatedDuration: 10 + fillableFields.length * 2,
         source: 'auto-discovered',
     };
 }
@@ -159,7 +170,7 @@ function buildNavigationWorkflow(pages) {
         source: 'auto-discovered',
     };
 }
-// ─── Helpers ─────────────────────────────────────────────────────────
+// ---------------- Helpers -----------------------------------------
 /** Recursively collect all pages from sitemap tree, sorted by importance */
 function collectAllPages(node) {
     const pages = [node];
@@ -176,19 +187,49 @@ function collectAllPages(node) {
     });
     return pages;
 }
+function normalizeWhitespace(value) {
+    return value.replace(/\s+/g, ' ').trim();
+}
+function escapeCssAttributeValue(value) {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+function escapeStepString(value) {
+    return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+function isFillActionableField(field) {
+    const type = (field.type || 'text').toLowerCase();
+    if (!field.name && !normalizeWhitespace(field.label || '')) {
+        return false;
+    }
+    if (field.disabled || field.readOnly || field.hidden) {
+        return false;
+    }
+    return !NON_ACTIONABLE_FILL_TYPES.has(type);
+}
 /** Build a Playwright selector for a form field */
 function fieldSelector(form, field) {
-    if (field.label) {
-        return `${form.selector} [aria-label="${field.label}"], ${form.selector} input[name="${field.name}"]`;
-    }
     if (field.name) {
-        return `${form.selector} [name="${field.name}"]`;
+        return `${form.selector} [name="${escapeCssAttributeValue(field.name)}"]`;
     }
-    return `${form.selector} input[type="${field.type}"]`;
+    const label = normalizeWhitespace(field.label);
+    if (label) {
+        return `getByLabel('${escapeStepString(label)}')`;
+    }
+    const type = (field.type || 'text').toLowerCase();
+    if (type === 'textarea') {
+        return `${form.selector} textarea`;
+    }
+    if (type === 'select' || type === 'select-one') {
+        return `${form.selector} select`;
+    }
+    return `${form.selector} input[type="${escapeCssAttributeValue(type)}"]`;
 }
 /** Generate synthetic test data based on field type */
 function syntheticValue(type, name, label) {
-    const hint = `${type} ${name} ${label}`.toLowerCase();
+    const normalizedType = (type || '').toLowerCase();
+    const hint = `${normalizedType} ${name} ${label}`.toLowerCase();
+    if (normalizedType === 'checkbox' || normalizedType === 'radio')
+        return 'true';
     if (hint.includes('email'))
         return 'test@example.com';
     if (hint.includes('password') || hint.includes('pass'))
@@ -209,9 +250,9 @@ function syntheticValue(type, name, label) {
         return 'test search query';
     if (hint.includes('message') || hint.includes('comment') || hint.includes('textarea'))
         return 'This is a test message from Afterburn.';
-    if (type === 'number')
+    if (normalizedType === 'number')
         return '42';
-    if (type === 'date')
+    if (normalizedType === 'date')
         return '2025-01-15';
     return 'test input';
 }

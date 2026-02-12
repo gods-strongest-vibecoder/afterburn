@@ -1,9 +1,19 @@
 // Generates basic workflow plans from discovered page elements without AI (fallback when GEMINI_API_KEY is not set)
 
-import type { SitemapNode, WorkflowPlan, WorkflowStep, FormInfo, PageData, InteractiveElement } from '../types/discovery.js';
+import type { SitemapNode, WorkflowPlan, WorkflowStep, FormInfo, PageData, InteractiveElement, FormField } from '../types/discovery.js';
 
 /** Maximum number of workflows to generate (keeps runtime manageable) */
 const MAX_WORKFLOWS = 8;
+const NON_ACTIONABLE_FILL_TYPES = new Set([
+  'hidden',
+  'submit',
+  'button',
+  'reset',
+  'file',
+  'color',
+  'range',
+  'image',
+]);
 
 /**
  * Generates workflow plans from sitemap data using heuristics instead of AI.
@@ -14,7 +24,7 @@ export function generateHeuristicPlans(sitemap: SitemapNode): WorkflowPlan[] {
   const pages = collectAllPages(sitemap);
   const plans: WorkflowPlan[] = [];
 
-  // 1. Form workflows — highest value (signup, login, contact, search)
+  // 1. Form workflows - highest value (signup, login, contact, search)
   for (const page of pages) {
     for (const form of page.pageData.forms) {
       if (plans.length >= MAX_WORKFLOWS) break;
@@ -38,7 +48,7 @@ export function generateHeuristicPlans(sitemap: SitemapNode): WorkflowPlan[] {
     if (plans.length >= MAX_WORKFLOWS) break;
   }
 
-  // 3. Navigation workflows — verify key internal links load without errors
+  // 3. Navigation workflows - verify key internal links load without errors
   const navPlan = buildNavigationWorkflow(pages);
   if (navPlan && plans.length < MAX_WORKFLOWS) {
     plans.push(navPlan);
@@ -51,7 +61,7 @@ export function generateHeuristicPlans(sitemap: SitemapNode): WorkflowPlan[] {
   return plans;
 }
 
-// ─── Workflow builders ───────────────────────────────────────────────
+// ---------------- Workflow builders -------------------------------
 
 function buildFormWorkflow(page: SitemapNode, form: FormInfo): WorkflowPlan | null {
   if (form.fields.length === 0) return null;
@@ -67,10 +77,12 @@ function buildFormWorkflow(page: SitemapNode, form: FormInfo): WorkflowPlan | nu
     confidence: 1.0,
   });
 
+  const fillableFields = form.fields.filter(isFillActionableField);
+
   // Step 2-N: Fill each field with synthetic test data
-  for (const field of form.fields) {
+  for (const field of fillableFields) {
     const testValue = syntheticValue(field.type, field.name, field.label);
-    const label = field.label || field.name || field.type;
+    const label = normalizeWhitespace(field.label || field.name || field.type || 'field');
 
     steps.push({
       action: 'fill',
@@ -81,10 +93,10 @@ function buildFormWorkflow(page: SitemapNode, form: FormInfo): WorkflowPlan | nu
     });
   }
 
-  // Final step: Submit (click submit button or the form's submit element)
+  // Final step: Submit (robustly match common submit controls)
   steps.push({
     action: 'click',
-    selector: `${form.selector} [type="submit"], ${form.selector} button:last-of-type`,
+    selector: `${form.selector} button[type="submit"], ${form.selector} input[type="submit"], ${form.selector} button:not([type])`,
     value: undefined,
     expectedResult: 'Form submits without errors',
     confidence: 0.6,
@@ -109,7 +121,7 @@ function buildFormWorkflow(page: SitemapNode, form: FormInfo): WorkflowPlan | nu
     description: `Fill and submit the ${formName} form on ${page.pageData.title} to verify it works without errors`,
     steps,
     priority,
-    estimatedDuration: 10 + form.fields.length * 2,
+    estimatedDuration: 10 + fillableFields.length * 2,
     source: 'auto-discovered',
   };
 }
@@ -178,7 +190,7 @@ function buildNavigationWorkflow(pages: SitemapNode[]): WorkflowPlan | null {
   };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────
+// ---------------- Helpers -----------------------------------------
 
 /** Recursively collect all pages from sitemap tree, sorted by importance */
 function collectAllPages(node: SitemapNode): SitemapNode[] {
@@ -196,21 +208,60 @@ function collectAllPages(node: SitemapNode): SitemapNode[] {
   return pages;
 }
 
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function escapeCssAttributeValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function escapeStepString(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function isFillActionableField(field: FormField): boolean {
+  const type = (field.type || 'text').toLowerCase();
+
+  if (!field.name && !normalizeWhitespace(field.label || '')) {
+    return false;
+  }
+
+  if (field.disabled || field.readOnly || field.hidden) {
+    return false;
+  }
+
+  return !NON_ACTIONABLE_FILL_TYPES.has(type);
+}
+
 /** Build a Playwright selector for a form field */
-function fieldSelector(form: FormInfo, field: { name: string; label: string; type: string }): string {
-  if (field.label) {
-    return `${form.selector} [aria-label="${field.label}"], ${form.selector} input[name="${field.name}"]`;
-  }
+function fieldSelector(form: FormInfo, field: FormField): string {
   if (field.name) {
-    return `${form.selector} [name="${field.name}"]`;
+    return `${form.selector} [name="${escapeCssAttributeValue(field.name)}"]`;
   }
-  return `${form.selector} input[type="${field.type}"]`;
+
+  const label = normalizeWhitespace(field.label);
+  if (label) {
+    return `getByLabel('${escapeStepString(label)}')`;
+  }
+
+  const type = (field.type || 'text').toLowerCase();
+  if (type === 'textarea') {
+    return `${form.selector} textarea`;
+  }
+  if (type === 'select' || type === 'select-one') {
+    return `${form.selector} select`;
+  }
+
+  return `${form.selector} input[type="${escapeCssAttributeValue(type)}"]`;
 }
 
 /** Generate synthetic test data based on field type */
 function syntheticValue(type: string, name: string, label: string): string {
-  const hint = `${type} ${name} ${label}`.toLowerCase();
+  const normalizedType = (type || '').toLowerCase();
+  const hint = `${normalizedType} ${name} ${label}`.toLowerCase();
 
+  if (normalizedType === 'checkbox' || normalizedType === 'radio') return 'true';
   if (hint.includes('email')) return 'test@example.com';
   if (hint.includes('password') || hint.includes('pass')) return 'TestPass123!';
   if (hint.includes('phone') || hint.includes('tel')) return '555-0100';
@@ -221,8 +272,8 @@ function syntheticValue(type: string, name: string, label: string): string {
   if (hint.includes('name')) return 'Test User';
   if (hint.includes('search') || hint.includes('query') || hint.includes('q')) return 'test search query';
   if (hint.includes('message') || hint.includes('comment') || hint.includes('textarea')) return 'This is a test message from Afterburn.';
-  if (type === 'number') return '42';
-  if (type === 'date') return '2025-01-15';
+  if (normalizedType === 'number') return '42';
+  if (normalizedType === 'date') return '2025-01-15';
 
   return 'test input';
 }

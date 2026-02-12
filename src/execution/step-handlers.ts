@@ -10,7 +10,282 @@ import { validateUrl, validateNavigationUrl, validateSelector, sanitizeValue } f
 const STEP_TIMEOUT = 10_000;
 const NAV_TIMEOUT = 30_000;
 export const DEAD_BUTTON_WAIT = 500;
+const ANSI_ESCAPE_PATTERN = /\u001B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+const RAW_ANSI_STYLE_PATTERN = /\[(?:\d{1,3};?)+m/g;
+const NON_ACTIONABLE_FILL_TYPES = new Set([
+  'hidden',
+  'file',
+  'color',
+  'range',
+  'submit',
+  'button',
+  'reset',
+  'image',
+]);
 
+class StepSkippedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'StepSkippedError';
+  }
+}
+
+function sanitizeErrorMessage(message: string): string {
+  return message
+    .replace(ANSI_ESCAPE_PATTERN, '')
+    .replace(RAW_ANSI_STYLE_PATTERN, '')
+    .trim();
+}
+
+function toErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return sanitizeErrorMessage(message);
+}
+
+function isNonActionableFillField(field: { type: string; disabled?: boolean; readOnly?: boolean; hidden?: boolean }): boolean {
+  const normalizedType = (field.type || '').toLowerCase();
+  return Boolean(field.disabled || field.readOnly || field.hidden || NON_ACTIONABLE_FILL_TYPES.has(normalizedType));
+}
+
+function shouldUncheckCheckbox(value?: string): boolean {
+  if (value === undefined) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized === '' ||
+    normalized === '0' ||
+    normalized === 'false' ||
+    normalized === 'off' ||
+    normalized === 'no' ||
+    normalized === 'unchecked'
+  );
+}
+
+interface StepFillFieldInfo {
+  type: string;
+  name: string;
+  label: string;
+  required: boolean;
+  placeholder: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  hidden?: boolean;
+}
+
+function inferFieldFromSelector(selector: string): StepFillFieldInfo | null {
+  const nameMatch = selector.match(/\[name\s*=\s*['\"]?([^'\"\]]+)['\"]?\]/i);
+  const idMatch = selector.match(/#([A-Za-z_][A-Za-z0-9_:-]*)/);
+  const fieldName = nameMatch?.[1] || idMatch?.[1] || '';
+
+  if (!fieldName) {
+    return null;
+  }
+
+  const lowerSelector = selector.toLowerCase();
+  let type = 'text';
+
+  if (lowerSelector.includes('select')) {
+    type = 'select';
+  } else if (lowerSelector.includes('textarea')) {
+    type = 'textarea';
+  } else if (lowerSelector.includes('checkbox')) {
+    type = 'checkbox';
+  } else if (lowerSelector.includes('radio')) {
+    type = 'radio';
+  } else if (lowerSelector.includes('password')) {
+    type = 'password';
+  } else if (lowerSelector.includes('email')) {
+    type = 'email';
+  }
+
+  return {
+    type,
+    name: fieldName,
+    label: fieldName,
+    required: false,
+    placeholder: '',
+  };
+}
+
+async function resolveFillTargetSelector(
+  page: Page,
+  preferredSelector: string,
+  fieldName: string
+): Promise<string | null> {
+  const candidates = [preferredSelector, `[name="${fieldName}"]`, `#${fieldName}`];
+  const visited = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (!candidate || visited.has(candidate)) {
+      continue;
+    }
+    visited.add(candidate);
+
+    if (await page.locator(candidate).count().then(count => count > 0).catch(() => false)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+async function applyFillValue(
+  page: Page,
+  selector: string,
+  field: StepFillFieldInfo,
+  timeout: number,
+  value?: string
+): Promise<void> {
+  if (typeof value !== 'string') {
+    return;
+  }
+
+  if (field.type === 'checkbox' || field.type === 'radio') {
+    if (shouldUncheckCheckbox(value)) {
+      await page.uncheck(selector, { timeout });
+    } else {
+      await page.check(selector, { timeout });
+    }
+    return;
+  }
+
+  if (field.type === 'select' || field.type === 'select-one') {
+    try {
+      await page.selectOption(selector, value, { timeout });
+    } catch {
+      // Keep fillField-selected value if explicit option does not exist.
+    }
+    return;
+  }
+
+  await page.fill(selector, value, { timeout });
+}
+
+function getSkippedFillReason(field: { type: string; disabled?: boolean; readOnly?: boolean; hidden?: boolean }): string {
+  if (field.disabled) return 'Skipping disabled field';
+  if (field.readOnly) return 'Skipping readonly field';
+  if (field.hidden) return 'Skipping hidden field';
+  return `Skipping unsupported fill field type: ${field.type}`;
+}
+
+async function tryFillSpecialField(
+  page: Page,
+  selector: string,
+  timeout: number,
+  value?: string
+): Promise<boolean> {
+  const locator = page.locator(selector).first();
+  const maybeLocator = locator as {
+    count?: () => Promise<number>;
+    evaluate?: <T>(fn: (element: Element) => T) => Promise<T>;
+  };
+
+  if (typeof maybeLocator.count !== 'function' || typeof maybeLocator.evaluate !== 'function') {
+    return false;
+  }
+
+  let count = 0;
+  try {
+    count = await maybeLocator.count();
+  } catch {
+    count = 0;
+  }
+
+  if (count === 0) {
+    const inferredField = inferFieldFromSelector(selector);
+    if (!inferredField) {
+      return false;
+    }
+
+    if (isNonActionableFillField(inferredField)) {
+      throw new StepSkippedError(getSkippedFillReason(inferredField));
+    }
+
+    const inferredResult = await fillField(page, inferredField, timeout);
+    if (inferredResult.skipped) {
+      throw new StepSkippedError(sanitizeErrorMessage(inferredResult.reason || 'Skipping unresolved field'));
+    }
+
+    const inferredSelector = await resolveFillTargetSelector(page, selector, inferredField.name);
+    if (inferredSelector) {
+      await applyFillValue(page, inferredSelector, inferredField, timeout, value);
+      return true;
+    }
+
+    throw new StepSkippedError('Skipping unresolved field selector');
+  }
+
+  const field = await maybeLocator.evaluate((element): StepFillFieldInfo => {
+    const formElement = element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const tagName = formElement.tagName.toLowerCase();
+    const type = tagName === 'select'
+      ? 'select'
+      : tagName === 'textarea'
+        ? 'textarea'
+        : ((formElement as HTMLInputElement).type || 'text').toLowerCase();
+    const placeholder = formElement.getAttribute('placeholder') || '';
+    const hiddenAttr = formElement.hasAttribute('hidden');
+    const ariaHidden = (formElement.getAttribute('aria-hidden') || '').toLowerCase() === 'true';
+
+    return {
+      type,
+      name: formElement.name || formElement.id || '',
+      label:
+        (formElement.labels && formElement.labels.length > 0
+          ? formElement.labels[0]?.textContent
+          : null) ||
+        formElement.getAttribute('aria-label') ||
+        placeholder ||
+        formElement.name ||
+        formElement.id ||
+        '',
+      required: formElement.required || false,
+      placeholder,
+      disabled: formElement.hasAttribute('disabled') || (formElement as HTMLInputElement).disabled || false,
+      readOnly: (formElement as HTMLInputElement).readOnly || false,
+      hidden: type === 'hidden' || hiddenAttr || ariaHidden,
+    };
+  });
+
+  if (isNonActionableFillField(field)) {
+    throw new StepSkippedError(getSkippedFillReason(field));
+  }
+
+  const isSpecialFill =
+    field.type === 'select' ||
+    field.type === 'select-one' ||
+    field.type === 'checkbox' ||
+    field.type === 'radio';
+
+  if (!isSpecialFill) {
+    return false;
+  }
+
+  if (!field.name) {
+    if (field.type === 'checkbox' || field.type === 'radio') {
+      if (shouldUncheckCheckbox(value)) {
+        await page.uncheck(selector, { timeout });
+      } else {
+        await page.check(selector, { timeout });
+      }
+    } else {
+      await page.selectOption(selector, value || '', { timeout });
+    }
+    return true;
+  }
+
+  const result = await fillField(page, field, timeout);
+  if (result.skipped) {
+    throw new StepSkippedError(sanitizeErrorMessage(result.reason || `Could not fill field: ${selector}`));
+  }
+
+  const fillSelector = (await resolveFillTargetSelector(page, selector, field.name)) || selector;
+  await applyFillValue(page, fillSelector, field, timeout, value);
+
+  return true;
+}
 /**
  * Convert legacy LLM selector strings into Playwright selector engines.
  * Supports getByRole/getByLabel/getByText compatibility for older plans.
@@ -93,7 +368,9 @@ export async function executeStep(
         break;
 
       case 'fill':
-        await page.fill(normalizedSelector, safeValue || '', { timeout: STEP_TIMEOUT });
+        if (!(await tryFillSpecialField(page, normalizedSelector, STEP_TIMEOUT, safeValue))) {
+          await page.fill(normalizedSelector, safeValue || '', { timeout: STEP_TIMEOUT });
+        }
         break;
 
       case 'select':
@@ -124,13 +401,24 @@ export async function executeStep(
       duration: Date.now() - startTime,
     };
   } catch (error) {
+    if (error instanceof StepSkippedError) {
+      return {
+        stepIndex,
+        action: step.action,
+        selector: step.selector,
+        status: 'skipped',
+        duration: Date.now() - startTime,
+        error: toErrorMessage(error),
+      };
+    }
+
     return {
       stepIndex,
       action: step.action,
       selector: step.selector,
       status: 'failed',
       duration: Date.now() - startTime,
-      error: error instanceof Error ? error.message : String(error),
+      error: toErrorMessage(error),
     };
   }
 }
@@ -377,7 +665,7 @@ export async function detectBrokenForm(
     return {
       isBroken: false,
       formSelector,
-      reason: `Detection failed: ${error instanceof Error ? error.message : String(error)}`,
+      reason: `Detection failed: ${toErrorMessage(error)}`,
       filledFields: 0,
       skippedFields: 0,
     };
@@ -418,3 +706,10 @@ export async function dismissModalIfPresent(page: Page): Promise<void> {
     // Fail silently - modal dismissal is best-effort
   }
 }
+
+
+
+
+
+
+
