@@ -16,10 +16,11 @@ export function registerTools(server) {
                 if (val === undefined || val === null)
                     return undefined;
                 if (typeof val === 'string') {
-                    const parsed = parseInt(val, 10);
-                    if (isNaN(parsed) || parsed < 0 || !Number.isInteger(parsed)) {
+                    const trimmed = val.trim();
+                    if (!/^\d+$/.test(trimmed)) {
                         throw new Error(`Invalid maxPages value: "${val}". Must be a non-negative integer.`);
                     }
+                    const parsed = Number(trimmed);
                     return parsed;
                 }
                 if (typeof val === 'number') {
