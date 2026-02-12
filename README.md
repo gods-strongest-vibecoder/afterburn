@@ -178,6 +178,9 @@ Checks Node.js version, browser installation, API key, and network connectivity.
 ## Testing
 
 ```bash
+# Build CLI + bundled GitHub Action artifacts
+npm run build:release
+
 # Fast default lane (unit tests)
 npm test
 
@@ -250,7 +253,7 @@ jobs:
           fail-on: high
 ```
 
-Posts a summary comment on your PR and uploads reports as artifacts. Action bundling coming in v1.1 -- for now, use the CLI in your CI workflow with `npx afterburn-cli`.
+Posts a summary comment on your PR and uploads reports as artifacts.
 
 ### MCP Server (for AI coding assistants)
 

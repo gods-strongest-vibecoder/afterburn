@@ -1,0 +1,90 @@
+name: Afterburn CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      scan_url:
+        description: Public URL to scan with Afterburn Action (optional)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build release artifacts
+        run: npm run build:release
+
+      - name: Verify bundled action artifacts are committed
+        run: git diff --exit-code -- action/dist/index.js action/dist/licenses.txt action/dist/package.json
+
+      - name: Unit tests
+        run: npm test
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+      - name: Coverage
+        run: npm run test:coverage
+
+  afterburn_scan:
+    name: Manual Afterburn Scan
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.scan_url != '' }}
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build release artifacts
+        run: npm run build:release
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run local Afterburn Action
+        uses: ./action
+        with:
+          url: ${{ inputs.scan_url }}
+          fail-on: high
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload reports fallback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: afterburn-reports
+          path: afterburn-reports/**/*
+          if-no-files-found: ignore

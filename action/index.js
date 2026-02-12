@@ -46,10 +46,11 @@ async function run() {
         // Normalize failOn input (case-insensitive) and validate
         const failOnRaw = (core.getInput('fail-on') || 'high').toLowerCase().trim();
         const validFailOnValues = ['critical', 'high', 'medium', 'low', 'never'];
-        if (!validFailOnValues.includes(failOnRaw)) {
-            core.warning(`Invalid fail-on value: "${failOnRaw}". Defaulting to "critical". Valid values: ${validFailOnValues.join(', ')}`);
+        const isValidFailOn = validFailOnValues.includes(failOnRaw);
+        if (!isValidFailOn) {
+            core.warning(`Invalid fail-on value: "${failOnRaw}". Defaulting to "high". Valid values: ${validFailOnValues.join(', ')}`);
         }
-        const failOn = validFailOnValues.includes(failOnRaw) ? failOnRaw : 'critical';
+        const failOn = isValidFailOn ? failOnRaw : 'high';
         core.info(`Testing ${url}...`);
         // Run Afterburn
         const result = await runAfterburn({
@@ -111,7 +112,15 @@ async function run() {
                 break;
         }
         if (shouldFail) {
-            core.setFailed(`Afterburn found ${result.highPriorityCount} high-priority issues`);
+            if (failOn === 'medium') {
+                core.setFailed(`Afterburn found ${result.highPriorityCount} high and ${result.mediumPriorityCount} medium-priority issues (threshold: medium)`);
+            }
+            else if (failOn === 'low') {
+                core.setFailed(`Afterburn found ${result.totalIssues} total issues (threshold: low)`);
+            }
+            else {
+                core.setFailed(`Afterburn found ${result.highPriorityCount} high-priority issues (threshold: ${failOn})`);
+            }
         }
         else {
             core.info(`Scan complete! Health score: ${result.healthScore.overall}/100`);

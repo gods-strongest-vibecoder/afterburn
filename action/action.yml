@@ -1,5 +1,5 @@
 name: 'Afterburn Web Testing'
-description: 'Automated testing for vibe-coded websites — find bugs, get fixes'
+description: 'Automated testing for vibe-coded websites - find bugs, get fixes'
 author: 'Afterburn'
 
 branding:
@@ -38,4 +38,4 @@ outputs:
 
 runs:
   using: 'node20'
-  main: 'index.js'
+  main: 'dist/index.js'

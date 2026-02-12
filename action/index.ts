@@ -6,6 +6,8 @@ import { runAfterburn } from '../dist/core/index.js';
 import type { AfterBurnResult } from '../dist/core/index.js';
 import { redactSensitiveData, sanitizeForMarkdownInline } from '../dist/utils/sanitizer.js';
 
+type FailOnThreshold = 'critical' | 'high' | 'medium' | 'low' | 'never';
+
 /**
  * Build PR comment with health score and top issues
  */
@@ -54,11 +56,12 @@ async function run(): Promise<void> {
 
     // Normalize failOn input (case-insensitive) and validate
     const failOnRaw = (core.getInput('fail-on') || 'high').toLowerCase().trim();
-    const validFailOnValues = ['critical', 'high', 'medium', 'low', 'never'];
-    if (!validFailOnValues.includes(failOnRaw)) {
-      core.warning(`Invalid fail-on value: "${failOnRaw}". Defaulting to "critical". Valid values: ${validFailOnValues.join(', ')}`);
+    const validFailOnValues: FailOnThreshold[] = ['critical', 'high', 'medium', 'low', 'never'];
+    const isValidFailOn = validFailOnValues.includes(failOnRaw as FailOnThreshold);
+    if (!isValidFailOn) {
+      core.warning(`Invalid fail-on value: "${failOnRaw}". Defaulting to "high". Valid values: ${validFailOnValues.join(', ')}`);
     }
-    const failOn = validFailOnValues.includes(failOnRaw) ? failOnRaw : 'critical';
+    const failOn: FailOnThreshold = isValidFailOn ? (failOnRaw as FailOnThreshold) : 'high';
 
     core.info(`Testing ${url}...`);
 
@@ -127,7 +130,15 @@ async function run(): Promise<void> {
     }
 
     if (shouldFail) {
-      core.setFailed(`Afterburn found ${result.highPriorityCount} high-priority issues`);
+      if (failOn === 'medium') {
+        core.setFailed(
+          `Afterburn found ${result.highPriorityCount} high and ${result.mediumPriorityCount} medium-priority issues (threshold: medium)`
+        );
+      } else if (failOn === 'low') {
+        core.setFailed(`Afterburn found ${result.totalIssues} total issues (threshold: low)`);
+      } else {
+        core.setFailed(`Afterburn found ${result.highPriorityCount} high-priority issues (threshold: ${failOn})`);
+      }
     } else {
       core.info(`Scan complete! Health score: ${result.healthScore.overall}/100`);
     }
