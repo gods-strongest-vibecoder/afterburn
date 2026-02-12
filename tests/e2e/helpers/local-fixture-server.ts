@@ -82,6 +82,44 @@ function renderSearchPage(term: string): string {
 </html>`;
 }
 
+function renderSpaPage(currentPath: string): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Afterburn Fixture SPA</title>
+  </head>
+  <body>
+    <h1>Fixture SPA</h1>
+    <nav>
+      <a href="/spa/about" data-spa-link>About</a>
+      <a href="/spa/pricing" data-spa-link>Pricing</a>
+    </nav>
+    <main id="spa-content">${currentPath}</main>
+    <script>
+      (function () {
+        const content = document.getElementById('spa-content');
+        function render(pathname) {
+          if (content) content.textContent = pathname;
+        }
+        document.querySelectorAll('[data-spa-link]').forEach((link) => {
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const href = link.getAttribute('href');
+            if (!href) return;
+            history.pushState({}, '', href);
+            render(location.pathname);
+          });
+        });
+        window.addEventListener('popstate', function () {
+          render(location.pathname);
+        });
+      })();
+    </script>
+  </body>
+</html>`;
+}
+
 export async function startFixtureServer(): Promise<FixtureServer> {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://127.0.0.1');
@@ -108,6 +146,12 @@ export async function startFixtureServer(): Promise<FixtureServer> {
       const query = url.searchParams.get('query') ?? '';
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       res.end(renderSearchPage(query));
+      return;
+    }
+
+    if (req.method === 'GET' && (url.pathname === '/spa' || url.pathname === '/spa/about' || url.pathname === '/spa/pricing')) {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(renderSpaPage(url.pathname));
       return;
     }
 
