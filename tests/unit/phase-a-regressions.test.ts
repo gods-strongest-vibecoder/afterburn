@@ -126,6 +126,22 @@ describe('Phase A regressions', () => {
     );
   });
 
+  it('skips submit click steps when submit control is missing', async () => {
+    const page = createMockPage('https://example.com');
+    const step: WorkflowStep = {
+      action: 'click',
+      selector: 'form:nth-of-type(1) button[type="submit"], form:nth-of-type(1) input[type="submit"], form:nth-of-type(1) button:not([type])',
+      expectedResult: 'Form submits',
+      confidence: 1,
+    };
+
+    const result = await executeStep(page, step, 2, 'https://example.com');
+
+    expect(result.status).toBe('skipped');
+    expect(result.error).toContain('Skipping submit click');
+    expect(page.click).not.toHaveBeenCalled();
+  });
+
   it('falls back to heuristic workflow plans when AI planning promise rejects', async () => {
     const sitemap = createMinimalSitemap();
 

@@ -47,6 +47,11 @@ function isNonActionableFillField(field: { type: string; disabled?: boolean; rea
   return Boolean(field.disabled || field.readOnly || field.hidden || NON_ACTIONABLE_FILL_TYPES.has(normalizedType));
 }
 
+function isSubmitClickSelector(selector: string): boolean {
+  const normalized = selector.toLowerCase();
+  return normalized.includes('type="submit"') || normalized.includes("type='submit'") || normalized.includes('button:not([type])');
+}
+
 function shouldUncheckCheckbox(value?: string): boolean {
   if (value === undefined) {
     return false;
@@ -364,6 +369,12 @@ export async function executeStep(
         break;
 
       case 'click':
+        if (isSubmitClickSelector(normalizedSelector)) {
+          const submitExists = await page.locator(normalizedSelector).count().catch(() => 0);
+          if (submitExists === 0) {
+            throw new StepSkippedError('Skipping submit click: submit control not found');
+          }
+        }
         await page.click(normalizedSelector, { timeout: STEP_TIMEOUT });
         break;
 
@@ -706,10 +717,4 @@ export async function dismissModalIfPresent(page: Page): Promise<void> {
     // Fail silently - modal dismissal is best-effort
   }
 }
-
-
-
-
-
-
 

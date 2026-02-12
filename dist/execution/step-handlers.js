@@ -37,6 +37,10 @@ function isNonActionableFillField(field) {
     const normalizedType = (field.type || '').toLowerCase();
     return Boolean(field.disabled || field.readOnly || field.hidden || NON_ACTIONABLE_FILL_TYPES.has(normalizedType));
 }
+function isSubmitClickSelector(selector) {
+    const normalized = selector.toLowerCase();
+    return normalized.includes('type="submit"') || normalized.includes("type='submit'") || normalized.includes('button:not([type])');
+}
 function shouldUncheckCheckbox(value) {
     if (value === undefined) {
         return false;
@@ -284,6 +288,12 @@ export async function executeStep(page, step, stepIndex, baseUrl) {
                 }
                 break;
             case 'click':
+                if (isSubmitClickSelector(normalizedSelector)) {
+                    const submitExists = await page.locator(normalizedSelector).count().catch(() => 0);
+                    if (submitExists === 0) {
+                        throw new StepSkippedError('Skipping submit click: submit control not found');
+                    }
+                }
                 await page.click(normalizedSelector, { timeout: STEP_TIMEOUT });
                 break;
             case 'fill':
