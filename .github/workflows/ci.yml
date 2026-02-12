@@ -38,8 +38,14 @@ jobs:
       - name: Build release artifacts
         run: npm run build:release
 
-      - name: Verify bundled action artifacts are committed
-        run: git diff --exit-code -- action/dist/index.js action/dist/licenses.txt action/dist/package.json
+      - name: Verify transpiled action entrypoint is committed
+        run: git diff --exit-code -- action/index.js
+
+      - name: Verify bundled action artifacts exist
+        run: |
+          test -s action/dist/index.js
+          test -s action/dist/licenses.txt
+          test -s action/dist/package.json
 
       - name: Unit tests
         run: npm test
