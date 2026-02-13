@@ -1,40 +1,45 @@
 // generate-gif.mjs - Programmatically renders afterburn demo GIF
-// Uses @napi-rs/canvas for frame rendering and gif-encoder-2 for GIF assembly
+// Synthesized from Pain Point Strategist + Visual Designer + Devil's Advocate debate
 
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import GIFEncoder from 'gif-encoder-2';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 
-// --- Dracula Theme ---
+// --- Catppuccin Mocha Theme (Visual Designer: better GIF compression than Dracula) ---
 const COLORS = {
-  bg:       '#282a36',
-  fg:       '#f8f8f2',
-  green:    '#50fa7b',
-  red:      '#ff5555',
-  yellow:   '#f1fa8c',
-  cyan:     '#8be9fd',
-  purple:   '#bd93f9',
-  comment:  '#6272a4',
-  titleBar: '#1e1f29',
-  dotRed:   '#ff5555',
-  dotYellow:'#f1fa8c',
-  dotGreen: '#50fa7b',
+  bg:        '#1e1e2e',   // Mocha base
+  fg:        '#cdd6f4',   // Mocha text
+  green:     '#a6e3a1',   // Mocha green (checkmarks)
+  red:       '#f38ba8',   // Mocha red ([CRITICAL] tags)
+  yellow:    '#f9e2af',   // Mocha yellow (health score)
+  cyan:      '#89dceb',   // Mocha sky (AI annotation)
+  purple:    '#cba6f7',   // Mocha mauve ($ prompt)
+  comment:   '#6c7086',   // Mocha overlay0 (muted text)
+  titleBar:  '#181825',   // Mocha mantle (darker bar)
+  surface:   '#313244',   // Mocha surface0 (subtle borders)
+  outer:     '#11111b',   // Mocha crust (outer bg)
+  dotRed:    '#f38ba8',
+  dotYellow: '#f9e2af',
+  dotGreen:  '#a6e3a1',
+  white:     '#ffffff',
+  bold:      '#f5e0dc',   // Mocha rosewater (for emphasis)
 };
 
-// --- Layout ---
-const WIDTH = 960;
-const HEIGHT = 540;
+// --- Layout (Visual Designer: 1000x600, larger font for GitHub scaling) ---
+const WIDTH = 1000;
+const HEIGHT = 600;
 const FPS = 12;
 const FRAME_DELAY = Math.round(1000 / FPS); // ~83ms
-const PADDING_X = 24;
-const PADDING_Y = 14;
-const TITLE_BAR_HEIGHT = 34;
-const FONT_SIZE = 16;
-const LINE_HEIGHT = 22;
-const BORDER_RADIUS = 10;
+const PADDING_X = 30;
+const PADDING_Y = 18;
+const TITLE_BAR_HEIGHT = 38;
+const FONT_SIZE = 17;       // Readable after GitHub scales to ~700px
+const LINE_HEIGHT = 22;     // Tighter to fit all 23 lines in 600px height
+const BORDER_RADIUS = 12;
+const FONT_FAMILY = '"DejaVu Sans Mono", monospace';  // Devil's Advocate: confirmed on system
 
-// --- Content Definition ---
+// --- Content Definition (Pain Point Strategist: gut-punch copy) ---
 const LINES = [];
 
 function addLine(time, segments) {
@@ -43,40 +48,64 @@ function addLine(time, segments) {
 
 function seg(text, color = COLORS.fg) { return { text, color }; }
 
-// Beat 1: Command (pre-visible from frame 0)
-addLine(0.0, [seg('$ ', COLORS.purple), seg('npx afterburn https://myapp.dev')]);
+// Beat 1: Command (pre-visible from frame 0) -- thumbnail shows tool name + recognizable URL
+addLine(0.0, [seg('$ ', COLORS.purple), seg('npx afterburn ', COLORS.fg), seg('https://my-saas.vercel.app', COLORS.cyan)]);
 
-// Beat 2: Banner + progress (after 1.5s)
-addLine(1.5, [seg('')]);
-addLine(1.5, [seg('Afterburn v1.0.1')]);
-addLine(1.5, [seg('')]);
+// Beat 2: Banner + progress (after 1.2s -- fast, we want to get to the payoff)
+addLine(1.2, [seg('')]);
+addLine(1.2, [seg('Afterburn v1.0.2', COLORS.bold)]);
+addLine(1.2, [seg('')]);
 
-// Use simple checkmark character that renders in all fonts
-addLine(2.2, [seg('  '), seg('OK', COLORS.green), seg(' Checking browser...')]);
-addLine(2.9, [seg('  '), seg('OK', COLORS.green), seg(' Crawling site...')]);
-addLine(3.6, [seg('  '), seg('OK', COLORS.green), seg(' Testing workflows...')]);
-addLine(4.3, [seg('  '), seg('OK', COLORS.green), seg(' Analyzing results...')]);
-addLine(5.0, [seg('  '), seg('OK', COLORS.green), seg(' Generating reports...')]);
+// Checkmarks cascade -- satisfying progress feel
+addLine(1.9, [seg('  '), seg('CHECK', COLORS.green), seg(' Checking browser...', COLORS.fg)]);
+addLine(2.5, [seg('  '), seg('CHECK', COLORS.green), seg(' Crawling site...', COLORS.fg)]);
+addLine(3.1, [seg('  '), seg('CHECK', COLORS.green), seg(' Testing workflows...', COLORS.fg)]);
+addLine(3.7, [seg('  '), seg('CHECK', COLORS.green), seg(' Analyzing results...', COLORS.fg)]);
+addLine(4.2, [seg('  '), seg('CHECK', COLORS.green), seg(' Generating reports...', COLORS.fg)]);
 
-// Beat 3: Health score + issues (after 5.5s)
-addLine(5.5, [seg('')]);
-addLine(5.8, [seg('Health: '), seg('47/100', COLORS.yellow), seg(' - 52 issues found (13 high, 21 medium, 18 low)')]);
-addLine(5.8, [seg('')]);
+// Beat 3: Health score -- THE emotional climax (Pain Point Strategist: 38/100 = gut punch)
+addLine(4.7, [seg('')]);
+addLine(5.0, [
+  seg('Health: ', COLORS.fg),
+  seg('38/100', COLORS.yellow),
+  seg(' -- 47 issues found ', COLORS.fg),
+  seg('(11 critical, 19 medium, 17 low)', COLORS.comment),
+]);
+addLine(5.0, [seg('')]);
 
-addLine(6.3, [seg('Top issues:')]);
-addLine(6.7, [seg('  1. '), seg('[HIGH]', COLORS.red), seg(' "Get Started Free" button does nothing when clicked')]);
-addLine(7.1, [seg('  2. '), seg('[HIGH]', COLORS.red), seg(' Newsletter signup form fails silently')]);
-addLine(7.5, [seg('  3. '), seg('[HIGH]', COLORS.red), seg(' JavaScript error: TypeError on page load')]);
-addLine(7.8, [seg('  ... and 49 more (see report)')]);
+// Beat 4: Top issues -- stories, not labels (Pain Point Strategist)
+addLine(5.5, [seg('Top issues:', COLORS.fg)]);
+addLine(5.9, [
+  seg('  1. ', COLORS.fg),
+  seg('[CRITICAL]', COLORS.red),
+  seg(' "Start Free Trial" button does nothing', COLORS.fg),
+]);
+addLine(6.3, [
+  seg('  2. ', COLORS.fg),
+  seg('[CRITICAL]', COLORS.red),
+  seg(' Contact form submits but loses the message', COLORS.fg),
+]);
+addLine(6.7, [
+  seg('  3. ', COLORS.fg),
+  seg('[CRITICAL]', COLORS.red),
+  seg(' Pricing page crashes on mobile', COLORS.fg),
+]);
+addLine(7.0, [seg('  ... and 44 more (see report)', COLORS.comment)]);
 
-// Beat 4: Reports (after 8.5s)
+// Beat 5: Reports + AI hook (Pain Point Strategist: "For you" / "For your AI")
+addLine(7.5, [seg('')]);
+addLine(7.8, [seg('Reports saved:', COLORS.fg)]);
+addLine(8.0, [seg('  For you:     ', COLORS.comment), seg('./afterburn-reports/report.html', COLORS.fg)]);
+addLine(8.2, [seg('  For your AI: ', COLORS.comment), seg('./afterburn-reports/report.md', COLORS.fg)]);
 addLine(8.5, [seg('')]);
-addLine(8.8, [seg('Reports saved:')]);
-addLine(9.0, [seg('  HTML:     afterburn-reports/report.html')]);
-addLine(9.2, [seg('  Markdown: afterburn-reports/report.md  '), seg('<-- paste into AI to auto-fix', COLORS.cyan)]);
+addLine(8.7, [
+  seg('Paste ', COLORS.cyan),
+  seg('report.md', COLORS.bold),
+  seg(' into Claude or Cursor to auto-fix these bugs.', COLORS.cyan),
+]);
 
-// Total duration: ~12 seconds (linger until 12.0)
-const TOTAL_DURATION = 12.0;
+// Total duration: ~10.5 seconds (compromise: not 7, not 14)
+const TOTAL_DURATION = 10.5;
 const TOTAL_FRAMES = Math.ceil(TOTAL_DURATION * FPS);
 
 // --- Rendering helpers ---
@@ -102,28 +131,26 @@ function drawCheckmark(ctx, x, y, size, color) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  // Short leg of check (going down-right)
-  ctx.moveTo(x, y + size * 0.4);
-  ctx.lineTo(x + size * 0.35, y + size * 0.75);
-  // Long leg of check (going up-right)
-  ctx.lineTo(x + size * 0.85, y + size * 0.1);
+  ctx.moveTo(x, y + size * 0.5);
+  ctx.lineTo(x + size * 0.35, y + size * 0.8);
+  ctx.lineTo(x + size * 0.9, y + size * 0.15);
   ctx.stroke();
 }
 
 function renderFrame(canvas, ctx, time) {
-  // Outer background (slightly darker, acts as margin)
-  ctx.fillStyle = '#1a1b26';
+  // Outer background (crust -- deepest dark)
+  ctx.fillStyle = COLORS.outer;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
   // Terminal window with rounded corners
-  const winX = 16, winY = 12;
-  const winW = WIDTH - 32, winH = HEIGHT - 24;
+  const winX = 18, winY = 14;
+  const winW = WIDTH - 36, winH = HEIGHT - 28;
 
   // Shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 16;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 20;
   ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 4;
+  ctx.shadowOffsetY = 6;
 
   // Window background
   drawRoundedRect(ctx, winX, winY, winW, winH, BORDER_RADIUS);
@@ -143,11 +170,15 @@ function renderFrame(canvas, ctx, time) {
   // Cover bottom rounded corners of title bar
   ctx.fillRect(winX, winY + TITLE_BAR_HEIGHT - BORDER_RADIUS, winW, BORDER_RADIUS);
 
-  // macOS-style dots
+  // Subtle border line under title bar
+  ctx.fillStyle = COLORS.surface;
+  ctx.fillRect(winX, winY + TITLE_BAR_HEIGHT - 1, winW, 1);
+
+  // macOS-style dots (Visual Designer: Colorful window bar = strongest terminal convention)
   const dotY = winY + TITLE_BAR_HEIGHT / 2;
-  const dotStartX = winX + 20;
-  const dotSpacing = 22;
-  const dotR = 6;
+  const dotStartX = winX + 22;
+  const dotSpacing = 24;
+  const dotR = 7;
 
   [COLORS.dotRed, COLORS.dotYellow, COLORS.dotGreen].forEach((color, i) => {
     ctx.beginPath();
@@ -158,16 +189,16 @@ function renderFrame(canvas, ctx, time) {
 
   // Title text
   ctx.fillStyle = COLORS.comment;
-  ctx.font = `13px "Consolas", "Courier New", monospace`;
+  ctx.font = `14px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
-  ctx.fillText('afterburn', winX + winW / 2, dotY + 4);
+  ctx.fillText('afterburn', winX + winW / 2, dotY + 5);
   ctx.textAlign = 'left';
 
   // Content area
   const contentX = winX + PADDING_X;
   const contentY = winY + TITLE_BAR_HEIGHT + PADDING_Y;
 
-  ctx.font = `${FONT_SIZE}px "Consolas", "Courier New", monospace`;
+  ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
 
   // Determine visible lines at this time
   const visibleLines = LINES.filter(l => l.time <= time);
@@ -177,12 +208,17 @@ function renderFrame(canvas, ctx, time) {
     let x = contentX;
 
     for (const segment of line.segments) {
-      // Check if this is a checkmark placeholder
-      if (segment.text === 'OK' && segment.color === COLORS.green) {
+      if (segment.text === 'CHECK' && segment.color === COLORS.green) {
         // Draw a proper checkmark glyph
-        drawCheckmark(ctx, x + 1, y - FONT_SIZE + 3, FONT_SIZE - 2, COLORS.green);
-        x += ctx.measureText('OK').width;
+        drawCheckmark(ctx, x + 1, y - FONT_SIZE + 3, FONT_SIZE, COLORS.green);
+        x += ctx.measureText('OK').width + 2;
       } else {
+        // Handle bold text
+        if (segment.color === COLORS.bold || segment.color === COLORS.yellow) {
+          ctx.font = `bold ${FONT_SIZE}px ${FONT_FAMILY}`;
+        } else {
+          ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
+        }
         ctx.fillStyle = segment.color;
         ctx.fillText(segment.text, x, y);
         x += ctx.measureText(segment.text).width;
@@ -190,12 +226,17 @@ function renderFrame(canvas, ctx, time) {
     }
   });
 
-  // Block cursor after last visible line
+  // Reset font after rendering
+  ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
+
+  // Block cursor after last visible line (only during animation, not during linger)
   if (visibleLines.length > 0 && time < TOTAL_DURATION - 1.5) {
     const lastLineIdx = visibleLines.length - 1;
     const cursorY = contentY + (lastLineIdx + 1) * LINE_HEIGHT + FONT_SIZE;
     ctx.fillStyle = COLORS.fg;
-    ctx.fillRect(contentX, cursorY - FONT_SIZE + 3, FONT_SIZE * 0.55, FONT_SIZE - 2);
+    ctx.globalAlpha = 0.8;
+    ctx.fillRect(contentX, cursorY - FONT_SIZE + 3, FONT_SIZE * 0.6, FONT_SIZE);
+    ctx.globalAlpha = 1.0;
   }
 }
 
@@ -206,15 +247,15 @@ async function main() {
 
   const encoder = new GIFEncoder(WIDTH, HEIGHT, 'neuquant', true);
 
-  const outputPath = join('C:', 'afterburn', 'demo', 'afterburn-demo.gif');
+  const outputPath = join(process.cwd(), 'demo', 'afterburn-demo.gif');
 
   encoder.setDelay(FRAME_DELAY);
-  encoder.setQuality(10);
+  encoder.setQuality(15);   // 10=best 30=worst; 15 is a good balance for dark themes
   encoder.setRepeat(0);    // 0 = loop forever
 
   encoder.start();
 
-  console.log(`Generating ${TOTAL_FRAMES} frames at ${FPS}fps...`);
+  console.log(`Generating ${TOTAL_FRAMES} frames at ${FPS}fps (${TOTAL_DURATION}s)...`);
 
   for (let i = 0; i < TOTAL_FRAMES; i++) {
     const time = i / FPS;
@@ -241,7 +282,7 @@ async function main() {
   } else if (buffer.length > 2 * 1024 * 1024) {
     console.log('NOTE: File exceeds 2MB goal but under 3MB hard limit.');
   } else {
-    console.log('File size is within target (<2MB).');
+    console.log('File size is within target (<2MB). Ship it!');
   }
 }
 
