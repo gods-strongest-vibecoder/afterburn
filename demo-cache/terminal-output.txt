@@ -1,6 +1,6 @@
 $ npx afterburn-cli http://localhost:3847 --max-pages 10
 ✔ Browser ready
-Afterburn v1.0.0
+Afterburn v1.0.2
 
 ✔ Checking browser...
 
