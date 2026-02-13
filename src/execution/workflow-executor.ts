@@ -21,6 +21,7 @@ import { auditAccessibility } from '../testing/accessibility-auditor.js';
 import { capturePerformanceMetrics } from '../testing/performance-monitor.js';
 import { auditMeta } from '../testing/meta-auditor.js';
 import type { MetaAuditResult } from '../testing/meta-auditor.js';
+import { getAfterburnVersion } from '../version.js';
 
 export interface ExecutionOptions {
   targetUrl: string;
@@ -50,6 +51,8 @@ export class WorkflowExecutor {
    * Main execution flow: runs all workflows and produces execution artifact
    */
   async execute(): Promise<ExecutionArtifact> {
+    const appVersion = getAfterburnVersion();
+
     this.log('Launching browser...');
     await this.browserManager.launch();
 
@@ -79,7 +82,7 @@ export class WorkflowExecutor {
 
     // Build execution artifact
     const artifact: ExecutionArtifact = {
-      version: '1.0.0',
+      version: appVersion,
       stage: 'execution',
       timestamp: new Date().toISOString(),
       sessionId: this.options.sessionId,

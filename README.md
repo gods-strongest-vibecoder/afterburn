@@ -1,9 +1,9 @@
-# Afterburn
+﻿# Afterburn
 
 [![npm version](https://img.shields.io/npm/v/afterburn-cli)](https://www.npmjs.com/package/afterburn-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-289%20passing-brightgreen)]()
+[![CI](https://github.com/gods-strongest-vibecoder/afterburn/actions/workflows/ci.yml/badge.svg)](https://github.com/gods-strongest-vibecoder/afterburn/actions/workflows/ci.yml)
 [![Built at BridgeMind Vibeathon 2026](https://img.shields.io/badge/Built%20at-BridgeMind%20Vibeathon%202026-blueviolet)]()
 
 <p align="center">
@@ -17,15 +17,15 @@ npx afterburn-cli https://your-site.com
 ```
 
 ```
-Afterburn v1.0.0
+Afterburn v1.0.2
 
-✔ Checking browser...
-✔ Crawling site...
-✔ Testing workflows...
-✔ Analyzing results...
-✔ Generating reports...
+[ok] Checking browser...
+[ok] Crawling site...
+[ok] Testing workflows...
+[ok] Analyzing results...
+[ok] Generating reports...
 
-Health: 62/100 — 20 issues found (0 high, 17 medium, 3 low)
+Health: 62/100 - 20 issues found (0 high, 17 medium, 3 low)
 
 Reports saved:
   HTML:     afterburn-reports/1770564079516/report.html
@@ -283,3 +283,5 @@ Exposes a `scan_website` tool that returns structured results your AI assistant 
 MIT
 
 Built for the [BridgeMind Vibeathon 2026](https://bridgemind.dev).
+
+

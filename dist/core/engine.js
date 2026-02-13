@@ -8,6 +8,7 @@ import { analyzeErrors, auditUI, mapErrorToSource } from '../analysis/index.js';
 import { ArtifactStorage } from '../artifacts/index.js';
 import { generateHtmlReport, writeHtmlReport, generateMarkdownReport, writeMarkdownReport, calculateHealthScore, prioritizeIssues, deduplicateIssues } from '../reports/index.js';
 import { validatePublicUrl, validatePath, validateMaxPages } from './validation.js';
+import { getAfterburnVersion } from '../version.js';
 // Hard timeout to prevent the pipeline from hanging forever on unresponsive sites
 const PIPELINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 function toBrokenLinkIssue(link) {
@@ -81,6 +82,7 @@ export async function runAfterburn(options) {
     }
 }
 async function runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir, cancellation) {
+    const appVersion = getAfterburnVersion();
     // Stage: browser check
     options.onProgress?.('browser', 'Checking browser installation...');
     try {
@@ -106,16 +108,16 @@ async function runPipeline(options, validatedTargetUrl, validatedSourcePath, val
         if (cancellation.cancelled) {
             throw new Error('Scan cancelled by timeout');
         }
-        // Issue 10: Don't return early — always generate reports even when no workflows found
+        // Issue 10: Don't return early - always generate reports even when no workflows found
         // Build minimal execution result for no-workflow case
         let executionResult;
         let diagnosedErrors = [];
         let uiAudits = [];
         if (discoveryResult.workflowPlans.length === 0) {
-            options.onProgress?.('complete', 'No testable elements found on site — generating report...');
+            options.onProgress?.('complete', 'No testable elements found on site - generating report...');
             // Create minimal execution result with all required fields
             executionResult = {
-                version: '1.0.0',
+                version: appVersion,
                 stage: 'execution',
                 timestamp: new Date().toISOString(),
                 sessionId,
@@ -180,7 +182,7 @@ async function runPipeline(options, validatedTargetUrl, validatedSourcePath, val
         await artifactStorage.save(executionResult);
         // Save analysis artifact
         const analysisArtifact = {
-            version: '1.0.0',
+            version: appVersion,
             stage: 'analysis',
             timestamp: new Date().toISOString(),
             sessionId,
@@ -201,7 +203,7 @@ async function runPipeline(options, validatedTargetUrl, validatedSourcePath, val
                     priority: 'high',
                     category: 'No Testable Content',
                     summary: 'No forms, buttons, or interactive elements found on the site',
-                    impact: 'Afterburn could not test anything — the site may be empty, under maintenance, or blocking automated access',
+                    impact: 'Afterburn could not test anything - the site may be empty, under maintenance, or blocking automated access',
                     fixSuggestion: 'Verify the site loads correctly in a browser. If the site uses anti-bot protection, results may be incomplete.',
                     location: validatedTargetUrl,
                 }];

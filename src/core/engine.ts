@@ -15,6 +15,7 @@ import type { HealthScore, PrioritizedIssue } from '../reports/index.js';
 import { validatePublicUrl, validatePath, validateMaxPages } from './validation.js';
 import type { ExecutionArtifact } from '../types/execution.js';
 import type { BrokenLink } from '../types/discovery.js';
+import { getAfterburnVersion } from '../version.js';
 
 export interface AfterBurnOptions {
   targetUrl: string;
@@ -146,6 +147,8 @@ async function runPipeline(
   outputDir: string,
   cancellation: { cancelled: boolean },
 ): Promise<AfterBurnResult> {
+  const appVersion = getAfterburnVersion();
+
   // Stage: browser check
   options.onProgress?.('browser', 'Checking browser installation...');
 
@@ -177,18 +180,18 @@ async function runPipeline(
       throw new Error('Scan cancelled by timeout');
     }
 
-    // Issue 10: Don't return early — always generate reports even when no workflows found
+    // Issue 10: Don't return early - always generate reports even when no workflows found
     // Build minimal execution result for no-workflow case
     let executionResult;
     let diagnosedErrors: any[] = [];
     let uiAudits: any[] = [];
 
     if (discoveryResult.workflowPlans.length === 0) {
-      options.onProgress?.('complete', 'No testable elements found on site — generating report...');
+      options.onProgress?.('complete', 'No testable elements found on site - generating report...');
 
       // Create minimal execution result with all required fields
       executionResult = {
-        version: '1.0.0',
+        version: appVersion,
         stage: 'execution',
         timestamp: new Date().toISOString(),
         sessionId,
@@ -261,7 +264,7 @@ async function runPipeline(
 
     // Save analysis artifact
     const analysisArtifact: AnalysisArtifact = {
-      version: '1.0.0',
+      version: appVersion,
       stage: 'analysis',
       timestamp: new Date().toISOString(),
       sessionId,
@@ -288,7 +291,7 @@ async function runPipeline(
         priority: 'high' as const,
         category: 'No Testable Content',
         summary: 'No forms, buttons, or interactive elements found on the site',
-        impact: 'Afterburn could not test anything — the site may be empty, under maintenance, or blocking automated access',
+        impact: 'Afterburn could not test anything - the site may be empty, under maintenance, or blocking automated access',
         fixSuggestion: 'Verify the site loads correctly in a browser. If the site uses anti-bot protection, results may be incomplete.',
         location: validatedTargetUrl,
       }];

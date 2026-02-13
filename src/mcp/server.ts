@@ -2,10 +2,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerTools } from './tools.js';
+import { getAfterburnVersion } from '../version.js';
 
 export function createServer(): McpServer {
+  const appVersion = getAfterburnVersion();
+
   const server = new McpServer(
-    { name: 'afterburn-mcp', version: '1.0.0' },
+    { name: 'afterburn-mcp', version: appVersion },
     {
       capabilities: {
         tools: {}

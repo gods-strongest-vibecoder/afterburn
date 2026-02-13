@@ -18,6 +18,28 @@ Thumbs.db
 
 # Afterburn reports (generated output)
 afterburn-reports/
+coverage/
+*.tgz
+
+# Local planning and review artifacts
+plans/
+security_best_practices_report.md
+
+# Local demo/workbench assets
+smoke-site/
+video/
+demo/index.html
+demo/serve.cjs
+demo/smoke-test.tape
+demo/smoke-test2.tape
+demo/terminal-recording.html
+demo/test-*.tape
+demo/vhs-*.txt
+demo/run-vhs*.ps1
+demo/run-vhs*.bat
+
+# Windows oddities
+nul
 
 # Claude Code framework (not project code)
 .agents/

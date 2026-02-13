@@ -5,13 +5,15 @@ import { runAfterburn } from '../core/index.js';
 import { ensureBrowserInstalled, createSpinner } from './index.js';
 import { runDoctor, printDoctorResults } from './doctor.js';
 import type { Ora } from 'ora';
+import { getAfterburnVersion } from '../version.js';
 
 export const program = new Command();
+const appVersion = getAfterburnVersion();
 
 program
   .name('afterburn')
   .description('Automated testing for vibe-coded websites')
-  .version('1.0.0')
+  .version(appVersion)
   .showHelpAfterError(true)
   .argument('<url>', 'URL to test')
   .option('--source <path>', 'Source code directory for pinpointing bugs')
@@ -40,7 +42,7 @@ program
     await ensureBrowserInstalled();
 
     // Print banner
-    console.log('Afterburn v1.0.0\n');
+    console.log(`Afterburn v${appVersion}\n`);
 
     // In verbose mode, show credential source without exposing actual values
     if (opts.verbose) {
