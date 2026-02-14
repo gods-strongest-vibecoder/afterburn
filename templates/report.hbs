@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none';">
+  <title>Afterburn Report - {{targetUrl}}</title>
+  <style>{{{inlineCSS}}}</style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>Afterburn</h1>
+      <div class="subtitle">Test Report</div>
+      <div class="url">{{targetUrl}}</div>
+      <div class="date">Scanned on {{scanDate}}</div>
+    </header>
+
+    <!-- Health Score Section -->
+    <section class="health-score health-{{healthScore.label}}">
+      <div class="score-display">
+        <div class="score-number">{{healthScore.overall}}<span style="font-size: 2rem; opacity: 0.7;">/100</span></div>
+        <div class="score-label">{{healthScore.label}}</div>
+      </div>
+      <div class="checks-summary">
+        {{healthScore.checksPassed}} of {{healthScore.checksTotal}} checks passed
+      </div>
+      <div class="score-breakdown">
+        <div class="breakdown-item">
+          <h3>Workflows</h3>
+          <div class="score">{{healthScore.breakdown.workflows}}<span style="font-size: 1rem; opacity: 0.7;">/100</span></div>
+        </div>
+        <div class="breakdown-item">
+          <h3>Errors</h3>
+          <div class="score">{{healthScore.breakdown.errors}}<span style="font-size: 1rem; opacity: 0.7;">/100</span></div>
+        </div>
+        <div class="breakdown-item">
+          <h3>Accessibility</h3>
+          <div class="score">{{healthScore.breakdown.accessibility}}<span style="font-size: 1rem; opacity: 0.7;">/100</span></div>
+        </div>
+        <div class="breakdown-item">
+          <h3>Performance</h3>
+          <div class="score">{{healthScore.breakdown.performance}}<span style="font-size: 1rem; opacity: 0.7;">/100</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What to Fix First (To-Do List) -->
+    <section>
+      <h2>What to Fix First</h2>
+      {{#if prioritizedIssues.length}}
+        <div class="todo-list">
+          {{#each prioritizedIssues}}
+            <div class="todo-item priority-{{priority}}">
+              <div class="todo-header">
+                <span class="priority-badge {{priority}}">{{priority}}</span>
+                <span class="category-badge">{{category}}</span>
+              </div>
+              <div class="todo-summary">
+                {{summary}}
+                {{#if occurrenceCount}}
+                  <span class="occurrence-badge">Found {{occurrenceCount}} times</span>
+                {{/if}}
+              </div>
+              <div class="todo-impact"><strong>Why it matters:</strong> {{impact}}</div>
+              <div class="todo-fix"><strong>How to fix:</strong> {{fixSuggestion}}</div>
+              <div class="todo-location">Location: {{location}}</div>
+              {{#if screenshotDataUri}}
+                <div class="todo-screenshot">
+                  <img src="{{screenshotDataUri}}" alt="Screenshot showing the issue" />
+                </div>
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="empty-state">
+          <div class="empty-state-icon">✓</div>
+          <p>No issues found! Your site is looking great.</p>
+        </div>
+      {{/if}}
+    </section>
+
+    <!-- Workflow Results -->
+    <section>
+      <h2>Workflow Results</h2>
+      {{#if workflowResults.length}}
+        <div class="workflow-list">
+          {{#each workflowResults}}
+            <div class="workflow-item">
+              <div class="workflow-header">
+                <div class="workflow-name">{{workflowName}}</div>
+                <span class="status-badge {{overallStatus}}">{{overallStatus}}</span>
+              </div>
+              <div class="workflow-description">{{description}}</div>
+              <div class="workflow-meta">
+                <span>{{totalSteps}} steps</span>
+                <span>[PASS] {{passedSteps}} passed</span>
+                {{#if failedSteps}}
+                  <span>[FAIL] {{failedSteps}} failed</span>
+                {{/if}}
+                {{#if skippedSteps}}
+                  <span>[SKIP] {{skippedSteps}} skipped</span>
+                {{/if}}
+                <span>Duration: {{duration}}ms</span>
+              </div>
+              <details class="workflow-steps">
+                <summary>View step details</summary>
+                <div class="step-list">
+                  {{#each stepResults}}
+                    <div class="step-item">
+                      <span class="step-status {{status}}">{{status}}</span>
+                      <span>{{action}}{{#if selector}} → {{selector}}{{/if}}</span>
+                    </div>
+                  {{/each}}
+                </div>
+              </details>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="empty-state">
+          <div class="empty-state-icon">-</div>
+          <p>No workflows were tested.</p>
+        </div>
+      {{/if}}
+    </section>
+
+    <!-- Accessibility Summary -->
+    <section>
+      <h2>Accessibility Summary</h2>
+      {{#if pageAudits.length}}
+        <div class="summary-grid">
+          {{#each pageAudits}}
+            {{#if accessibility}}
+              <div class="summary-card">
+                <h3>{{url}}</h3>
+                <div class="value">{{accessibility.violationCount}}</div>
+                <div class="description">
+                  {{#if accessibility.violationCount}}
+                    {{accessibility.violationCount}} accessibility {{#if (eq accessibility.violationCount 1)}}issue{{else}}issues{{/if}} found
+                  {{else}}
+                    No accessibility issues found
+                  {{/if}}
+                </div>
+              </div>
+            {{/if}}
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="empty-state">
+          <div class="empty-state-icon">A11y</div>
+          <p>No accessibility audits were performed.</p>
+        </div>
+      {{/if}}
+    </section>
+
+    <!-- Performance Summary -->
+    <section>
+      <h2>Performance Summary</h2>
+      {{#if pageAudits.length}}
+        <div class="summary-grid">
+          {{#each pageAudits}}
+            {{#if performance}}
+              <div class="summary-card">
+                <h3>{{url}}</h3>
+                <div class="value">{{performance.lcp}}ms</div>
+                <div class="description">
+                  Largest Contentful Paint (LCP)
+                  {{#if (lt performance.lcp 2500)}}
+                    <br>[GOOD] Good performance
+                  {{else if (lt performance.lcp 4000)}}
+                    <br>[WARN] Needs improvement
+                  {{else}}
+                    <br>[POOR] Poor performance
+                  {{/if}}
+                </div>
+              </div>
+            {{/if}}
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="empty-state">
+          <div class="empty-state-icon">-</div>
+          <p>No performance metrics were collected.</p>
+        </div>
+      {{/if}}
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-branding">Generated by <strong>Afterburn</strong></div>
+      <div class="footer-timestamp">{{scanDate}}</div>
+      {{#if aiPowered}}
+        <div class="ai-badge">[AI] AI-Powered Analysis</div>
+      {{else}}
+        <div class="ai-tip">Tip: Set <code>GEMINI_API_KEY</code> for smarter test planning and AI-powered root cause analysis.</div>
+      {{/if}}
+    </footer>
+  </div>
+</body>
+</html>

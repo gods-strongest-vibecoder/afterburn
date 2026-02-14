@@ -1,0 +1,23 @@
+{
+  "name": "afterburn-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio --port 3999",
+    "build": "remotion render AfterburnDemo45s out/afterburn-demo.mp4 --concurrency=4",
+    "build:fast": "remotion render AfterburnDemo45s out/preview.mp4 --scale=0.5 --concurrency=4",
+    "still": "remotion still AfterburnDemo45s --frame=1200 out/test.png"
+  },
+  "dependencies": {
+    "remotion": "4.0.248",
+    "@remotion/cli": "4.0.248",
+    "@remotion/google-fonts": "4.0.248",
+    "@remotion/transitions": "4.0.248",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^18.0.0"
+  }
+}

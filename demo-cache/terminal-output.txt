@@ -1,0 +1,37 @@
+$ npx afterburn-cli http://localhost:3847 --max-pages 10
+✔ Browser ready
+Afterburn v1.0.0
+
+✔ Checking browser...
+
+Site Map:
+FlowSync — Automate Your Workflow (/)
+  404 (/about)
+  404 (/blog)
+  Contact — FlowSync (/contact)
+  Pricing — FlowSync (/pricing)
+
+Using heuristic test plans (set GEMINI_API_KEY for smarter AI-driven testing)
+
+Discovered Workflows (heuristic):
+  1. General Form Submission (important) - 4 steps
+  2. Contact Form Submission (important) - 6 steps
+  3. Core Page Navigation (important) - 5 steps
+  4. Click "Get Started Free" Button (nice-to-have) - 3 steps
+  5. Click "Subscribe" Button (nice-to-have) - 3 steps
+  6. Click "Send Message" Button (nice-to-have) - 3 steps
+  7. Click "Get Started" Button (nice-to-have) - 3 steps
+  8. Click "Start Free Trial" Button (nice-to-have) - 3 steps
+
+✔ Crawling site...
+✔ Testing workflows...
+✔ Analyzing results...
+✔ Generating reports...
+
+Health: 62/100 — 33 issues found (11 high, 12 medium, 10 low)
+
+Top issues:
+  1. [HIGH] Tried to use .apiUrl on something that is undefined
+  2. [HIGH] Submit button doesn't do anything when clicked
+  3. [HIGH] Submit button (contact form form) doesn't do anything when clicked
+  ... and 30 more (see report)

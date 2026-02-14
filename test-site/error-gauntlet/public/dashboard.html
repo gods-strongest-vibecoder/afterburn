@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <!-- Intentional: generic title, no brand (SEO) -->
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js"></script>
+  <!-- Intentional: inline script with mixed content reference -->
+  <script>
+    // Intentional: load resource over HTTP (mixed content / security)
+    var analyticsUrl = "http://cdn.example.com/analytics.js";
+    // Intentional: another console error — accessing undefined
+    var userName = window.currentUser.name;
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="logo">NimbusAI</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/blog">Blog</a>
+        <a href="/contact">Contact</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="dashboard-section">
+    <div class="container">
+      <h1>Your Dashboard</h1>
+      <p style="color: #6b7280; margin-bottom: 32px;">Welcome back! Here's an overview of your writing activity.</p>
+
+      <!-- Stats grid -->
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <div class="stat-number">47</div>
+          <div class="stat-label">Documents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">12,340</div>
+          <div class="stat-label">Words written</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">89%</div>
+          <!-- Intentional: low contrast label -->
+          <div class="stat-label low-contrast">Readability score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Team members</div>
+        </div>
+      </div>
+
+      <!-- Recent documents table (no table headers — accessibility issue) -->
+      <h2>Recent Documents</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+        <!-- Intentional: table without <thead> or <th> elements (accessibility) -->
+        <tr style="border-bottom: 1px solid #e5e7eb; padding: 12px 0;">
+          <td style="padding: 12px 0; font-weight: 600;">Q1 Marketing Report</td>
+          <td style="padding: 12px 0; color: #6b7280;">Edited 2 hours ago</td>
+          <td style="padding: 12px 0;"><a href="/documents/1">Open</a></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 12px 0; font-weight: 600;">Blog Post: AI Trends</td>
+          <td style="padding: 12px 0; color: #6b7280;">Edited yesterday</td>
+          <td style="padding: 12px 0;"><a href="/documents/2">Open</a></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 12px 0; font-weight: 600;">Product Launch Email</td>
+          <td style="padding: 12px 0; color: #6b7280;">Edited 3 days ago</td>
+          <td style="padding: 12px 0;"><a href="/documents/3">Open</a></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 12px 0; font-weight: 600;">Investor Deck Script</td>
+          <td style="padding: 12px 0; color: #6b7280;">Edited last week</td>
+          <!-- Intentional: link to nonexistent page -->
+          <td style="padding: 12px 0;"><a href="/documents/4">Open</a></td>
+        </tr>
+      </table>
+
+      <!-- Quick actions with accessibility issues -->
+      <div style="margin-top: 40px;">
+        <h2>Quick Actions</h2>
+        <div style="display: flex; gap: 16px; margin-top: 16px;">
+          <!-- Intentional: button with no accessible label (just an icon) -->
+          <button class="btn btn-primary" aria-label="">+ New Document</button>
+          <!-- Intentional: link styled as button but functionally broken -->
+          <a href="javascript:void(0)" class="btn btn-secondary">Import from Google Docs</a>
+          <!-- Intentional: button calling undefined function -->
+          <button class="btn btn-secondary" onclick="exportAll()">Export All</button>
+        </div>
+      </div>
+
+      <!-- Usage chart placeholder with ARIA issues -->
+      <div style="margin-top: 40px;">
+        <h2>Usage This Month</h2>
+        <!-- Intentional: div acting as interactive element without proper ARIA -->
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 40px; text-align: center; margin-top: 16px; cursor: pointer;" onclick="showDetailedStats()">
+          <p style="color: #6b7280;">Click to view detailed usage breakdown</p>
+          <!-- Intentional: progress bar without ARIA attributes -->
+          <div style="background: #e5e7eb; height: 12px; border-radius: 6px; margin-top: 16px; max-width: 400px; margin-left: auto; margin-right: auto;">
+            <div style="background: #4f46e5; height: 12px; border-radius: 6px; width: 67%;"></div>
+          </div>
+          <p class="tiny-text" style="margin-top: 8px;">67% of monthly quota used (6,700 / 10,000 words)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; 2026 NimbusAI Inc.</p>
+      <div class="footer-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

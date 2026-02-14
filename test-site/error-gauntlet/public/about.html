@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!-- Intentional: missing lang attribute -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- Intentional: no viewport meta (mobile) -->
+  <title>About</title>
+  <!-- Intentional: generic title, no brand name (SEO) -->
+  <!-- Intentional: no meta description -->
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="logo">NimbusAI</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/blog">Blog</a>
+        <a href="/contact">Contact</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <section style="padding: 80px 0;">
+    <div class="container">
+      <h1>About NimbusAI</h1>
+      <p style="font-size: 1.2rem; color: #6b7280; margin-bottom: 40px;">We're on a mission to make writing effortless for everyone.</p>
+
+      <!-- Intentional: heading hierarchy skip (h1 -> h4) -->
+      <h4>Our Story</h4>
+      <p style="margin-bottom: 24px;">NimbusAI started in 2024 when our founders — a journalist, a developer, and a linguist — realized that AI could help writers focus on ideas instead of mechanics. We built the first prototype in a weekend hackathon and haven't stopped since. Read our <a href="/founding-story">full founding story</a>.</p>
+
+      <h4>Our Mission</h4>
+      <p style="margin-bottom: 40px;">We believe everyone has stories worth telling. NimbusAI removes the friction between thought and written word, helping professionals and creatives alike produce their best work faster.</p>
+
+      <h2>Meet the Team</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 32px;">
+        <div style="text-align: center;">
+          <!-- Intentional: image with empty alt (not descriptive) -->
+          <img src="/images/team-sarah.svg" alt="" style="width: 120px; height: 120px; border-radius: 50%;">
+          <h3>Sarah Park</h3>
+          <p style="color: #6b7280;">CEO & Co-founder</p>
+          <p class="tiny-text">Previously senior editor at The Atlantic, Sarah brings 15 years of publishing experience.</p>
+        </div>
+        <div style="text-align: center;">
+          <!-- Intentional: broken image (404) -->
+          <img src="/images/team-alex.jpg" alt="Alex Rivera" style="width: 120px; height: 120px; border-radius: 50%;">
+          <h3>Alex Rivera</h3>
+          <p style="color: #6b7280;">CTO & Co-founder</p>
+          <p class="tiny-text">Former ML engineer at Google Brain. Alex leads our AI research team.</p>
+        </div>
+        <div style="text-align: center;">
+          <!-- Intentional: missing alt entirely -->
+          <img src="/images/team-sarah.svg" style="width: 120px; height: 120px; border-radius: 50%;">
+          <h3>Priya Sharma</h3>
+          <p style="color: #6b7280;">Head of Linguistics</p>
+          <p class="tiny-text">PhD in computational linguistics from MIT. Priya ensures NimbusAI writes naturally.</p>
+        </div>
+      </div>
+
+      <!-- Intentional: broken structured data (invalid JSON-LD) -->
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "NimbusAI",
+        "url": "https://nimbusai.example.com",
+        "founders": [
+          { "@type": "Person", "name": "Sarah Park", },
+          { "@type": "Person", "name": "Alex Rivera", }
+        ],
+        "description":
+      }
+      </script>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p>&copy; 2026 NimbusAI Inc.</p>
+      <div class="footer-links">
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/press-kit">Press Kit</a>
+        <a href="https://twitter.com/nimbusai" target="_blank">Twitter</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

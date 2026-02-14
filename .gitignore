@@ -1,0 +1,63 @@
+node_modules/
+.afterburn/
+*.tsbuildinfo
+
+# Build output (regenerated via `npm run build`)
+dist/
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+credentials*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated output
+afterburn-reports/
+coverage/
+*.tgz
+
+# Internal tooling
+.claude/
+.planning/
+plans/
+_portable/
+.agents/
+CLAUDE.md
+AGENTS.md
+_setup.sh
+_setup.ps1
+HACKATHON-CHECKLIST.md
+REDDIT-POST.md
+voiceover-generator.html
+
+# Demo workbench (keep only the final GIF)
+smoke-site/
+demo/index.html
+demo/serve.cjs
+demo/smoke-test*.tape
+demo/terminal-recording.html
+demo/test-*.tape
+demo/vhs-*.txt
+demo/run-vhs*
+
+# Video build output
+video/out/
+video/node_modules/
+video/public/
+
+# Test site audit artifacts (not test fixtures)
+test-site/*.md
+test-site/*.log
+!test-site/error-gauntlet/ERROR_MANIFEST.md
+
+# Windows
+nul
+Thumbs.db

@@ -1,0 +1,278 @@
+/* NimbusAI — Error Gauntlet stylesheet (some errors are intentional) */
+
+/* === Reset & Base === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  /* Intentional: no font-size set on body — defaults to 16px which is fine */
+}
+
+a { color: #4f46e5; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+/* === Navigation === */
+.navbar {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: #555; font-size: 0.95rem; }
+.nav-links a:hover { color: #4f46e5; }
+
+/* === Hero === */
+.hero {
+  padding: 80px 0 60px;
+  text-align: center;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+}
+
+.hero h1 { font-size: 3rem; color: #1e1b4b; margin-bottom: 16px; }
+.hero-subtitle { font-size: 1.2rem; color: #6b7280; max-width: 600px; margin: 0 auto 32px; }
+
+/* === Buttons === */
+.btn {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary { background: #4f46e5; color: #fff; }
+.btn-primary:hover { background: #4338ca; }
+
+.btn-secondary { background: #e5e7eb; color: #333; }
+.btn-secondary:hover { background: #d1d5db; }
+
+.btn-large { padding: 16px 40px; font-size: 1.1rem; }
+
+/* Intentional bad tap target — too small for mobile */
+.btn-tiny {
+  padding: 4px 8px;
+  font-size: 10px;
+  /* This is way too small for mobile tap targets (needs 44x44px minimum) */
+}
+
+/* === Features === */
+.features { padding: 80px 0; }
+.features h2 { text-align: center; margin-bottom: 48px; font-size: 2rem; }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.feature-card {
+  text-align: center;
+  padding: 32px 24px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.feature-card h3 { margin: 16px 0 8px; }
+.feature-icon { width: 64px; height: 64px; }
+
+/* === Pricing === */
+.pricing-section { padding: 80px 0; background: #f9fafb; }
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.pricing-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px 32px;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.pricing-card.featured {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 24px rgba(79, 70, 229, 0.15);
+}
+
+.price { font-size: 3rem; font-weight: 700; color: #1e1b4b; }
+.price-period { font-size: 1rem; color: #9ca3af; }
+
+.pricing-card ul { list-style: none; margin: 24px 0; text-align: left; }
+.pricing-card li { padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+
+/* === Testimonials === */
+.testimonials { padding: 80px 0; }
+
+.testimonial-card {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.testimonial-card cite { display: block; margin-top: 12px; font-style: normal; color: #6b7280; }
+
+/* === Blog === */
+.blog-section { padding: 80px 0; }
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.blog-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.blog-card img { width: 100%; height: 200px; object-fit: cover; }
+.blog-card-body { padding: 24px; }
+.blog-card h3 { margin-bottom: 8px; }
+.blog-card p { color: #6b7280; }
+
+/* === Contact form === */
+.contact-section { padding: 80px 0; }
+
+.contact-form { max-width: 600px; margin: 0 auto; }
+
+.form-group { margin-bottom: 20px; }
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.form-group textarea { min-height: 120px; resize: vertical; }
+
+/* === Dashboard (login page) === */
+.login-section {
+  padding: 120px 0;
+  text-align: center;
+  background: #f9fafb;
+  min-height: 80vh;
+}
+
+.login-form {
+  max-width: 400px;
+  margin: 32px auto 0;
+  background: #fff;
+  padding: 40px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+/* === Dashboard === */
+.dashboard-section { padding: 40px 0; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.stat-number { font-size: 2rem; font-weight: 700; color: #4f46e5; }
+.stat-label { color: #6b7280; margin-top: 4px; }
+
+/* === Intentional low-contrast text (accessibility error) === */
+.low-contrast { color: #c0c0c0; /* light gray on white — fails WCAG AA */ }
+
+/* Intentional tiny text (mobile error) */
+.tiny-text { font-size: 8px; }
+
+/* === Footer === */
+.footer {
+  background: #1e1b4b;
+  color: #fff;
+  padding: 40px 0;
+}
+
+.footer-inner { display: flex; justify-content: space-between; align-items: center; }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { color: #c7d2fe; }
+
+/* === Intentional: fixed-width element that breaks mobile === */
+.fixed-width-banner {
+  width: 1200px; /* won't fit on mobile screens — causes horizontal scroll */
+  background: #fef3c7;
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+/* Intentional: excessive nesting depth for DOM depth error */
+.deep-nest-1 { padding: 2px; }
+.deep-nest-2 { padding: 2px; }
+.deep-nest-3 { padding: 2px; }
+.deep-nest-4 { padding: 2px; }
+.deep-nest-5 { padding: 2px; }
+.deep-nest-6 { padding: 2px; }
+.deep-nest-7 { padding: 2px; }
+.deep-nest-8 { padding: 2px; }
+.deep-nest-9 { padding: 2px; }
+.deep-nest-10 { padding: 2px; }
+
+/* === Intentional: unused CSS rules (performance issue) === */
+.unused-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+.unused-modal-content { background: white; border-radius: 12px; padding: 40px; max-width: 500px; margin: 100px auto; }
+.unused-tooltip { position: absolute; background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+.unused-sidebar { width: 250px; position: fixed; left: 0; top: 0; bottom: 0; background: #1e1b4b; }
+.unused-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; background: #dcfce7; color: #166534; }
+.unused-spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.unused-dropdown { position: absolute; top: 100%; left: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.unused-accordion { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.unused-accordion-header { padding: 16px; cursor: pointer; font-weight: 600; }
+.unused-accordion-body { padding: 16px; display: none; }
+.unused-toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 8px; }
+.unused-progress { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.unused-progress-bar { height: 100%; background: #4f46e5; transition: width 0.3s; }

@@ -1,0 +1,88 @@
+{
+  "name": "afterburn-cli",
+  "version": "1.0.2",
+  "description": "Automated testing for vibe-coded websites. One command finds broken forms, dead buttons, JS crashes, and more.",
+  "main": "dist/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://github.com/gods-strongest-vibecoder/afterburn#readme",
+  "scripts": {
+    "build": "tsc",
+    "build:action": "tsc -p action/tsconfig.json",
+    "bundle:action": "ncc build action/index.js -o action/dist --license licenses.txt",
+    "build:release": "npm run build && npm run build:action && npm run bundle:action",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run --config vitest.config.unit.ts",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:smoke:external": "vitest run --config vitest.config.e2e.ts tests/e2e/external-smoke.test.ts",
+    "test:coverage": "vitest run --config vitest.config.unit.ts --coverage",
+    "test:watch": "vitest --config vitest.config.unit.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "bin": {
+    "afterburn": "dist/index.js",
+    "afterburn-cli": "dist/index.js",
+    "afterburn-mcp": "dist/mcp/entry.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "keywords": [
+    "testing",
+    "automation",
+    "playwright",
+    "website-testing",
+    "accessibility",
+    "vibe-coding",
+    "cli-tool",
+    "developer-tools",
+    "bug-detection",
+    "qa-automation",
+    "mcp",
+    "ai-tools",
+    "web-development"
+  ],
+  "author": "Afterburn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gods-strongest-vibecoder/afterburn.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "fs-extra": "^11.3.3",
+    "handlebars": "^4.7.8",
+    "ora": "^9.3.0",
+    "playwright": "^1.58.2",
+    "playwright-extra": "4.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2",
+    "sharp": "^0.34.5",
+    "ts-morph": "^27.0.2",
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@actions/artifact": "^6.1.0",
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
+    "@napi-rs/canvas": "^0.1.92",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.2.1",
+    "@vercel/ncc": "^0.38.4",
+    "@vitest/coverage-v8": "^4.0.18",
+    "gif-encoder-2": "^1.0.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
