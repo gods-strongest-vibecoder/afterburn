@@ -71,6 +71,11 @@
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.1"
   },
+  "overrides": {
+    "puppeteer-extra-plugin-user-data-dir": {
+      "rimraf": "^4.4.1"
+    }
+  },
   "devDependencies": {
     "@actions/artifact": "^6.1.0",
     "@actions/core": "^3.0.0",
