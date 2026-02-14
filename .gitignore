@@ -9,7 +9,32 @@ dist/
 .env
 .env.*
 *.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
 credentials*
+service-account*.json
+keyfile*.json
+.htpasswd
+.netrc
+
+# SSH keys
+id_rsa
+id_ed25519
+id_dsa
+id_ecdsa
+*.pub
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Terraform
+*.tfstate
+*.tfstate.backup
 
 # IDE
 .vscode/
