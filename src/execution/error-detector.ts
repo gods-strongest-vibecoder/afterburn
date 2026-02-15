@@ -4,6 +4,15 @@ import { Page } from 'playwright';
 import { ErrorCollector } from '../types/execution.js';
 import { redactSensitiveData, redactSensitiveUrl } from '../utils/sanitizer.js';
 
+function isNextImageOptimizerUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    return parsed.pathname === '/_next/image';
+  } catch {
+    return rawUrl.includes('/_next/image');
+  }
+}
+
 /**
  * Set up page event listeners to capture errors passively
  * Returns collector and cleanup function
@@ -18,6 +27,13 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
   // Console error capture (only console.error, not warnings/logs)
   const consoleHandler = (msg: any) => {
     if (msg.type() === 'error') {
+      const messageUrl = typeof msg.location === 'function'
+        ? (msg.location()?.url || '')
+        : '';
+      if (isNextImageOptimizerUrl(messageUrl)) {
+        return;
+      }
+
       collector.consoleErrors.push({
         message: redactSensitiveData(msg.text()),
         url: page.url(),
@@ -33,6 +49,12 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
 
     // Capture failed HTTP requests (4xx and 5xx)
     if (status >= 400) {
+      // Ignore internal Next.js image optimizer failures (e.g., invalid remote URLs).
+      // These requests are framework-internal noise and create false-positive report issues.
+      if (isNextImageOptimizerUrl(url)) {
+        return;
+      }
+
       const resourceType = response.request().resourceType();
 
       // Add to network failures

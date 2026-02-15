@@ -61,6 +61,20 @@ function isSubmitClickSelector(selector: string): boolean {
   return normalized.includes('type="submit"') || normalized.includes("type='submit'") || normalized.includes('button:not([type])');
 }
 
+function toVisibleSelectorList(selector: string): string {
+  return selector
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => `${part}:visible`)
+    .join(', ');
+}
+
+function isInvisibleElementError(errorMessage: string): boolean {
+  const lower = errorMessage.toLowerCase();
+  return lower.includes('element is not visible') || lower.includes('waiting for element to be visible');
+}
+
 function shouldUncheckCheckbox(value?: string): boolean {
   if (value === undefined) {
     return false;
@@ -377,10 +391,13 @@ export async function executeStep(
 
       case 'click':
         if (isSubmitClickSelector(normalizedSelector)) {
-          const submitExists = await page.locator(normalizedSelector).count().catch(() => 0);
-          if (submitExists === 0) {
-            throw new StepSkippedError('Skipping submit click: submit control not found');
+          const visibleSubmitSelector = toVisibleSelectorList(normalizedSelector);
+          const visibleSubmitExists = await page.locator(visibleSubmitSelector).count().catch(() => 0);
+          if (visibleSubmitExists === 0) {
+            throw new StepSkippedError('Skipping submit click: no visible submit control found');
           }
+          await page.click(visibleSubmitSelector, { timeout: STEP_TIMEOUT });
+          break;
         }
         await page.click(normalizedSelector, { timeout: STEP_TIMEOUT });
         break;
@@ -435,6 +452,16 @@ export async function executeStep(
     // Playwright's click times out with "element is not enabled" in its call log.
     // This is expected behavior, not a real failure.
     const errorMsg = toErrorMessage(error);
+    if (step.action === 'click' && isSubmitClickSelector(normalizedSelector) && isInvisibleElementError(errorMsg)) {
+      return {
+        stepIndex,
+        action: step.action,
+        selector: step.selector,
+        status: 'skipped',
+        duration: Date.now() - startTime,
+        error: 'Skipping submit click: submit control is hidden',
+      };
+    }
     if (step.action === 'click' && isDisabledButtonError(errorMsg)) {
       return {
         stepIndex,
@@ -653,11 +680,12 @@ export async function detectBrokenForm(
     page.on('request', networkListener);
 
     // Submit form
-    const submitButton = await page.locator(
-      `${formSelector} button[type="submit"], ${formSelector} input[type="submit"], ${formSelector} button[type="button"], ${formSelector} button:not([type])`
-    ).first();
-    if (await submitButton.count() > 0) {
-      await submitButton.click({ timeout: STEP_TIMEOUT });
+    const submitSelector =
+      `${formSelector} button[type="submit"], ${formSelector} input[type="submit"], ${formSelector} button[type="button"], ${formSelector} button:not([type])`;
+    const visibleSubmitSelector = toVisibleSelectorList(submitSelector);
+    const visibleSubmitCount = await page.locator(visibleSubmitSelector).count().catch(() => 0);
+    if (visibleSubmitCount > 0) {
+      await page.click(visibleSubmitSelector, { timeout: STEP_TIMEOUT });
     } else {
       // Try form.submit() as fallback
       await page.evaluate((selector) => {

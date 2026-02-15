@@ -142,6 +142,41 @@ describe('Phase A regressions', () => {
     expect(page.click).not.toHaveBeenCalled();
   });
 
+  it('clicks a visible submit control when hidden submit elements exist first', async () => {
+    const page = createMockPage('https://example.com');
+    const originalLocator = page.locator;
+
+    page.locator = vi.fn((selector: string) => {
+      if (selector.includes('button[type="submit"]') && selector.includes(':visible')) {
+        return {
+          first: () => ({
+            isVisible: vi.fn().mockResolvedValue(false),
+            click: vi.fn().mockResolvedValue(undefined),
+            count: vi.fn().mockResolvedValue(0),
+          }),
+          count: vi.fn().mockResolvedValue(1),
+        };
+      }
+
+      return originalLocator(selector);
+    });
+
+    const step: WorkflowStep = {
+      action: 'click',
+      selector: 'form:nth-of-type(1) button[type="submit"], form:nth-of-type(1) input[type="submit"], form:nth-of-type(1) button:not([type])',
+      expectedResult: 'Form submits',
+      confidence: 1,
+    };
+
+    const result = await executeStep(page, step, 2, 'https://example.com');
+
+    expect(result.status).toBe('passed');
+    expect(page.click).toHaveBeenCalledWith(
+      expect.stringContaining(':visible'),
+      expect.objectContaining({ timeout: expect.any(Number) })
+    );
+  });
+
   it('falls back to heuristic workflow plans when AI planning promise rejects', async () => {
     const sitemap = createMinimalSitemap();
 
