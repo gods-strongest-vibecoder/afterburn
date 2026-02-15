@@ -47,7 +47,10 @@ export function generateHeuristicPlans(sitemap: SitemapNode): WorkflowPlan[] {
     for (const button of ctaButtons) {
       if (plans.length >= MAX_WORKFLOWS) break;
       const plan = buildButtonWorkflow(page, button);
-      if (plan) plans.push(plan);
+      if (plan && !seenWorkflowNames.has(plan.workflowName)) {
+        seenWorkflowNames.add(plan.workflowName);
+        plans.push(plan);
+      }
     }
     if (plans.length >= MAX_WORKFLOWS) break;
   }
@@ -297,8 +300,13 @@ function classifyForm(form: FormInfo, pageUrl?: string): string {
   // Signup indicators in form action or page URL
   const hasSignupUrl = /sign.?up|register|signup|create.?account|join/.test(action)
     || /sign.?up|register|signup|create.?account|join/.test(pagePath);
+  // Login indicators in form action or page URL — takes priority over signup heuristics
+  const hasLoginUrl = /\b(sign.?in|signin|log.?in|login)\b/.test(action)
+    || /\/(sign.?in|signin|log.?in|login)\b/.test(pagePath);
 
   if (fieldHints.includes('password') && fieldHints.includes('email')) {
+    // Explicit login URL takes priority over ambiguous signup signals
+    if (hasLoginUrl && !hasSignupUrl) return 'login';
     if (fieldHints.includes('confirm') || fieldHints.includes('register') || hasSignupFields || hasSignupUrl) {
       return 'signup';
     }
@@ -308,6 +316,8 @@ function classifyForm(form: FormInfo, pageUrl?: string): string {
   if (action.includes('contact') || fieldHints.includes('message') || fieldHints.includes('subject')) return 'contact';
   if (action.includes('subscribe') || fieldHints.includes('newsletter')) return 'subscribe';
   if (fieldHints.includes('password')) {
+    // Explicit login URL takes priority
+    if (hasLoginUrl && !hasSignupUrl) return 'login';
     // Even without email, check if this is a signup form by URL or fields
     if (hasSignupFields || hasSignupUrl) return 'signup';
     return 'login';

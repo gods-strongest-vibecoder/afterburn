@@ -190,17 +190,17 @@ export class WorkflowExecutor {
         // Track last URL
         lastUrl = page.url();
 
-        // Form detection: check if this step interacts with a form
+        // Form detection: only trigger on fill→submit pattern (not arbitrary button clicks).
+        // The old isClickInsideForm check caused false positives: button workflows
+        // (e.g. "Click Notify me") would trigger broken form detection if the button
+        // happened to be inside a <form> wrapper used for layout.
         const isFormFillThenSubmit =
           step.action === 'fill' &&
           i + 1 < plan.steps.length &&
           plan.steps[i + 1].action === 'click' &&
           plan.steps[i + 1].selector.includes('submit');
 
-        const isClickInsideForm =
-          step.action === 'click' && result.status === 'passed';
-
-        if (isFormFillThenSubmit || isClickInsideForm) {
+        if (isFormFillThenSubmit) {
           const formSelector = await this.findFormSelector(page, step.selector);
           if (formSelector) {
             const brokenResult = await detectBrokenForm(page, formSelector);
@@ -279,6 +279,16 @@ export class WorkflowExecutor {
         this.log(`    Skipping audit: unable to load ${url} (${error instanceof Error ? error.message : String(error)})`);
         return;
       }
+    }
+
+    // Wait for JS rendering so meta tags, headings, and canonical URLs injected by
+    // frameworks (Next.js, Clerk, etc.) are present in the DOM before auditing.
+    // networkidle waits until no network activity for 500ms, which covers most
+    // client-side rendering frameworks that inject meta tags after initial load.
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 8000 });
+    } catch {
+      // Timeout acceptable — proceed with whatever DOM state we have
     }
 
     const [accessibility, performance, metaAudit] = await Promise.all([

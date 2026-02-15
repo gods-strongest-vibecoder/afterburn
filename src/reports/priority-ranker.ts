@@ -27,17 +27,30 @@ function humanizeSelector(selector: string): string {
   return 'A button on the page';
 }
 
+// Common Tailwind / utility CSS class prefixes — not meaningful as form names
+const UTILITY_CLASS_RE = /^(flex|grid|block|inline|hidden|relative|absolute|fixed|sticky|overflow|float|clear|object|box|isolation|z|order|col|row|gap|space|justify|items|self|place|p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|w|min-w|max-w|h|min-h|max-h|size|font|text|leading|tracking|break|hyphens|whitespace|align|underline|overline|line-through|no-underline|uppercase|lowercase|capitalize|normal-case|truncate|indent|decoration|bg|from|via|to|border|rounded|outline|ring|shadow|opacity|mix-blend|blur|brightness|contrast|drop-shadow|grayscale|hue-rotate|invert|saturate|sepia|backdrop|transition|duration|ease|delay|animate|scale|rotate|translate|skew|origin|accent|appearance|cursor|caret|pointer-events|resize|scroll|snap|touch|select|will-change|fill|stroke|sr-only|not-sr-only|container|aspect|columns|break-after|break-before|break-inside|table|caption|list|divide|ring-offset)[- ]/;
+
 /**
  * Convert form selectors to human-readable names.
  * e.g. 'form#contact-form' → 'contact form'
  *      'form.newsletter-form' → 'newsletter form'
+ *      'form.flex' → 'a form on this page' (utility class, not semantic)
  */
 function humanizeFormSelector(selector: string): string {
+  // IDs are almost always semantic — trust them
   const idMatch = selector.match(/form#([\w-]+)/);
   if (idMatch) return idMatch[1].replace(/[-_]/g, ' ').replace(/\bform\b/gi, '').trim() + ' form';
 
-  const classMatch = selector.match(/form\.([\w-]+)/);
-  if (classMatch) return classMatch[1].replace(/[-_]/g, ' ').replace(/\bform\b/gi, '').trim() + ' form';
+  // For classes, try each one and skip utility/Tailwind names
+  const classMatches = selector.match(/form(?:\.([\w-]+))+/);
+  if (classMatches) {
+    const allClasses = selector.match(/\.([\w-]+)/g)?.map(c => c.slice(1)) || [];
+    for (const cls of allClasses) {
+      if (!UTILITY_CLASS_RE.test(cls + '-') && cls.length > 2) {
+        return cls.replace(/[-_]/g, ' ').replace(/\bform\b/gi, '').trim() + ' form';
+      }
+    }
+  }
 
   return 'form';
 }

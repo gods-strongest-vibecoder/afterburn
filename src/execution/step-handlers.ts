@@ -360,6 +360,14 @@ export async function executeStep(
           timeout: NAV_TIMEOUT,
         });
 
+        // Wait for JS frameworks to finish rendering (prevents phantom elements during hydration).
+        // networkidle waits until no network activity for 500ms — covers React/Next.js hydration.
+        try {
+          await page.waitForLoadState('networkidle', { timeout: 5000 });
+        } catch {
+          // Timeout acceptable — SPAs may never reach full network idle
+        }
+
         // Verify we stayed on the same origin
         const afterOrigin = new URL(page.url()).origin;
         if (baseOrigin && afterOrigin !== baseOrigin) {

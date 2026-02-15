@@ -46,10 +46,11 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
       // Detect broken images specifically
       const isImage = resourceType === 'image' || /\.(jpg|jpeg|png|gif|svg|webp|ico)$/i.test(url);
       if (isImage) {
-        // Find selector by matching img src or background-image
-        let selector = `img[src*="${url.split('/').pop()}"]`;
+        // Verify the image element actually exists in the current DOM.
+        // Transient requests during SPA hydration (e.g. Next.js) can fire 4xx
+        // responses for images that are never in the final rendered page.
+        let selector: string | null = null;
 
-        // Try to find more specific selector if possible
         try {
           const imgElement = await page.locator(`img[src="${url}"]`).first().elementHandle({ timeout: 1000 });
           if (imgElement) {
@@ -59,17 +60,22 @@ export function setupErrorListeners(page: Page): { collector: ErrorCollector; cl
               selector = `img#${id}`;
             } else if (className) {
               selector = `img.${className.split(' ')[0]}`;
+            } else {
+              selector = `img[src*="${url.split('/').pop()}"]`;
             }
           }
         } catch {
-          // Fallback to generic selector if element not found
+          // Element not found in DOM — transient/phantom image
         }
 
-        collector.brokenImages.push({
-          url,
-          selector,
-          status,
-        });
+        // Only report broken images that actually exist in the rendered DOM
+        if (selector) {
+          collector.brokenImages.push({
+            url,
+            selector,
+            status,
+          });
+        }
       }
     }
   };

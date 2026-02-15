@@ -68,7 +68,7 @@ export class BrowserManager {
 
       // Wait for network idle with timeout (some SPAs never reach idle)
       try {
-        await page.waitForLoadState('networkidle', { timeout: options?.networkIdleTimeout ?? 2000 });
+        await page.waitForLoadState('networkidle', { timeout: options?.networkIdleTimeout ?? 5000 });
       } catch {
         // Timeout is acceptable - page may never reach networkidle
       }
