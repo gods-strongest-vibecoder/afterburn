@@ -1,6 +1,6 @@
 {
   "name": "afterburn-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automated testing for vibe-coded websites. One command finds broken forms, dead buttons, JS crashes, and more.",
   "main": "dist/index.js",
   "type": "module",
