@@ -143,12 +143,14 @@ export async function validateLinks(
 
           return null; // Link is OK
         } catch (error) {
-          // Network error or timeout
+          // Network error or timeout — preserve timeout distinction in statusText
+          const errorMsg = error instanceof Error ? error.message : 'Network error';
+          const isTimeout = errorMsg.toLowerCase().includes('timeout') || errorMsg.includes('exceeded');
           return {
             url: link.href,
             sourceUrl,
             statusCode: 0,
-            statusText: error instanceof Error ? error.message : 'Network error',
+            statusText: isTimeout ? `Timeout: ${errorMsg}` : errorMsg,
           };
         }
       })

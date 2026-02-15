@@ -23,7 +23,7 @@ export interface AfterBurnOptions {
   sourcePath?: string;           // --source flag
   email?: string;                // --email flag
   password?: string;             // --password flag
-  outputDir?: string;            // defaults to ./afterburn-reports/{timestamp}/
+  outputDir?: string;            // defaults to ./afterburn-reports/{domain}/
   flowHints?: string[];          // --flows flag parsed
   maxPages?: number;             // --max-pages flag, 0 = unlimited
   headless?: boolean;            // defaults true
@@ -96,6 +96,34 @@ export function recalculateExecutionSummary(executionArtifact: ExecutionArtifact
   executionArtifact.exitCode = (executionArtifact.workflowResults.some(result => result.overallStatus === 'failed') || totalIssues > 0) ? 1 : 0;
 }
 
+/**
+ * Extract a filesystem-safe domain slug from a URL.
+ * Strips protocol, www., trailing slashes, and replaces dots with hyphens.
+ * e.g. "https://www.getcredibly.org/foo" -> "getcredibly-org"
+ */
+function domainSlug(targetUrl: string): string {
+  try {
+    const hostname = new URL(targetUrl).hostname
+      .replace(/^www\./, '')   // strip www.
+      .replace(/\./g, '-');    // dots to hyphens
+    return hostname || 'unknown-site';
+  } catch {
+    return 'unknown-site';
+  }
+}
+
+/**
+ * Build a human-readable timestamp string for filenames: YYYY-MM-DD-HHmmss
+ */
+function fileTimestamp(): string {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `${date}-${hh}${mm}${ss}`;
+}
+
 export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurnResult> {
   // Defense in depth: validate inputs even if caller already validated
   const validatedTargetUrl = await validatePublicUrl(options.targetUrl);
@@ -123,10 +151,11 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
     throw new Error('Invalid session ID: must be at least 8 characters');
   }
 
-  // Create outputDir if it doesn't exist
+  // Build human-readable default output directory: afterburn-reports/{domain}/
+  const slug = domainSlug(validatedTargetUrl);
   const outputDir = options.outputDir
     ? validatePath(options.outputDir, 'outputDir')
-    : `./afterburn-reports/${Date.now()}`;
+    : `./afterburn-reports/${slug}`;
   await fs.ensureDir(outputDir);
 
   // Cancellation flag for timeout handling (Issue 1)
@@ -145,7 +174,7 @@ export async function runAfterburn(options: AfterBurnOptions): Promise<AfterBurn
   });
 
   try {
-    const result = await Promise.race([runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir, cancellation), timeoutPromise]);
+    const result = await Promise.race([runPipeline(options, validatedTargetUrl, validatedSourcePath, validatedMaxPages, sessionId, outputDir, slug, cancellation), timeoutPromise]);
     clearTimeout(timeoutId!);
     return result;
   } catch (error) {
@@ -161,6 +190,7 @@ async function runPipeline(
   validatedMaxPages: number,
   sessionId: string,
   outputDir: string,
+  slug: string,
   cancellation: { cancelled: boolean },
 ): Promise<AfterBurnResult> {
   const appVersion = getAfterburnVersion();
@@ -317,12 +347,15 @@ async function runPipeline(
     let markdownReportPath: string | null = null;
     const warnings: string[] = [];
 
+    // Human-readable report filenames: {domain}-{YYYY-MM-DD}-{HHmmss}.{ext}
+    const reportBaseName = `${slug}-${fileTimestamp()}`;
+
     // Generate HTML and Markdown reports in parallel (independent outputs)
     await Promise.all([
       (async () => {
         try {
           const htmlReport = await generateHtmlReport(executionResult, analysisArtifact);
-          htmlReportPath = path.join(outputDir, `report-${sessionId}.html`);
+          htmlReportPath = path.join(outputDir, `${reportBaseName}.html`);
           await writeHtmlReport(htmlReport, htmlReportPath);
         } catch (reportError) {
           // Issue 11: Track report generation failures as warnings
@@ -332,7 +365,7 @@ async function runPipeline(
       (async () => {
         try {
           const markdownReport = generateMarkdownReport(executionResult, analysisArtifact);
-          markdownReportPath = path.join(outputDir, `report-${sessionId}.md`);
+          markdownReportPath = path.join(outputDir, `${reportBaseName}.md`);
           await writeMarkdownReport(markdownReport, markdownReportPath);
         } catch (reportError) {
           // Issue 11: Track report generation failures as warnings

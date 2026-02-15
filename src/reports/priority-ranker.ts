@@ -43,6 +43,45 @@ function humanizeFormSelector(selector: string): string {
 }
 
 /**
+ * Strip Playwright call logs and verbose error dumps from issue summaries.
+ * Keeps the first meaningful sentence and caps at 120 chars.
+ */
+function sanitizeIssueSummary(raw: string): string {
+  let cleaned = raw;
+
+  // Strip everything after "Call log:" (Playwright verbose call traces)
+  const callLogIdx = cleaned.indexOf('Call log:');
+  if (callLogIdx !== -1) {
+    cleaned = cleaned.substring(0, callLogIdx);
+  }
+
+  // Strip everything after "=== logs ===" (Playwright log blocks)
+  const logsIdx = cleaned.indexOf('=== logs ===');
+  if (logsIdx !== -1) {
+    cleaned = cleaned.substring(0, logsIdx);
+  }
+
+  // Replace "page.click: Timeout Xms exceeded." with readable message
+  cleaned = cleaned.replace(/page\.click:\s*Timeout\s+\d+ms\s+exceeded\.?/gi, 'Click timed out on element');
+
+  // Replace "page.fill: Timeout Xms exceeded." with readable message
+  cleaned = cleaned.replace(/page\.fill:\s*Timeout\s+\d+ms\s+exceeded\.?/gi, 'Could not fill form field');
+
+  // Replace other common page.action timeout patterns
+  cleaned = cleaned.replace(/page\.\w+:\s*Timeout\s+\d+ms\s+exceeded\.?/gi, 'Action timed out');
+
+  // Trim whitespace and trailing punctuation artifacts
+  cleaned = cleaned.trim().replace(/[\s\-:]+$/, '');
+
+  // Cap at 120 chars
+  if (cleaned.length > 120) {
+    cleaned = cleaned.substring(0, 117) + '...';
+  }
+
+  return cleaned || raw.substring(0, 120);
+}
+
+/**
  * Extract the pathname from a full URL for readable display.
  */
 function extractPathFromUrl(url: string): string {
@@ -93,6 +132,21 @@ function buildAccessibilityFix(violation: { id: string; description: string; hel
 
   // Fallback: still include the help URL but add actionable context
   return `Fix the ${violation.nodes} affected element(s): ${violation.description}. See ${violation.helpUrl} for step-by-step guidance.`;
+}
+
+/**
+ * Build technical details for accessibility violations, including element samples if available.
+ * Truncates long HTML snippets to keep output readable.
+ */
+function buildAccessibilityDetails(violation: { nodes: number; elementSamples?: string[] }): string {
+  const countText = `${violation.nodes} element(s) affected`;
+  if (!violation.elementSamples || violation.elementSamples.length === 0) {
+    return countText;
+  }
+  const truncatedSamples = violation.elementSamples.map(html =>
+    html.length > 80 ? html.substring(0, 77) + '...' : html
+  );
+  return `${countText}. Examples: ${truncatedSamples.join(', ')}`;
 }
 
 /**
@@ -296,7 +350,7 @@ export function prioritizeIssues(
       issues.push({
         priority,
         category: 'Workflow Error',
-        summary: error.summary,
+        summary: sanitizeIssueSummary(error.summary),
         impact: 'This breaks a core user flow on your site',
         fixSuggestion: error.suggestedFix,
         location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
@@ -314,7 +368,7 @@ export function prioritizeIssues(
       issues.push({
         priority,
         category: 'Console Error',
-        summary: error.summary,
+        summary: sanitizeIssueSummary(error.summary),
         impact: buildJsErrorImpact(error),
         fixSuggestion: error.suggestedFix,
         location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
@@ -331,7 +385,7 @@ export function prioritizeIssues(
       issues.push({
         priority,
         category: 'Console Error',
-        summary: error.summary,
+        summary: sanitizeIssueSummary(error.summary),
         impact: buildNetworkErrorImpact(error),
         fixSuggestion: error.suggestedFix,
         location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
@@ -375,23 +429,39 @@ export function prioritizeIssues(
     }
   }
 
-  // MEDIUM PRIORITY: Broken links (discovered during crawl)
+  // MEDIUM/LOW PRIORITY: Broken links (discovered during crawl)
+  // Timeouts are downgraded to LOW — the page may just be slow, not broken
   for (const brokenLink of executionArtifact.brokenLinks) {
-    const statusLabel = brokenLink.statusCode === 0 ? 'unreachable' : `${brokenLink.statusCode}`;
     const linkPath = extractPathFromUrl(brokenLink.url);
-    issues.push({
-      priority: 'medium',
-      category: 'Broken Link',
-      summary: `Link to ${linkPath} is broken (${statusLabel})`,
-      impact: `Visitors who click the "${linkPath}" link will see an error page instead of content`,
-      fixSuggestion: brokenLink.statusCode === 404
-        ? `Create the missing page at ${linkPath}, or update the link to point to an existing page`
-        : brokenLink.statusCode === 0
-          ? `The page at ${brokenLink.url} could not be reached — check if the URL is spelled correctly`
-          : `The server returned ${brokenLink.statusCode} for ${linkPath} — check server logs for the error`,
-      location: brokenLink.sourceUrl,
-      technicalDetails: `HTTP ${brokenLink.statusCode}: ${brokenLink.url} (found on ${brokenLink.sourceUrl})`,
-    });
+    const isTimeout = brokenLink.statusCode === 0 &&
+      (brokenLink.statusText?.toLowerCase().includes('timeout') || brokenLink.statusText?.toLowerCase().includes('exceeded'));
+
+    if (isTimeout) {
+      issues.push({
+        priority: 'low',
+        category: 'Broken Link',
+        summary: `Link to ${linkPath} timed out (may be slow)`,
+        impact: `The page at "${linkPath}" took too long to respond — it may be slow or temporarily unavailable`,
+        fixSuggestion: `Check that ${brokenLink.url} loads correctly in a browser. If it's slow, consider optimizing the page or increasing server resources.`,
+        location: brokenLink.sourceUrl,
+        technicalDetails: `Timeout: ${brokenLink.url} (found on ${brokenLink.sourceUrl}). Status text: ${brokenLink.statusText}`,
+      });
+    } else {
+      const statusLabel = brokenLink.statusCode === 0 ? 'unreachable' : `${brokenLink.statusCode}`;
+      issues.push({
+        priority: 'medium',
+        category: 'Broken Link',
+        summary: `Link to ${linkPath} is broken (${statusLabel})`,
+        impact: `Visitors who click the "${linkPath}" link will see an error page instead of content`,
+        fixSuggestion: brokenLink.statusCode === 404
+          ? `Create the missing page at ${linkPath}, or update the link to point to an existing page`
+          : brokenLink.statusCode === 0
+            ? `The page at ${brokenLink.url} could not be reached — check if the URL is spelled correctly`
+            : `The server returned ${brokenLink.statusCode} for ${linkPath} — check server logs for the error`,
+        location: brokenLink.sourceUrl,
+        technicalDetails: `HTTP ${brokenLink.statusCode}: ${brokenLink.url} (found on ${brokenLink.sourceUrl})`,
+      });
+    }
   }
 
   // MEDIUM PRIORITY: UI audit layout/contrast issues (high severity)
@@ -438,7 +508,7 @@ export function prioritizeIssues(
             fixSuggestion: buildAccessibilityFix(violation),
             location: pageAudit.url,
             screenshotRef: fallbackScreenshot,
-            technicalDetails: `${violation.nodes} element(s) affected`,
+            technicalDetails: buildAccessibilityDetails(violation),
           });
         } else if (violation.impact === 'serious') {
           issues.push({
@@ -449,7 +519,7 @@ export function prioritizeIssues(
             fixSuggestion: buildAccessibilityFix(violation),
             location: pageAudit.url,
             screenshotRef: fallbackScreenshot,
-            technicalDetails: `${violation.nodes} element(s) affected`,
+            technicalDetails: buildAccessibilityDetails(violation),
           });
         }
       }
@@ -482,7 +552,7 @@ export function prioritizeIssues(
       issues.push({
         priority: 'low',
         category: 'Console Error',
-        summary: error.summary,
+        summary: sanitizeIssueSummary(error.summary),
         impact: 'A background error that may not affect users yet, but could cause problems later',
         fixSuggestion: error.suggestedFix,
         location: error.sourceLocation ? `${error.sourceLocation.file}:${error.sourceLocation.line}` : (error.pageUrl || 'Unknown'),
@@ -549,7 +619,7 @@ export function prioritizeIssues(
             fixSuggestion: buildAccessibilityFix(violation),
             location: pageAudit.url,
             screenshotRef: fallbackScreenshot,
-            technicalDetails: `${violation.nodes} element(s) affected`,
+            technicalDetails: buildAccessibilityDetails(violation),
           });
         }
       }

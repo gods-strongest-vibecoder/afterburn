@@ -75,6 +75,7 @@ export interface AccessibilityViolation {
   description: string;
   nodes: number;
   helpUrl: string;
+  elementSamples?: string[];  // Up to 3 HTML snippets from affected elements
 }
 
 /**

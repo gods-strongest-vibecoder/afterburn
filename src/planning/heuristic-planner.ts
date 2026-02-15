@@ -23,13 +23,17 @@ const NON_ACTIONABLE_FILL_TYPES = new Set([
 export function generateHeuristicPlans(sitemap: SitemapNode): WorkflowPlan[] {
   const pages = collectAllPages(sitemap);
   const plans: WorkflowPlan[] = [];
+  const seenWorkflowNames = new Set<string>();
 
   // 1. Form workflows - highest value (signup, login, contact, search)
   for (const page of pages) {
     for (const form of page.pageData.forms) {
       if (plans.length >= MAX_WORKFLOWS) break;
       const plan = buildFormWorkflow(page, form);
-      if (plan) plans.push(plan);
+      if (plan && !seenWorkflowNames.has(plan.workflowName)) {
+        seenWorkflowNames.add(plan.workflowName);
+        plans.push(plan);
+      }
     }
     if (plans.length >= MAX_WORKFLOWS) break;
   }
@@ -111,13 +115,17 @@ function buildFormWorkflow(page: SitemapNode, form: FormInfo): WorkflowPlan | nu
     confidence: 0.7,
   });
 
-  const formName = classifyForm(form);
+  const formName = classifyForm(form, page.url);
   const priority = formName.includes('login') || formName.includes('signup') || formName.includes('search')
     ? 'critical' as const
     : 'important' as const;
 
+  // Include page path in workflow name for uniqueness/clarity
+  const pagePath = page.path || new URL(page.url).pathname;
+  const pathSuffix = pagePath && pagePath !== '/' ? ` (${pagePath})` : '';
+
   return {
-    workflowName: `${capitalize(formName)} Form Submission`,
+    workflowName: `${capitalize(formName)} Form${pathSuffix}`,
     description: `Fill and submit the ${formName} form on ${page.pageData.title} to verify it works without errors`,
     steps,
     priority,
@@ -278,18 +286,32 @@ function syntheticValue(type: string, name: string, label: string): string {
   return 'test input';
 }
 
-/** Classify a form by its fields and action */
-function classifyForm(form: FormInfo): string {
+/** Classify a form by its fields, action URL, and page URL */
+function classifyForm(form: FormInfo, pageUrl?: string): string {
   const fieldHints = form.fields.map(f => `${f.type} ${f.name} ${f.label}`.toLowerCase()).join(' ');
   const action = (form.action || '').toLowerCase();
+  const pagePath = (pageUrl || '').toLowerCase();
+
+  // Signup indicators in field names (firstName, lastName, username, name alongside password)
+  const hasSignupFields = /\b(first.?name|last.?name|username|user.?name|full.?name)\b/.test(fieldHints);
+  // Signup indicators in form action or page URL
+  const hasSignupUrl = /sign.?up|register|signup|create.?account|join/.test(action)
+    || /sign.?up|register|signup|create.?account|join/.test(pagePath);
 
   if (fieldHints.includes('password') && fieldHints.includes('email')) {
-    return fieldHints.includes('confirm') || fieldHints.includes('register') ? 'signup' : 'login';
+    if (fieldHints.includes('confirm') || fieldHints.includes('register') || hasSignupFields || hasSignupUrl) {
+      return 'signup';
+    }
+    return 'login';
   }
   if (action.includes('search') || fieldHints.includes('search') || fieldHints.includes('query')) return 'search';
   if (action.includes('contact') || fieldHints.includes('message') || fieldHints.includes('subject')) return 'contact';
   if (action.includes('subscribe') || fieldHints.includes('newsletter')) return 'subscribe';
-  if (fieldHints.includes('password')) return 'login';
+  if (fieldHints.includes('password')) {
+    // Even without email, check if this is a signup form by URL or fields
+    if (hasSignupFields || hasSignupUrl) return 'signup';
+    return 'login';
+  }
 
   return 'general';
 }

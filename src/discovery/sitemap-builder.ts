@@ -162,22 +162,52 @@ export function buildSitemap(pages: PageData[], rootUrl: string): SitemapNode {
 }
 
 /**
- * Renders a sitemap tree as human-readable indented text.
- * Format: Title (path) with 2 spaces per depth level.
+ * Renders a sitemap tree as human-readable text with box-drawing tree connectors.
+ * Uses Unicode box-drawing characters (├──, └──, │) for visual hierarchy.
+ *
+ * Example output:
+ *   Home (/)
+ *   ├── About (/about)
+ *   ├── Blog (/blog)
+ *   │   ├── Post One (/blog/post-one)
+ *   │   └── Post Two (/blog/post-two)
+ *   └── Contact (/contact)
  *
  * @param node - Root or any node in the tree
- * @param indent - Current indentation level (internal use)
+ * @param prefix - Accumulated prefix for current depth (internal use)
+ * @param isLast - Whether this node is the last child of its parent (internal use)
+ * @param isRoot - Whether this is the root node (internal use)
  * @returns Multi-line string representation of the tree
  */
-export function printSitemapTree(node: SitemapNode, indent: number = 0): string {
-  const indentation = '  '.repeat(indent);
-  let output = `${indentation}${node.title} (${node.path})\n`;
+export function printSitemapTree(
+  node: SitemapNode,
+  prefix: string = '',
+  isLast: boolean = true,
+  isRoot: boolean = true,
+): string {
+  let output: string;
+
+  if (isRoot) {
+    // Root node: no connector prefix
+    output = `${node.title} (${node.path})\n`;
+  } else {
+    // Child node: use ├── or └── depending on position
+    const connector = isLast ? '\u2514\u2500\u2500 ' : '\u251C\u2500\u2500 ';
+    output = `${prefix}${connector}${node.title} (${node.path})\n`;
+  }
 
   // Sort children by path for consistent output
   const sortedChildren = [...node.children].sort((a, b) => a.path.localeCompare(b.path));
 
-  for (const child of sortedChildren) {
-    output += printSitemapTree(child, indent + 1);
+  for (let i = 0; i < sortedChildren.length; i++) {
+    const child = sortedChildren[i];
+    const childIsLast = i === sortedChildren.length - 1;
+    // For children of root, prefix stays empty.
+    // For deeper nodes, extend prefix with │ (continuation) or spaces (last child).
+    const childPrefix = isRoot
+      ? ''
+      : prefix + (isLast ? '    ' : '\u2502   ');
+    output += printSitemapTree(child, childPrefix, childIsLast, false);
   }
 
   return output;

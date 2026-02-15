@@ -125,19 +125,82 @@ program
       // Print one-liner summary (ASCII-safe for Windows terminals)
       console.log(`\nHealth: ${result.healthScore.overall}/100 - ${result.totalIssues} issues found (${result.highPriorityCount} high, ${result.mediumPriorityCount} medium, ${result.lowPriorityCount} low)`);
 
-      // Print top 3 issues in terminal so the user sees value immediately
+      // Print issues grouped by page so the user sees which pages have problems
       if (result.prioritizedIssues.length > 0) {
-        console.log('\nTop issues:');
-        const topIssues = result.prioritizedIssues.slice(0, 3);
-        for (let i = 0; i < topIssues.length; i++) {
-          const issue = topIssues[i];
-          const priorityTag = issue.priority === 'high' ? '[HIGH]' : issue.priority === 'medium' ? '[MED]' : '[LOW]';
-          // Truncate summary for terminal readability
-          const summary = issue.summary.length > 80 ? issue.summary.slice(0, 77) + '...' : issue.summary;
-          console.log(`  ${i + 1}. ${priorityTag} ${summary}`);
+        // Helper: extract pathname from a location string (full URL, possibly with "(and X other pages)" suffix)
+        const extractPathname = (location: string): { pathname: string; suffix: string } => {
+          // Check for "(and N other page(s))" suffix
+          const otherPagesMatch = location.match(/^(.*?)\s*(\(and \d+ other pages?\))$/);
+          const urlPart = otherPagesMatch ? otherPagesMatch[1].trim() : location;
+          const suffix = otherPagesMatch ? ` ${otherPagesMatch[2]}` : '';
+          try {
+            const parsed = new URL(urlPart);
+            return { pathname: parsed.pathname, suffix };
+          } catch {
+            // Not a valid URL — use as-is
+            return { pathname: urlPart, suffix };
+          }
+        };
+
+        // Group issues by page pathname (including suffix like "(and 2 other pages)")
+        const pageGroups = new Map<string, { issues: typeof result.prioritizedIssues; highestPriority: number }>();
+        const priorityRank = (p: string) => p === 'high' ? 0 : p === 'medium' ? 1 : 2;
+
+        for (const issue of result.prioritizedIssues) {
+          const { pathname, suffix } = extractPathname(issue.location);
+          const key = pathname + suffix;
+          const existing = pageGroups.get(key);
+          if (existing) {
+            existing.issues.push(issue);
+            existing.highestPriority = Math.min(existing.highestPriority, priorityRank(issue.priority));
+          } else {
+            pageGroups.set(key, { issues: [issue], highestPriority: priorityRank(issue.priority) });
+          }
         }
-        if (result.prioritizedIssues.length > 3) {
-          console.log(`  ... and ${result.prioritizedIssues.length - 3} more (see report)`);
+
+        // Sort groups: pages with highest-priority issues first, then by issue count descending
+        const sortedGroups = [...pageGroups.entries()].sort((a, b) => {
+          if (a[1].highestPriority !== b[1].highestPriority) return a[1].highestPriority - b[1].highestPriority;
+          return b[1].issues.length - a[1].issues.length;
+        });
+
+        // Sort issues within each group by priority
+        for (const [, group] of sortedGroups) {
+          group.issues.sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority));
+        }
+
+        // Determine how many groups/issues to show in terminal
+        // Always show all HIGH and MEDIUM issues; truncate LOW-only groups if too many
+        let lowOnlyGroupsShown = 0;
+        const maxLowOnlyGroups = 3;
+        let hiddenLowIssueCount = 0;
+
+        for (const [pagePath, group] of sortedGroups) {
+          const hasHighOrMed = group.issues.some(i => i.priority === 'high' || i.priority === 'medium');
+          if (!hasHighOrMed) {
+            lowOnlyGroupsShown++;
+            if (lowOnlyGroupsShown > maxLowOnlyGroups) {
+              hiddenLowIssueCount += group.issues.length;
+              continue;
+            }
+          }
+
+          const issueWord = group.issues.length === 1 ? 'issue' : 'issues';
+          console.log(`\n${pagePath} (${group.issues.length} ${issueWord})`);
+
+          for (const issue of group.issues) {
+            const tag = issue.priority === 'high' ? '[HIGH]' : issue.priority === 'medium' ? '[MED] ' : '[LOW] ';
+            // Truncate summary to keep lines readable (account for indent + tag)
+            const maxSummaryLen = 88;
+            const summary = issue.summary.length > maxSummaryLen
+              ? issue.summary.slice(0, maxSummaryLen - 3) + '...'
+              : issue.summary;
+            console.log(`  ${tag} ${summary}`);
+          }
+        }
+
+        if (hiddenLowIssueCount > 0) {
+          console.log(`\n  ... and ${hiddenLowIssueCount} more low-priority issues (see report)`);
         }
       }
 

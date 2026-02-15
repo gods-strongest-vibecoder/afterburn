@@ -10,6 +10,7 @@ interface AccessibilityViolation {
   description: string;
   nodes: number;
   helpUrl: string;
+  elementSamples?: string[];  // Up to 3 HTML snippets from affected elements
 }
 
 interface AccessibilityReport {
@@ -36,13 +37,22 @@ export async function auditAccessibility(page: Page): Promise<AccessibilityRepor
       .analyze();
 
     // Map violations to AccessibilityViolation type
-    const violations: AccessibilityViolation[] = results.violations.map(violation => ({
-      id: violation.id,
-      impact: violation.impact as 'critical' | 'serious' | 'moderate' | 'minor',
-      description: violation.description,
-      nodes: violation.nodes.length,
-      helpUrl: violation.helpUrl,
-    }));
+    const violations: AccessibilityViolation[] = results.violations.map(violation => {
+      // Capture up to 3 HTML snippets from affected nodes for context
+      const elementSamples = violation.nodes
+        .slice(0, 3)
+        .map(node => node.html)
+        .filter((html): html is string => typeof html === 'string' && html.length > 0);
+
+      return {
+        id: violation.id,
+        impact: violation.impact as 'critical' | 'serious' | 'moderate' | 'minor',
+        description: violation.description,
+        nodes: violation.nodes.length,
+        helpUrl: violation.helpUrl,
+        elementSamples: elementSamples.length > 0 ? elementSamples : undefined,
+      };
+    });
 
     return {
       url,
