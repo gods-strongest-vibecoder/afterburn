@@ -1,6 +1,6 @@
 // Unit tests for the priority issue ranker
 import { describe, it, expect } from 'vitest';
-import { prioritizeIssues, type PrioritizedIssue } from '../../src/reports/priority-ranker.js';
+import { prioritizeIssues, sanitizeIssueSummary, buildAccessibilityDetails, type PrioritizedIssue } from '../../src/reports/priority-ranker.js';
 import type { DiagnosedError, UIAuditResult } from '../../src/analysis/diagnosis-schema.js';
 import type { ExecutionArtifact } from '../../src/types/execution.js';
 
@@ -435,5 +435,123 @@ describe('prioritizeIssues', () => {
 
     const result = prioritizeIssues(errors, [], makeArtifact());
     expect(result[0].location).toBe('Unknown');
+  });
+});
+
+// ─── sanitizeIssueSummary ────────────────────────────────────────────────────
+
+describe('sanitizeIssueSummary', () => {
+  it('strips everything after "Call log:"', () => {
+    expect(sanitizeIssueSummary('Timeout error Call log: trace details...')).toBe('Timeout error');
+  });
+
+  it('strips everything after "=== logs ==="', () => {
+    expect(sanitizeIssueSummary('Error message === logs === detailed logs')).toBe('Error message');
+  });
+
+  it('replaces page.click timeout with readable message', () => {
+    expect(sanitizeIssueSummary('page.click: Timeout 10000ms exceeded.')).toBe('Click timed out on element');
+  });
+
+  it('replaces page.fill timeout with readable message', () => {
+    expect(sanitizeIssueSummary('page.fill: Timeout 5000ms exceeded.')).toBe('Could not fill form field');
+  });
+
+  it('replaces other page.X timeout with generic action message', () => {
+    expect(sanitizeIssueSummary('page.evaluate: Timeout 3000ms exceeded.')).toBe('Action timed out');
+  });
+
+  it('truncates to 120 chars with ellipsis for long strings', () => {
+    const longString = 'A'.repeat(200);
+    const result = sanitizeIssueSummary(longString);
+    expect(result.length).toBe(120);
+    expect(result.endsWith('...')).toBe(true);
+    expect(result).toBe('A'.repeat(117) + '...');
+  });
+
+  it('returns short strings unchanged', () => {
+    expect(sanitizeIssueSummary('Simple error')).toBe('Simple error');
+  });
+
+  it('handles combined: timeout + call log stripped together', () => {
+    const input = 'page.click: Timeout 10000ms exceeded.Call log: waiting for locator...';
+    expect(sanitizeIssueSummary(input)).toBe('Click timed out on element');
+  });
+});
+
+// ─── buildAccessibilityDetails ───────────────────────────────────────────────
+
+describe('buildAccessibilityDetails', () => {
+  it('returns node count when no elementSamples', () => {
+    const result = buildAccessibilityDetails({ nodes: 5 });
+    expect(result).toContain('5 element(s) affected');
+  });
+
+  it('includes element samples when present', () => {
+    const result = buildAccessibilityDetails({
+      nodes: 3,
+      elementSamples: ['<button>Click</button>', '<img>'],
+    });
+    expect(result).toContain('3 element(s) affected');
+    expect(result).toContain('Examples:');
+    expect(result).toContain('<button>Click</button>');
+    expect(result).toContain('<img>');
+  });
+
+  it('truncates long HTML snippets to ~80 chars', () => {
+    const longHtml = '<div class="' + 'x'.repeat(100) + '">content</div>';
+    const result = buildAccessibilityDetails({
+      nodes: 1,
+      elementSamples: [longHtml],
+    });
+    // The truncated sample should be 80 chars (77 + '...')
+    expect(result).toContain('...');
+    // The original long HTML should NOT appear in full
+    expect(result).not.toContain(longHtml);
+  });
+
+  it('handles empty elementSamples array same as no samples', () => {
+    const result = buildAccessibilityDetails({ nodes: 2, elementSamples: [] });
+    expect(result).toBe('2 element(s) affected');
+  });
+});
+
+// ─── Timeout vs broken link priority ─────────────────────────────────────────
+
+describe('broken link priority: timeout vs actual broken', () => {
+  it('gives LOW priority to timeout broken links with statusCode 0', () => {
+    const artifact = makeArtifact({
+      brokenLinks: [
+        {
+          url: 'https://example.com/slow-page',
+          sourceUrl: 'https://example.com/home',
+          statusCode: 0,
+          statusText: 'Timeout: navigation exceeded 30000ms',
+        },
+      ],
+    });
+
+    const result = prioritizeIssues([], [], artifact);
+    expect(result).toHaveLength(1);
+    expect(result[0].priority).toBe('low');
+    expect(result[0].summary).toContain('timed out');
+  });
+
+  it('gives MEDIUM priority to 404 broken links with "broken" in summary', () => {
+    const artifact = makeArtifact({
+      brokenLinks: [
+        {
+          url: 'https://example.com/missing-page',
+          sourceUrl: 'https://example.com/home',
+          statusCode: 404,
+          statusText: 'Not Found',
+        },
+      ],
+    });
+
+    const result = prioritizeIssues([], [], artifact);
+    expect(result).toHaveLength(1);
+    expect(result[0].priority).toBe('medium');
+    expect(result[0].summary).toContain('broken');
   });
 });

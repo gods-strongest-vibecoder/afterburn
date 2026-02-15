@@ -101,7 +101,7 @@ export function recalculateExecutionSummary(executionArtifact: ExecutionArtifact
  * Strips protocol, www., trailing slashes, and replaces dots with hyphens.
  * e.g. "https://www.getcredibly.org/foo" -> "getcredibly-org"
  */
-function domainSlug(targetUrl: string): string {
+export function domainSlug(targetUrl: string): string {
   try {
     const hostname = new URL(targetUrl).hostname
       .replace(/^www\./, '')   // strip www.
@@ -115,7 +115,7 @@ function domainSlug(targetUrl: string): string {
 /**
  * Build a human-readable timestamp string for filenames: YYYY-MM-DD-HHmmss
  */
-function fileTimestamp(): string {
+export function fileTimestamp(): string {
   const now = new Date();
   const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
   const hh = String(now.getHours()).padStart(2, '0');

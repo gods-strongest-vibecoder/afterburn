@@ -42,7 +42,7 @@ function toErrorMessage(error: unknown): string {
   return sanitizeErrorMessage(message);
 }
 
-function isDisabledButtonError(errorMessage: string): boolean {
+export function isDisabledButtonError(errorMessage: string): boolean {
   const lower = errorMessage.toLowerCase();
   return (
     lower.includes('element is not enabled') ||

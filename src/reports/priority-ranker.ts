@@ -46,7 +46,7 @@ function humanizeFormSelector(selector: string): string {
  * Strip Playwright call logs and verbose error dumps from issue summaries.
  * Keeps the first meaningful sentence and caps at 120 chars.
  */
-function sanitizeIssueSummary(raw: string): string {
+export function sanitizeIssueSummary(raw: string): string {
   let cleaned = raw;
 
   // Strip everything after "Call log:" (Playwright verbose call traces)
@@ -138,7 +138,7 @@ function buildAccessibilityFix(violation: { id: string; description: string; hel
  * Build technical details for accessibility violations, including element samples if available.
  * Truncates long HTML snippets to keep output readable.
  */
-function buildAccessibilityDetails(violation: { nodes: number; elementSamples?: string[] }): string {
+export function buildAccessibilityDetails(violation: { nodes: number; elementSamples?: string[] }): string {
   const countText = `${violation.nodes} element(s) affected`;
   if (!violation.elementSamples || violation.elementSamples.length === 0) {
     return countText;

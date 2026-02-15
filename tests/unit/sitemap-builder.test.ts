@@ -178,4 +178,73 @@ describe('printSitemapTree', () => {
     expect(lines[2]).toContain('/blog');
     expect(lines[3]).toContain('/zoo');
   });
+
+  it('uses ├── for non-last children and └── for last child', () => {
+    const pages = [
+      makePage('https://example.com/', 'Home'),
+      makePage('https://example.com/blog', 'Blog'),
+      makePage('https://example.com/about', 'About'),
+      makePage('https://example.com/contact', 'Contact'),
+    ];
+
+    const tree = buildSitemap(pages, 'https://example.com');
+    const output = printSitemapTree(tree);
+    const lines = output.trim().split('\n');
+
+    // Sorted order: about, blog, contact
+    expect(lines[1]).toBe('├── About (/about)');
+    expect(lines[2]).toBe('├── Blog (/blog)');
+    expect(lines[3]).toBe('└── Contact (/contact)');
+  });
+
+  it('uses │ continuation for deep nesting under non-last children', () => {
+    const pages = [
+      makePage('https://example.com/', 'Home'),
+      makePage('https://example.com/blog', 'Blog'),
+      makePage('https://example.com/blog/post-1', 'Post 1'),
+      makePage('https://example.com/blog/post-2', 'Post 2'),
+      makePage('https://example.com/contact', 'Contact'),
+    ];
+
+    const tree = buildSitemap(pages, 'https://example.com');
+    const output = printSitemapTree(tree);
+    const lines = output.trim().split('\n');
+
+    // Sorted: blog (not last), contact (last)
+    // Blog's children get │   prefix because blog is not the last child
+    expect(lines[0]).toBe('Home (/)');
+    expect(lines[1]).toBe('├── Blog (/blog)');
+    expect(lines[2]).toBe('│   ├── Post 1 (/blog/post-1)');
+    expect(lines[3]).toBe('│   └── Post 2 (/blog/post-2)');
+    expect(lines[4]).toBe('└── Contact (/contact)');
+  });
+
+  it('uses spaces (not │) for children of a last-child node', () => {
+    const pages = [
+      makePage('https://example.com/', 'Home'),
+      makePage('https://example.com/about', 'About'),
+      makePage('https://example.com/about/team', 'Team'),
+    ];
+
+    const tree = buildSitemap(pages, 'https://example.com');
+    const output = printSitemapTree(tree);
+    const lines = output.trim().split('\n');
+
+    // About is the only (and therefore last) child of root
+    expect(lines[0]).toBe('Home (/)');
+    expect(lines[1]).toBe('└── About (/about)');
+    // Team is child of About (last child) so prefix is 4 spaces, not │
+    expect(lines[2]).toBe('    └── Team (/about/team)');
+  });
+
+  it('root node has no connector prefix', () => {
+    const pages = [makePage('https://example.com/', 'Home')];
+    const tree = buildSitemap(pages, 'https://example.com');
+    const output = printSitemapTree(tree);
+    const firstLine = output.trim().split('\n')[0];
+
+    // Root starts directly with the title, no ├── or └── prefix
+    expect(firstLine).toBe('Home (/)');
+    expect(firstLine).not.toMatch(/^[├└│]/);
+  });
 });
