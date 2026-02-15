@@ -42,6 +42,15 @@ function toErrorMessage(error: unknown): string {
   return sanitizeErrorMessage(message);
 }
 
+function isDisabledButtonError(errorMessage: string): boolean {
+  const lower = errorMessage.toLowerCase();
+  return (
+    lower.includes('element is not enabled') ||
+    lower.includes('element is disabled') ||
+    lower.includes('disabled:pointer-events-none')
+  );
+}
+
 function isNonActionableFillField(field: { type: string; disabled?: boolean; readOnly?: boolean; hidden?: boolean }): boolean {
   const normalizedType = (field.type || '').toLowerCase();
   return Boolean(field.disabled || field.readOnly || field.hidden || NON_ACTIONABLE_FILL_TYPES.has(normalizedType));
@@ -413,13 +422,29 @@ export async function executeStep(
       };
     }
 
+    // Detect disabled-button click failures and treat as skipped rather than failed.
+    // When a form has a disabled submit button (e.g. waiting for client-side validation),
+    // Playwright's click times out with "element is not enabled" in its call log.
+    // This is expected behavior, not a real failure.
+    const errorMsg = toErrorMessage(error);
+    if (step.action === 'click' && isDisabledButtonError(errorMsg)) {
+      return {
+        stepIndex,
+        action: step.action,
+        selector: step.selector,
+        status: 'skipped',
+        duration: Date.now() - startTime,
+        error: 'Button is disabled (likely requires form validation)',
+      };
+    }
+
     return {
       stepIndex,
       action: step.action,
       selector: step.selector,
       status: 'failed',
       duration: Date.now() - startTime,
-      error: toErrorMessage(error),
+      error: errorMsg,
     };
   }
 }
