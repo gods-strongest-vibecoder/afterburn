@@ -53,7 +53,7 @@ describe('heuristic planner form-step safety', () => {
     ]);
 
     const plans = generateHeuristicPlans(sitemap);
-    const formPlan = plans.find((plan) => plan.workflowName.includes('Form Submission'));
+    const formPlan = plans.find((plan) => plan.workflowName.includes('Form'));
 
     expect(formPlan).toBeDefined();
 
@@ -88,7 +88,7 @@ describe('heuristic planner form-step safety', () => {
     ]);
 
     const plans = generateHeuristicPlans(sitemap);
-    const formPlan = plans.find((plan) => plan.workflowName.includes('Form Submission'));
+    const formPlan = plans.find((plan) => plan.workflowName.includes('Form'));
     const fillStep = formPlan?.steps.find((step) => step.action === 'fill');
 
     expect(fillStep?.selector).toBe("getByLabel('Billing Address \\\'Line 1\\\'')");

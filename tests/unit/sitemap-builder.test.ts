@@ -157,8 +157,8 @@ describe('printSitemapTree', () => {
 
     const lines = output.trim().split('\n');
     expect(lines[0]).toBe('Home (/)');
-    expect(lines[1]).toBe('  About (/about)');
-    expect(lines[2]).toBe('    Team (/about/team)');
+    expect(lines[1]).toBe('└── About (/about)');
+    expect(lines[2]).toBe('    └── Team (/about/team)');
   });
 
   it('sorts children alphabetically by path', () => {
