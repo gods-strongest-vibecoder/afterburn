@@ -22,7 +22,8 @@
     "test:smoke:external": "vitest run --config vitest.config.e2e.ts tests/e2e/external-smoke.test.ts",
     "test:coverage": "vitest run --config vitest.config.unit.ts --coverage",
     "test:watch": "vitest --config vitest.config.unit.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
   },
   "bin": {
     "afterburn": "dist/index.js",
@@ -86,6 +87,7 @@
     "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-v8": "^4.0.18",
     "gif-encoder-2": "^1.0.5",
+    "husky": "^9.1.7",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
